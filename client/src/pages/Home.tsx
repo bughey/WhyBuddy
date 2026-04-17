@@ -140,11 +140,9 @@ export default function Home() {
         setLocation(`/tasks/${selectedTaskId}`);
       }
     : undefined;
-  const fullWorkbenchLabel =
-    locale === "zh-CN" ? "全屏工作台" : "Fullscreen workbench";
-  const workflowLabel =
-    locale === "zh-CN" ? "工作流面板" : "Workflow panel";
-  const demoLabel = locale === "zh-CN" ? "演示模式" : "Live demo";
+  const fullWorkbenchLabel = copy.home.enterTasks;
+  const workflowLabel = copy.home.openWorkflow;
+  const demoLabel = copy.home.liveDemo;
 
   const localeLabel =
     locale === "zh-CN" ? copy.common.englishShort : copy.common.chineseShort;

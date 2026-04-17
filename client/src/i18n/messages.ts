@@ -31,12 +31,12 @@ export const messages = {
     },
     home: {
       mobileHint:
-        "这里是办公室首页。移动端继续保留当前结构，你可以从这里进入任务、打开工作流或调整运行时配置。",
+        "这里是办公室首页。移动端继续保留当前结构，你可以从这里打开任务工作台、工作流或运行时配置。",
       officeEyebrow: "办公室",
       officeTitle: "办公室已成为桌面端默认执行壳。",
       officeDescription:
         "桌面端会在办公室里内嵌任务队列、Scene3D、详情与统一发起；移动端暂时继续通过任务页和抽屉协同。",
-      enterTasks: "进入任务",
+      enterTasks: "任务工作台",
       openWorkflow: "打开工作流",
       openConfig: "运行时配置",
       runtimeChip: (label: string) => `当前模式：${label}`,
@@ -87,7 +87,7 @@ export const messages = {
         tasks: {
           label: "任务",
           sublabel: "TASKS",
-          description: "进入全屏任务工作台与深链页，继续推进执行主线。",
+          description: "打开全屏任务工作台与深链详情页，用于查看、跟进和深度处理现有任务。",
         },
         more: {
           label: "更多",
@@ -142,16 +142,16 @@ export const messages = {
     legacyRoutes: {
       commandCenter: {
         eyebrow: "旧入口兼容",
-        title: "指挥中心已收敛到任务主路径。",
+        title: "指挥中心已并入新的 Office / Tasks 壳体。",
         description:
-          "旧的 /command-center 书签仍然可访问，但新的主入口已经迁移到任务页。继续推进执行时，请优先进入任务主线。",
-        primaryCta: "前往任务",
-        secondaryCta: "返回办公室",
+          "旧的 /command-center 书签仍然可访问，但默认入口已经回到办公室首页。需要查看或继续已有任务时，再打开任务工作台。",
+        primaryCta: "进入办公室首页",
+        secondaryCta: "打开任务工作台",
         legacyCta: "继续打开 legacy 视图",
         legacyDescription: "保留原指挥中心页面，方便短期过渡。",
         noteTitle: "为什么这样调整",
         noteBody:
-          "这次收敛的目标不是减少按钮数量，而是让用户自然进入“办公室”或“任务”两条主路径，把配置、治理和帮助类入口放到更多里。",
+          "这次收敛的目标不是减少按钮数量，而是让用户先从办公室首页进入统一主线，再在任务工作台里做查看、跟进和深度处理；配置、治理和帮助统一收口到更多里。",
       },
     },
     notFound: {
@@ -783,12 +783,12 @@ export const messages = {
     },
     home: {
       mobileHint:
-        "This is the Office home. Mobile keeps the current structure, so you can still enter Tasks, open the workflow, or adjust runtime settings from here.",
+        "This is the Office home. Mobile keeps the current structure, so you can still open the task workbench, workflow, or runtime settings from here.",
       officeEyebrow: "Office",
       officeTitle: "Office is now the default desktop execution shell.",
       officeDescription:
         "On desktop, the Office now embeds the task queue, Scene3D, detail tabs, and unified launch. Mobile stays conservative for now.",
-      enterTasks: "Open Tasks",
+      enterTasks: "Task Workbench",
       openWorkflow: "Open Workflow",
       openConfig: "Runtime Config",
       runtimeChip: (label: string) => `Mode: ${label}`,
@@ -842,7 +842,7 @@ export const messages = {
           label: "Tasks",
           sublabel: "TASKS",
           description:
-            "Open the full-screen task workbench and deep-link pages for focused execution.",
+            "Open the full-screen task workbench and deep-link pages for inspection, follow-up, and deep handling of existing missions.",
         },
         more: {
           label: "More",
@@ -900,17 +900,17 @@ export const messages = {
     legacyRoutes: {
       commandCenter: {
         eyebrow: "Legacy Route",
-        title: "Command Center now lives under the Tasks path.",
+        title: "Command Center has been folded into the Office / Tasks shell.",
         description:
-          "Your old /command-center bookmark still works, but the primary execution entry point has moved to Tasks. Continue there first for the new main flow.",
-        primaryCta: "Go to Tasks",
-        secondaryCta: "Back to Office",
+          "Your old /command-center bookmark still works, but the default entry point is now the Office home. Open the task workbench only when you need to inspect or continue an existing mission.",
+        primaryCta: "Open Office Home",
+        secondaryCta: "Open Task Workbench",
         legacyCta: "Open legacy view",
         legacyDescription:
           "Keep using the original Command Center while the transition is in progress.",
         noteTitle: "Why this changed",
         noteBody:
-          "The goal of this convergence is not fewer buttons. It is a clearer path into either Office or Tasks, with configuration, governance, and help grouped under More.",
+          "The goal of this convergence is not fewer buttons. It is a clearer flow: start from Office, then use the task workbench for inspection, follow-up, and deep handling, while configuration, governance, and help stay under More.",
       },
     },
     notFound: {

@@ -624,8 +624,8 @@ export function OfficeAgentInspectorPanel({
           className="mt-3 inline-flex items-center justify-center gap-2 rounded-full bg-[#d07a4f] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#bf6c43]"
         >
           {activeTaskTitle
-            ? t(locale, "回到当前任务详情", "Open current task")
-            : t(locale, "进入任务页", "Open task hub")}
+            ? t(locale, "打开当前任务详情", "Open current task")
+            : t(locale, "打开任务工作台", "Open task workbench")}
           <ArrowRight className="size-4" />
         </button>
       ) : (
@@ -634,7 +634,7 @@ export function OfficeAgentInspectorPanel({
           onClick={() => setLocation("/tasks")}
           className="mt-3 inline-flex items-center justify-center gap-2 rounded-full border border-stone-200 bg-white px-4 py-2.5 text-sm font-semibold text-stone-700 transition-colors hover:bg-stone-50"
         >
-          {t(locale, "进入任务页", "Open task hub")}
+          {t(locale, "打开任务工作台", "Open task workbench")}
           <ArrowRight className="size-4" />
         </button>
       )}

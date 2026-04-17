@@ -415,7 +415,7 @@ export function AgentDetailDrawer({
                   className="rounded-full border-[#DBC8B5] bg-white/90 text-[#5C493A] hover:bg-[#FFF8F0]"
                   onClick={handleTaskOpen}
                 >
-                  {t(locale, "进入任务页", "Open tasks")}
+                  {t(locale, "打开任务工作台", "Open task workbench")}
                 </Button>
               }
             >

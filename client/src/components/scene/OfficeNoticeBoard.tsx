@@ -116,7 +116,7 @@ export function OfficeNoticeBoard({
           className="rounded-full bg-[#C98257] text-white hover:bg-[#B86F45]"
           onClick={onOpenTasks}
         >
-          {locale === "zh-CN" ? "进入任务台" : "Open tasks"}
+          {locale === "zh-CN" ? "打开任务工作台" : "Open task workbench"}
           <ArrowRight className="size-4" />
         </Button>
         <Button

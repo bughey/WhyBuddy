@@ -24,7 +24,7 @@ export default function LegacyCommandCenterPage() {
         <div className="grid gap-4 md:grid-cols-2">
           <button
             type="button"
-            onClick={() => setLocation("/tasks")}
+            onClick={() => setLocation("/")}
             className="rounded-[28px] bg-[linear-gradient(180deg,#c98257,#b86f45)] px-5 py-5 text-left text-[#fffaf4] shadow-[0_18px_34px_rgba(184,111,69,0.24)] transition-transform hover:-translate-y-0.5"
           >
             <div className="flex items-start justify-between gap-3">
@@ -33,16 +33,16 @@ export default function LegacyCommandCenterPage() {
                   {copy.legacyRoutes.commandCenter.primaryCta}
                 </div>
                 <div className="mt-2 text-xs leading-5 text-white/80">
-                  {copy.toolbar.primaryNav.tasks.description}
+                  {copy.toolbar.primaryNav.office.description}
                 </div>
               </div>
-              <FolderKanban className="mt-0.5 size-5 shrink-0" />
+              <BriefcaseBusiness className="mt-0.5 size-5 shrink-0" />
             </div>
           </button>
 
           <button
             type="button"
-            onClick={() => setLocation("/")}
+            onClick={() => setLocation("/tasks")}
             className="workspace-panel workspace-panel-inset rounded-[28px] px-5 py-5 text-left transition-transform hover:-translate-y-0.5"
           >
             <div className="flex items-start justify-between gap-3">
@@ -51,10 +51,10 @@ export default function LegacyCommandCenterPage() {
                   {copy.legacyRoutes.commandCenter.secondaryCta}
                 </div>
                 <div className="mt-2 text-xs leading-5 text-[var(--workspace-text-muted)]">
-                  {copy.toolbar.primaryNav.office.description}
+                  {copy.toolbar.primaryNav.tasks.description}
                 </div>
               </div>
-              <BriefcaseBusiness className="mt-0.5 size-5 shrink-0 text-[var(--workspace-text-subtle)]" />
+              <FolderKanban className="mt-0.5 size-5 shrink-0 text-[var(--workspace-text-subtle)]" />
             </div>
           </button>
         </div>

@@ -356,7 +356,7 @@ export function WorkflowPanelCompatibility({
                       ? t(locale, "去办公室查看", "Open in office")
                       : destination.kind === "task-detail"
                         ? t(locale, "打开任务详情", "Open task detail")
-                        : t(locale, "前往任务中台", "Open task hub")}
+                        : t(locale, "打开任务工作台", "Open task workbench")}
                     <ArrowRight className="size-4" />
                   </button>
                 ) : null}
