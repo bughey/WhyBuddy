@@ -65,6 +65,29 @@ export function TaskPlanetInterior({
     .join(", ");
   const stageRadius = compact ? 82 : 118;
   const agentRadius = compact ? 112 : 150;
+  const totalWorkPackages = Math.max(detail.taskCount, detail.tasks.length);
+  const completedWorkPackages = Math.min(
+    detail.completedTaskCount,
+    totalWorkPackages
+  );
+  const workPackageSummary =
+    totalWorkPackages > 0
+      ? t(
+          locale,
+          `${completedWorkPackages}/${totalWorkPackages} 已完成`,
+          `${completedWorkPackages}/${totalWorkPackages} completed`
+        )
+      : t(locale, "暂未生成工作包", "No work packages yet");
+  const collaborationSummary =
+    detail.departmentLabels.length > 0
+      ? compactText(detail.departmentLabels.join(" / "), 42)
+      : detail.agents.length > 0
+        ? t(
+            locale,
+            `${detail.agents.length} 名成员协作中`,
+            `${detail.agents.length} crew assigned`
+          )
+        : t(locale, "等待协作分配", "Awaiting crew assignment");
 
   return (
     <section
@@ -234,26 +257,18 @@ export function TaskPlanetInterior({
             </div>
             <div className={PLANET_TILE_CLASS}>
               <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-stone-500">
-                {t(locale, "等待原因", "Waiting")}
+                {t(locale, "工作包", "Work Packages")}
               </div>
               <div className="mt-1 text-sm font-medium text-stone-800">
-                {compactText(
-                  detail.waitingFor ||
-                    t(locale, "当前无阻塞信号", "No blocking signal"),
-                  42
-                )}
+                {workPackageSummary}
               </div>
             </div>
             <div className={PLANET_TILE_CLASS}>
               <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-stone-500">
-                {t(locale, "最新信号", "Signal")}
+                {t(locale, "协作范围", "Collaboration")}
               </div>
               <div className="mt-1 text-sm font-medium text-stone-800">
-                {compactText(
-                  detail.lastSignal ||
-                    t(locale, "当前没有新的执行信号", "No recent signal"),
-                  42
-                )}
+                {collaborationSummary}
               </div>
             </div>
           </div>

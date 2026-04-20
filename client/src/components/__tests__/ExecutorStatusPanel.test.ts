@@ -11,7 +11,6 @@ import { describe, it, expect } from "vitest";
 
 import type { ExecutorStatusPanelProps } from "../ExecutorStatusPanel";
 import type {
-  MissionArtifact,
   MissionExecutorContext,
   MissionInstanceContext,
 } from "@shared/mission/contracts";
@@ -40,24 +39,16 @@ describe("ExecutorStatusPanel props contract", () => {
       workspaceRoot: "/workspace",
       startedAt: Date.now(),
     };
-    const artifacts: MissionArtifact[] = [
-      { kind: "file", name: "output.txt", description: "Execution output" },
-      { kind: "report", name: "summary.md", description: "Summary report" },
-    ];
-    const props: ExecutorStatusPanelProps = { executor, instance, artifacts };
+    const props: ExecutorStatusPanelProps = { executor, instance };
 
     expect(props.executor?.status).toBe("running");
     expect(props.instance?.image).toBe("node:20-slim");
-    expect(props.artifacts).toHaveLength(2);
-    expect(props.artifacts?.[0].kind).toBe("file");
-    expect(props.artifacts?.[1].name).toBe("summary.md");
   });
 
   it("allows all props to be undefined (renders nothing)", () => {
     const props: ExecutorStatusPanelProps = {};
     expect(props.executor).toBeUndefined();
     expect(props.instance).toBeUndefined();
-    expect(props.artifacts).toBeUndefined();
   });
 
   it("status values map to expected display states", () => {
@@ -71,18 +62,12 @@ describe("ExecutorStatusPanel props contract", () => {
     }
   });
 
-  it("artifacts list can contain all valid kinds", () => {
-    const kinds: MissionArtifact["kind"][] = ["file", "report", "url", "log"];
-    const artifacts: MissionArtifact[] = kinds.map((kind) => ({
-      kind,
-      name: `${kind}-artifact`,
-      description: `A ${kind} artifact`,
-    }));
+  it("supports pure runtime summaries without extra artifact context", () => {
     const props: ExecutorStatusPanelProps = {
-      executor: { name: "test" },
-      artifacts,
+      executor: { name: "test", status: "completed" },
     };
-    expect(props.artifacts).toHaveLength(4);
-    expect(props.artifacts?.map((a) => a.kind)).toEqual(kinds);
+
+    expect(props.executor?.status).toBe("completed");
+    expect(props.instance).toBeUndefined();
   });
 });

@@ -199,6 +199,18 @@ export interface MissionTaskDetail extends MissionTaskSummary {
   decision: MissionDecision | null;
   instanceInfo: Array<{ label: string; value: string }>;
   logSummary: Array<{ label: string; value: string }>;
+  runtimeChannels: {
+    socket: {
+      status: "connected" | "disconnected";
+      label: string;
+      detail: string;
+    };
+    callback: {
+      status: "active" | "idle";
+      label: string;
+      detail: string;
+    };
+  };
   decisionHistory: DecisionHistoryEntry[];
   operatorActions: MissionOperatorActionRecord[];
   securitySummary?: {
@@ -223,6 +235,7 @@ interface TasksStoreState {
   ready: boolean;
   loading: boolean;
   error: string | null;
+  missionSocketConnected: boolean;
   selectedTaskId: string | null;
   tasks: MissionTaskSummary[];
   detailsById: Record<string, MissionTaskDetail>;
@@ -301,6 +314,43 @@ function formatDurationMs(value: number | null): string {
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
   return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
+}
+
+function buildRuntimeChannels(
+  mission: MissionRecord,
+  missionSocketConnected: boolean
+): MissionTaskDetail["runtimeChannels"] {
+  const socket = missionSocketConnected
+    ? {
+        status: "connected" as const,
+        label: "Socket connected",
+        detail: "Mission socket is connected and can receive live runtime updates.",
+      }
+    : {
+        status: "disconnected" as const,
+        label: "Socket disconnected",
+        detail: "Mission socket is offline, so runtime updates may be delayed until refresh.",
+      };
+
+  const callbackLabel = mission.executor?.lastEventType
+    ? `Callback ${mission.executor.lastEventType}`
+    : mission.executor?.jobId
+      ? "Callback pending"
+      : "Callback idle";
+  const callbackDetail = mission.executor?.lastEventAt
+    ? `Last executor callback at ${formatShortDate(mission.executor.lastEventAt)}.${mission.executor?.jobId ? ` Job ${mission.executor.jobId}.` : ""}${mission.executor?.requestId ? ` Request ${mission.executor.requestId}.` : ""}`
+    : mission.executor?.jobId
+      ? `Waiting for executor callback after dispatch.${mission.executor?.jobId ? ` Job ${mission.executor.jobId}.` : ""}${mission.executor?.requestId ? ` Request ${mission.executor.requestId}.` : ""}`
+      : "No executor callback has been recorded for this mission yet.";
+
+  return {
+    socket,
+    callback: {
+      status: mission.executor?.lastEventAt ? "active" : "idle",
+      label: callbackLabel,
+      detail: callbackDetail,
+    },
+  };
 }
 
 function clampPercentage(value: number | null | undefined, fallback = 0): number {
@@ -1012,7 +1062,8 @@ function buildNativeLogSummary(
  * detail 构建：完全从 MissionRecord 派生。
  */
 function buildDetailRecord(
-  mission: MissionRecord
+  mission: MissionRecord,
+  missionSocketConnected = false
 ): MissionTaskDetail {
   const summary = buildSummaryRecord(mission);
   const failureReasons = missionFailureReasons(mission, mission.events);
@@ -1036,6 +1087,7 @@ function buildDetailRecord(
     decision: mission.decision ?? null,
     instanceInfo: buildMissionInstanceInfo(summary, mission),
     logSummary: buildMissionLogSummary(mission, mission.events),
+    runtimeChannels: buildRuntimeChannels(mission, missionSocketConnected),
     decisionHistory: mission.decisionHistory ?? [],
     operatorActions: mission.operatorActions ?? [],
     securitySummary: mission.securitySummary,
@@ -1052,7 +1104,8 @@ function buildDetailRecord(
 export function buildPlanetDetailRecord(
   planet: MissionPlanetOverviewItem,
   interior: MissionPlanetInteriorData,
-  mission: MissionRecord
+  mission: MissionRecord,
+  missionSocketConnected = false
 ): MissionTaskDetail {
   const summary = buildSummaryRecord(mission);
   const events = interior.events ?? [];
@@ -1119,6 +1172,7 @@ export function buildPlanetDetailRecord(
     decision: mission.decision ?? null,
     instanceInfo: buildMissionInstanceInfo(summary, mission),
     logSummary: buildMissionLogSummary(mission, events),
+    runtimeChannels: buildRuntimeChannels(mission, missionSocketConnected),
     decisionHistory: mission.decisionHistory ?? [],
     operatorActions: mission.operatorActions ?? [],
     securitySummary: mission.securitySummary,
@@ -1130,7 +1184,8 @@ export function buildPlanetDetailRecord(
 
 /* buildMissionDetailRecord — kept for backward compat, delegates to buildDetailRecord */
 function buildMissionDetailRecord(
-  mission: MissionRecord
+  mission: MissionRecord,
+  missionSocketConnected = false
 ): MissionTaskDetail {
   const summary = buildSummaryRecord(mission);
   const failureReasons = missionFailureReasons(mission, mission.events);
@@ -1154,6 +1209,7 @@ function buildMissionDetailRecord(
     decision: mission.decision ?? null,
     instanceInfo: buildMissionInstanceInfo(summary, mission),
     logSummary: buildNativeLogSummary(mission),
+    runtimeChannels: buildRuntimeChannels(mission, missionSocketConnected),
     decisionHistory: mission.decisionHistory ?? [],
     operatorActions: mission.operatorActions ?? [],
     securitySummary: mission.securitySummary,
@@ -1217,7 +1273,10 @@ export async function patchMissionRecordInStore(
 
   const missionResponse = await getMission(missionId);
   const summary = buildSummaryRecord(missionResponse.task);
-  const detail = buildDetailRecord(missionResponse.task);
+  const detail = buildDetailRecord(
+    missionResponse.task,
+    get().missionSocketConnected
+  );
 
   set(state => {
     const nextTasks = [...state.tasks.filter(task => task.id !== missionId), summary]
@@ -1269,6 +1328,10 @@ function ensureMissionSocket(
   // Initialize sandbox store for live log/screenshot streaming
   useSandboxStore.getState().initSocket(missionSocket);
 
+  missionSocket.on("connect", () => {
+    set({ missionSocketConnected: true });
+  });
+
   missionSocket.on(MISSION_SOCKET_EVENT, (payload: MissionSocketPayload) => {
     if (!payload || typeof payload !== "object" || !("type" in payload)) {
       return;
@@ -1293,7 +1356,7 @@ function ensureMissionSocket(
     ) {
       const mission = payload.task;
       const summary = buildSummaryRecord(mission);
-      const detail = buildDetailRecord(mission);
+      const detail = buildDetailRecord(mission, get().missionSocketConnected);
 
       set(state => {
         const nextTasks = [
@@ -1324,6 +1387,7 @@ function ensureMissionSocket(
   });
 
   missionSocket.on("disconnect", () => {
+    set({ missionSocketConnected: false });
     if (useAppStore.getState().runtimeMode !== "advanced") {
       stopMissionSocket();
     }
@@ -1409,7 +1473,7 @@ async function hydrateTaskData(
   const detailsById = Object.fromEntries(
     enrichedMissions.map(mission => [
       mission.id,
-      buildDetailRecord(mission),
+      buildDetailRecord(mission, get().missionSocketConnected),
     ])
   ) as Record<string, MissionTaskDetail>;
 
@@ -1469,12 +1533,23 @@ async function hydratePlanetTaskData(
     if (planet.id === selectedTaskId) {
       try {
         const interiorResponse = await getPlanetInterior(planet.id);
-        detailsById[planet.id] = buildPlanetDetailRecord(planet, interiorResponse.interior, mission);
+        detailsById[planet.id] = buildPlanetDetailRecord(
+          planet,
+          interiorResponse.interior,
+          mission,
+          get().missionSocketConnected
+        );
       } catch {
-        detailsById[planet.id] = buildMissionDetailRecord(mission);
+        detailsById[planet.id] = buildMissionDetailRecord(
+          mission,
+          get().missionSocketConnected
+        );
       }
     } else {
-      detailsById[planet.id] = buildMissionDetailRecord(mission);
+      detailsById[planet.id] = buildMissionDetailRecord(
+        mission,
+        get().missionSocketConnected
+      );
     }
   }
 
@@ -1492,6 +1567,7 @@ export const useTasksStore = create<TasksStoreState>((set, get) => ({
   ready: false,
   loading: false,
   error: null,
+  missionSocketConnected: false,
   selectedTaskId: null,
   tasks: [],
   detailsById: {},
@@ -1603,7 +1679,10 @@ export const useTasksStore = create<TasksStoreState>((set, get) => ({
       });
 
       const summary = buildSummaryRecord(response.task);
-      const detail = buildDetailRecord(response.task);
+      const detail = buildDetailRecord(
+        response.task,
+        get().missionSocketConnected
+      );
 
       set(state => {
         const nextTasks = [
@@ -1663,7 +1742,10 @@ export const useTasksStore = create<TasksStoreState>((set, get) => ({
       });
 
       const summary = buildSummaryRecord(response.task);
-      const detail = buildDetailRecord(response.task);
+      const detail = buildDetailRecord(
+        response.task,
+        get().missionSocketConnected
+      );
 
       set(state => {
         const nextTasks = [

@@ -105,6 +105,18 @@ function makeDetail(overrides?: Partial<MissionTaskDetail>): MissionTaskDetail {
     decision: makeDecision(),
     instanceInfo: [],
     logSummary: [],
+    runtimeChannels: {
+      socket: {
+        status: "connected",
+        label: "Socket connected",
+        detail: "Mission socket is connected and can receive live runtime updates.",
+      },
+      callback: {
+        status: "idle",
+        label: "Callback idle",
+        detail: "No executor callback has been recorded for this mission yet.",
+      },
+    },
     decisionHistory: [],
     operatorActions: [],
     missionArtifacts: [],
@@ -139,9 +151,9 @@ describe("TaskOperationsHero", () => {
     expect(markup).toContain("当前负责人");
     expect(markup).toContain("阻塞 / 等待");
     expect(markup).toContain("下一步动作");
-    expect(markup).toContain("执行阶段 / 运行态");
     expect(markup).toContain("需要用户决策");
     expect(markup).toContain("提交待处理决策");
+    expect(markup).not.toContain("执行阶段 / 运行态");
 
     expect(markup.indexOf("任务操作")).toBeLessThan(
       markup.indexOf("当前负责人")
@@ -151,9 +163,6 @@ describe("TaskOperationsHero", () => {
     );
     expect(markup.indexOf("阻塞 / 等待")).toBeLessThan(
       markup.indexOf("下一步动作")
-    );
-    expect(markup.indexOf("下一步动作")).toBeLessThan(
-      markup.indexOf("执行阶段 / 运行态")
     );
   });
 

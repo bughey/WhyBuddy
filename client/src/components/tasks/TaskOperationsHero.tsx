@@ -4,10 +4,8 @@ import { motion } from "framer-motion";
 import {
   AlertTriangle,
   ArrowRightCircle,
-  Bot,
   Sparkles,
   UserRound,
-  Workflow,
 } from "lucide-react";
 
 import type {
@@ -37,7 +35,6 @@ import {
   missionStatusTone,
   taskInsightToneClasses,
   type TaskInsightSummary,
-  type TaskInsightTone,
 } from "./task-helpers";
 
 interface TaskOperationsHeroProps {
@@ -47,27 +44,6 @@ interface TaskOperationsHeroProps {
     action: "pause" | "resume" | "retry" | "mark-blocked" | "terminate";
     reason?: string;
   }) => void | Promise<void>;
-}
-
-function t(locale: string, zh: string, en: string) {
-  return locale === "zh-CN" ? zh : en;
-}
-
-function localizedExecutorStatus(locale: string, status: string) {
-  switch (status) {
-    case "queued":
-      return t(locale, "排队中", "Queued");
-    case "running":
-      return t(locale, "执行中", "Running");
-    case "completed":
-      return t(locale, "已完成", "Completed");
-    case "failed":
-      return t(locale, "失败", "Failed");
-    case "warning":
-      return t(locale, "需关注", "Needs attention");
-    default:
-      return status;
-  }
 }
 
 function recommendedToneClasses(
@@ -81,16 +57,6 @@ function recommendedToneClasses(
         : "danger",
     "px-3 py-1 text-xs"
   );
-}
-
-function summaryToneForRuntime(detail: MissionTaskDetail): TaskInsightTone {
-  if (detail.status === "done") return "success";
-  if (detail.status === "failed") return "danger";
-  if (detail.status === "waiting" || detail.operatorState === "paused") {
-    return "info";
-  }
-  if (detail.operatorState === "blocked") return "warning";
-  return "neutral";
 }
 
 function SummaryCard({
@@ -146,10 +112,6 @@ export function TaskOperationsHero({
     localizeTaskHubBriefText(detail.summary || detail.sourceText, locale),
     260
   );
-  const liveSignalText = compactText(
-    detail.lastSignal || detail.waitingFor || copy.tasks.detailView.noDetail,
-    140
-  );
   const primaryActions = derivePrimaryActions(detail, locale);
   const owner = deriveCurrentOwner(detail, locale);
   const blocker = deriveTaskBlocker(detail, locale);
@@ -170,40 +132,7 @@ export function TaskOperationsHero({
       label: detail.kind,
       className: "workspace-tone-neutral bg-white/75 font-medium",
     },
-    ...(detail.executor?.status
-      ? [
-          {
-            key: "executor-status",
-            label: `${t(locale, "执行器", "Executor")} ${localizedExecutorStatus(locale, detail.executor.status)}`,
-            className: "workspace-tone-info font-medium",
-          },
-        ]
-      : []),
   ];
-
-  const runtimeSummary: TaskInsightSummary = {
-    label: copy.tasks.hero.runtimeLabel,
-    title:
-      detail.currentStageLabel || missionStatusLabel(detail.status, locale),
-    detail:
-      compactText(
-        detail.lastSignal ||
-          detail.waitingFor ||
-          detail.summary ||
-          copy.tasks.detailView.noDetail,
-        160
-      ) || copy.tasks.detailView.noDetail,
-    meta: [
-      copy.tasks.detailView.progressLabel(detail.progress),
-      detail.executor?.status
-        ? `${t(locale, "执行器", "Executor")} ${localizedExecutorStatus(locale, detail.executor.status)}`
-        : null,
-      detail.instance?.image || null,
-    ]
-      .filter(Boolean)
-      .join(" / "),
-    tone: summaryToneForRuntime(detail),
-  };
 
   return (
     <section className="shrink-0 overflow-hidden rounded-[28px] border border-stone-200/80 bg-[radial-gradient(circle_at_top_left,rgba(251,191,36,0.16),transparent_30%),radial-gradient(circle_at_top_right,rgba(56,189,248,0.16),transparent_28%),linear-gradient(180deg,#fffdf8,#f7f0e6)] p-5 shadow-[0_24px_70px_rgba(113,83,49,0.1)]">
@@ -239,9 +168,6 @@ export function TaskOperationsHero({
               </div>
               <div className="mt-2 text-sm font-medium">
                 {formatTaskRelative(detail.updatedAt, locale)}
-              </div>
-              <div className="mt-2 max-w-[260px] text-xs leading-5 text-stone-500">
-                {liveSignalText}
               </div>
             </div>
           </div>
@@ -327,16 +253,6 @@ export function TaskOperationsHero({
             item={nextStep}
             icon={<ArrowRightCircle className="size-4" />}
             highlighted={detail.status === "done"}
-          />
-          <SummaryCard
-            item={runtimeSummary}
-            icon={
-              detail.executor ? (
-                <Bot className="size-4" />
-              ) : (
-                <Workflow className="size-4" />
-              )
-            }
           />
         </div>
       </div>

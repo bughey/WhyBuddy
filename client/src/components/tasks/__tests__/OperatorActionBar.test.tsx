@@ -81,6 +81,18 @@ function makeDetail(overrides?: Partial<MissionTaskDetail>): MissionTaskDetail {
     decision: null,
     instanceInfo: [],
     logSummary: [],
+    runtimeChannels: {
+      socket: {
+        status: "connected",
+        label: "Socket connected",
+        detail: "Mission socket is connected and can receive live runtime updates.",
+      },
+      callback: {
+        status: "idle",
+        label: "Callback idle",
+        detail: "No executor callback has been recorded for this mission yet.",
+      },
+    },
     decisionHistory: [],
     operatorActions: [],
     missionArtifacts: [],

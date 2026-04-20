@@ -176,7 +176,8 @@ describe("task operation helper derivations", () => {
     expect(primary.recommended.map(action => action.key)).toContain("pause");
     expect(owner.title).toBe("Agent Alpha");
     expect(owner.meta).toContain("Engineering");
-    expect(nextStep.title).toBe("Wait for the next executor update");
+    expect(nextStep.title).toBe("Let the executor continue the current stage");
+    expect(nextStep.detail).toContain("continue producing the next deliverables");
   });
 
   it("prioritizes blocker summaries over waiting copy for blocked missions", () => {
@@ -283,5 +284,33 @@ describe("task operation helper derivations", () => {
     expect(owner.title).toBe("Mission complete");
     expect(blocker.title).toBe("No active blocker");
     expect(nextStep.title).toBe("Review deliverables and share the outcome");
+  });
+
+  it("keeps coordination summaries structural instead of repeating lastSignal", () => {
+    const detail = makeDetail({
+      status: "running",
+      agents: [],
+      executor: {
+        name: "lobster",
+        jobId: "job-7",
+        status: "running",
+      },
+      lastSignal: "Executor is preparing the next artifact.",
+    });
+
+    const owner = deriveCurrentOwner(detail);
+    const blocker = deriveTaskBlocker(detail);
+    const nextStep = deriveNextStep(detail);
+
+    expect(owner.detail).toBe("Executor running is advancing the current stage.");
+    expect(owner.detail).not.toContain("preparing the next artifact");
+    expect(blocker.detail).toBe(
+      "No blocker is recorded right now, so the workflow can continue as planned."
+    );
+    expect(blocker.meta).toBe("Run execution");
+    expect(nextStep.detail).toBe(
+      "The executor is still working and will continue producing the next deliverables."
+    );
+    expect(nextStep.detail).not.toContain("preparing the next artifact");
   });
 });

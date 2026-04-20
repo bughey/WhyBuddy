@@ -166,10 +166,9 @@ export default function TasksPage({
     selectedDetail?.title ||
     selectedTaskSummary?.title ||
     t(locale, "等待选择任务", "Pick a task to inspect");
-  const focusSignal =
+  const focusSummary =
     compactText(
-      selectedDetail?.lastSignal ||
-        selectedDetail?.summary ||
+      selectedDetail?.summary ||
         selectedTaskSummary?.summary ||
         selectedTaskSummary?.sourceText ||
         t(
@@ -211,7 +210,7 @@ export default function TasksPage({
             {focusTitle}
           </div>
           <p className="mt-2 max-w-4xl text-sm leading-6 text-stone-600">
-            {focusSignal}
+            {focusSummary}
           </p>
         </div>
 

@@ -247,8 +247,8 @@ export function OfficeWorkflowFlowPanel({
         title={t(locale, "还没有团队流上下文", "No workflow context yet")}
         description={t(
           locale,
-          "快速任务会直接进入 mission，团队流发起成功后这里会显示 stage、组织摘要、附件和产物。",
-          "Mission launches land directly in the task flow. After a workflow launch succeeds, this tab shows stages, organization context, attachments, and artifacts."
+          "快速任务会直接进入 mission，团队流发起成功后这里会显示 stage、组织摘要、输入附件和任务工作包。",
+          "Mission launches land directly in the task flow. After a workflow launch succeeds, this tab shows stages, organization context, input attachments, and work packages."
         )}
       />
     );
@@ -325,10 +325,10 @@ export function OfficeWorkflowFlowPanel({
             </div>
             <div className="rounded-[18px] border border-stone-200/80 bg-stone-50/80 px-3 py-3">
               <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-stone-500">
-                {t(locale, "产物摘要", "Artifact summary")}
+                {t(locale, "任务工作包", "Work packages")}
               </div>
               <div className="mt-1 text-sm font-semibold text-stone-900">
-                {missionDetail?.artifacts.length || 0}
+                {missionDetail?.taskCount || workflowTasks.length || 0}
               </div>
             </div>
           </div>
@@ -478,7 +478,7 @@ export function OfficeWorkflowFlowPanel({
           </ContextCard>
 
           <ContextCard
-            title={t(locale, "任务与产物摘要", "Task and artifact summary")}
+            title={t(locale, "任务摘要", "Task summary")}
             icon={<Sparkles className="size-4" />}
           >
             <div className="space-y-3">
@@ -515,19 +515,14 @@ export function OfficeWorkflowFlowPanel({
 
               <div className="rounded-[18px] border border-stone-200/80 bg-stone-50/80 px-3 py-3">
                 <div className="text-sm font-semibold text-stone-900">
-                  {t(locale, "产物汇总", "Artifacts")}
+                  {t(locale, "运行证据归口", "Runtime evidence")}
                 </div>
                 <div className="mt-1 text-xs leading-6 text-stone-500">
-                  {missionDetail?.artifacts.length
-                    ? missionDetail.artifacts
-                        .slice(0, 4)
-                        .map(artifact => artifact.title)
-                        .join(" / ")
-                    : t(
-                        locale,
-                        "当前还没有 mission 产物。",
-                        "No mission artifacts yet."
-                      )}
+                  {t(
+                    locale,
+                    "产物、日志和 executor 状态已经统一回到底部 runtime dock，这里只保留任务工作项摘要。",
+                    "Artifacts, logs, and executor state now live in the bottom runtime dock, so this panel keeps only work-item summaries."
+                  )}
                 </div>
               </div>
             </div>

@@ -35,6 +35,8 @@ import { TasksCockpitDetail } from "@/components/tasks/TasksCockpitDetail";
 import { TasksQueueRail } from "@/components/tasks/TasksQueueRail";
 import {
   compactText,
+  deriveMissionStepFlow,
+  deriveMissionStepFocus,
   deriveCurrentOwner,
   deriveNextStep,
   deriveTaskBlocker,
@@ -533,39 +535,15 @@ export function OfficeTaskCockpit({
   const runningCount = tasks.filter(task => task.status === "running").length;
   const waitingCount = tasks.filter(task => task.status === "waiting").length;
   const warningCount = tasks.filter(task => task.hasWarnings).length;
-  const focusSignal =
-    selectedDetail?.lastSignal ||
-    selectedDetail?.waitingFor ||
-    selectedDetail?.summary ||
-    pendingLaunch?.directive ||
-    t(
-      locale,
-      "点击左侧任务或场景 Agent，把当前执行焦点钉在办公室里。",
-      "Pick a task or scene agent to focus the current scene."
-    );
-  const focusStage =
-    selectedDetail?.currentStageLabel ||
-    pendingWorkflow?.current_stage ||
-    t(locale, "等待焦点", "Awaiting focus");
-  const focusTone = pendingLaunch
-    ? "warning"
-    : selectedDetail?.status === "failed"
-      ? "danger"
-      : selectedDetail?.status === "done"
-        ? "success"
-        : selectedDetail
-          ? "info"
-          : "neutral";
-  const focusProgress =
-    selectedDetail?.progress ?? selectedTaskSummary?.progress ?? 0;
-  const focusTitle =
-    selectedDetail?.title ||
-    pendingLaunch?.directive ||
-    t(
-      locale,
-      "等待把执行焦点钉在场景里",
-      "Waiting to pin an execution focus into the scene"
-    );
+  const stepFocus = deriveMissionStepFocus(
+    selectedDetail ?? selectedTaskSummary,
+    locale,
+    {
+      pendingDirective: pendingLaunch?.directive,
+      pendingStageLabel: pendingWorkflow?.current_stage || null,
+    }
+  );
+  const stepFlow = deriveMissionStepFlow(selectedDetail ?? selectedTaskSummary);
   const runtimeModeLabel =
     runtimeMode === "advanced"
       ? t(locale, "高级执行", "Advanced runtime")
@@ -588,6 +566,11 @@ export function OfficeTaskCockpit({
   const sideShellClass = resizeActive
     ? "border-stone-200/85 bg-[#fff9f2]/96 shadow-[0_14px_30px_rgba(99,73,45,0.08)]"
     : "border-white/35 bg-[linear-gradient(180deg,rgba(255,252,248,0.48),rgba(244,236,227,0.32))] shadow-[0_22px_48px_rgba(99,73,45,0.12)] backdrop-blur-md transition-all hover:bg-[linear-gradient(180deg,rgba(255,252,248,0.7),rgba(246,238,229,0.5))]";
+  const hasPendingDecision =
+    Boolean(selectedDetail) &&
+    (selectedDetail?.decision != null ||
+      (selectedDetail?.decisionPresets.length ?? 0) > 0 ||
+      Boolean(selectedDetail?.decisionPrompt));
   const currentOwnerInsight = selectedDetail
     ? deriveCurrentOwner(selectedDetail, locale)
     : null;
@@ -597,25 +580,86 @@ export function OfficeTaskCockpit({
   const nextStepInsight = selectedDetail
     ? deriveNextStep(selectedDetail, locale)
     : null;
+  const showWaitingSupportCard = Boolean(
+    selectedDetail?.status === "waiting" || hasPendingDecision
+  );
+  const showSupportBlockerCard = Boolean(
+    blockerInsight &&
+      (selectedDetail?.blocker != null ||
+        selectedDetail?.operatorState === "blocked" ||
+        selectedDetail?.operatorState === "paused" ||
+        selectedDetail?.status === "failed")
+  );
+  const showSupportNextStepCard = Boolean(
+    nextStepInsight &&
+      (hasPendingDecision ||
+        selectedDetail?.status === "waiting" ||
+        selectedDetail?.status === "failed" ||
+        selectedDetail?.status === "cancelled" ||
+        selectedDetail?.operatorState === "blocked" ||
+        selectedDetail?.operatorState === "paused")
+  );
+  const supportOwnerInsight =
+    currentOwnerInsight &&
+    selectedDetail &&
+    (hasPendingDecision ||
+      selectedDetail.operatorState === "blocked" ||
+      selectedDetail.operatorState === "paused" ||
+      selectedDetail.status === "failed")
+      ? currentOwnerInsight
+      : null;
+  const showClarificationSupportCard = Boolean(
+    hasActiveClarification && currentCommand
+  );
+  const showPendingLaunchSupportCard = Boolean(pendingLaunch);
+  const supportTabHasContext =
+    showWaitingSupportCard ||
+    showSupportBlockerCard ||
+    showSupportNextStepCard ||
+    Boolean(supportOwnerInsight) ||
+    showPendingLaunchSupportCard ||
+    showClarificationSupportCard;
+  const waitingSupportTitle = hasPendingDecision
+    ? t(locale, "待处理决策", "Pending decision")
+    : t(locale, "等待上下文", "Waiting context");
+  const waitingSupportDetail = compactText(
+    selectedDetail?.waitingFor ||
+      selectedDetail?.decisionPrompt ||
+      selectedDetail?.decision?.prompt ||
+      t(
+        locale,
+        "当前等待人工确认后继续推进。",
+        "The mission is waiting for manual confirmation before continuing."
+      ),
+    180
+  );
+  const waitingSupportMeta = [
+    selectedDetail?.currentStageLabel || null,
+    hasPendingDecision
+      ? t(
+          locale,
+          "右侧任务工作区可继续提交决策",
+          "Continue the decision in the task workspace on the right"
+        )
+      : null,
+  ]
+    .filter(Boolean)
+    .join(" / ");
   const shouldAutoExpandLauncherContext =
     hasActiveClarification ||
     Boolean(pendingLaunch) ||
+    hasPendingDecision ||
     selectedDetail?.status === "waiting" ||
     selectedDetail?.status === "failed" ||
-    selectedDetail?.operatorState === "blocked";
+    selectedDetail?.status === "cancelled" ||
+    selectedDetail?.operatorState === "blocked" ||
+    selectedDetail?.operatorState === "paused";
   const showLauncherContextDock = !hasActiveClarification;
   const launcherDockFrameHeight = hasActiveClarification
     ? "clamp(200px, 24vh, 250px)"
     : "clamp(210px, 26vh, 270px)";
   const launcherStageFrameHeight = launcherDockFrameHeight;
   const launcherContextDockMaxHeight = "clamp(240px, 32vh, 420px)";
-  const runtimeRecentSignals = selectedDetail
-    ? [
-        ...(selectedDetail.logSummary ?? []),
-        ...(selectedDetail.instanceInfo ?? []),
-      ].slice(0, 4)
-    : [];
-
   useEffect(() => {
     if (hasActiveClarification) {
       setLauncherContextExpanded(false);
@@ -634,11 +678,20 @@ export function OfficeTaskCockpit({
     shouldAutoExpandLauncherContext,
   ]);
 
+  useEffect(() => {
+    if (supportTabHasContext) {
+      setRuntimeDockTab("support");
+    }
+  }, [
+    supportTabHasContext,
+    selectedDetail?.id,
+  ]);
+
   async function handleCopyFocusSummary() {
     const summary = [
-      focusTitle,
-      focusSignal,
-      `${focusStage} / ${focusProgress}%`,
+      stepFocus.title,
+      stepFocus.signal,
+      `${stepFocus.stageLabel} / ${stepFocus.progress}%`,
     ]
       .filter(Boolean)
       .join("\n");
@@ -894,7 +947,7 @@ export function OfficeTaskCockpit({
           <span
             className={cn(
               "workspace-status !gap-0.5 !px-1 !py-0.5 !text-[8px] font-semibold",
-              `workspace-tone-${focusTone}`
+              `workspace-tone-${stepFocus.tone}`
             )}
           >
             {selectedDetail
@@ -922,6 +975,67 @@ export function OfficeTaskCockpit({
           >
             {t(locale, `关注 ${warningCount}`, `Warnings ${warningCount}`)}
           </span>
+        </div>
+
+        <div className="mt-1 grid gap-1 [grid-template-columns:repeat(auto-fit,minmax(74px,1fr))]">
+          {stepFlow.items.map(item => {
+            const isCurrent = item.key === stepFlow.currentKey;
+            const toneClass =
+              item.status === "done"
+                ? "workspace-tone-success"
+                : item.status === "failed"
+                  ? "workspace-tone-danger"
+                  : item.status === "waiting"
+                    ? "workspace-tone-info"
+                    : item.status === "active"
+                      ? `workspace-tone-${stepFocus.tone}`
+                      : "workspace-tone-neutral";
+
+            return (
+              <div
+                key={item.key}
+                className={cn(
+                  "rounded-[10px] border px-1.5 py-1",
+                  isCurrent
+                    ? "border-stone-300/80 bg-white/80 shadow-[0_6px_16px_rgba(120,88,54,0.08)]"
+                    : "border-white/45 bg-white/48"
+                )}
+              >
+                <div className="flex items-center justify-between gap-1">
+                  <span className="truncate text-[8px] font-semibold text-stone-700">
+                    {item.label}
+                  </span>
+                  <span
+                    className={cn(
+                      "workspace-status !gap-0.5 !px-1 !py-0 !text-[7px] font-semibold",
+                      toneClass
+                    )}
+                  >
+                    {item.progress}%
+                  </span>
+                </div>
+                <div className="mt-1 h-1 overflow-hidden rounded-full bg-stone-200/80">
+                  <div
+                    className={cn(
+                      "h-full rounded-full transition-[width]",
+                      item.status === "done"
+                        ? "bg-emerald-400"
+                        : item.status === "failed"
+                          ? "bg-rose-400"
+                          : item.status === "waiting"
+                            ? "bg-sky-400"
+                            : item.status === "active"
+                              ? "bg-amber-400"
+                              : "bg-stone-300"
+                    )}
+                    style={{
+                      width: `${item.progress <= 0 ? 0 : Math.max(8, Math.min(100, item.progress))}%`,
+                    }}
+                  />
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 
@@ -974,13 +1088,13 @@ export function OfficeTaskCockpit({
           <div className="flex items-center justify-between gap-3">
             <div>
               <div className="text-[8px] font-semibold uppercase tracking-[0.16em] text-stone-500">
-                {t(locale, "辅助判断与运行证据", "Decision and runtime")}
+                {t(locale, "辅助判断 / 运行证据", "Support / Runtime Evidence")}
               </div>
               <div className="mt-0.5 text-[10px] leading-4 text-stone-600">
                 {t(
                   locale,
-                  "辅助判断信息和 Logs / Artifacts / Runtime 统一归口在同一个折叠区域。",
-                  "Supporting context and runtime evidence now share one folded tabbed surface."
+                  "辅助 tab 只保留按需判断信息，Logs / Artifacts / Runtime 作为独立运行证据 tab 统一归口。",
+                  "The Support tab keeps only decision aids, while Logs / Artifacts / Runtime stay grouped as dedicated runtime evidence tabs."
                 )}
               </div>
             </div>
@@ -1037,119 +1151,153 @@ export function OfficeTaskCockpit({
           value="support"
           className="mt-0 min-h-0 flex-1 overflow-hidden p-3 data-[state=active]:block"
         >
-          <div className="grid gap-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-            <div className="rounded-[12px] border border-white/60 bg-white/64 px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)]">
-              <div className="text-[8px] font-semibold uppercase tracking-[0.14em] text-stone-500">
-                {blockerInsight?.label || t(locale, "阻塞", "Blocker")}
-              </div>
-              <div className="mt-1 text-[10px] font-semibold text-stone-900">
-                {blockerInsight?.title || t(locale, "当前无阻塞", "No blocker")}
-              </div>
-              <div className="mt-1 text-[9px] leading-4 text-stone-600">
-                {compactText(
-                  blockerInsight?.detail ||
-                    t(
-                      locale,
-                      "当前没有新的等待项。",
-                      "No blocking item is active right now."
-                    ),
-                  140
-                )}
-              </div>
-            </div>
-
-            <div className="rounded-[12px] border border-white/60 bg-white/64 px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)]">
-              <div className="text-[8px] font-semibold uppercase tracking-[0.14em] text-stone-500">
-                {nextStepInsight?.label || t(locale, "下一步", "Next step")}
-              </div>
-              <div className="mt-1 text-[10px] font-semibold text-stone-900">
-                {nextStepInsight?.title ||
-                  t(locale, "等待继续推进", "Ready to continue")}
-              </div>
-              <div className="mt-1 text-[9px] leading-4 text-stone-600">
-                {compactText(
-                  nextStepInsight?.detail ||
-                    t(
-                      locale,
-                      "继续沿着当前主线推进即可。",
-                      "Continue along the active mainline."
-                    ),
-                  140
-                )}
-              </div>
-            </div>
-
-            {currentOwnerInsight ? (
-              <div className="rounded-[12px] border border-white/60 bg-white/64 px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)] lg:col-span-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-[8px] font-semibold uppercase tracking-[0.14em] text-stone-500">
-                    {currentOwnerInsight.label}
-                  </span>
-                  <span
-                    className={cn(
-                      "workspace-status !gap-0.5 !px-1 !py-0.5 !text-[8px] font-semibold",
-                      `workspace-tone-${currentOwnerInsight.tone || "neutral"}`
-                    )}
-                  >
-                    {currentOwnerInsight.title}
-                  </span>
-                  {currentOwnerInsight.meta ? (
-                    <span className="truncate text-[8px] text-stone-500">
-                      {currentOwnerInsight.meta}
-                    </span>
+          {supportTabHasContext ? (
+            <div className="grid gap-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+              {showWaitingSupportCard ? (
+                <div className="rounded-[12px] border border-sky-200/70 bg-sky-50/78 px-3 py-2 text-[9px] leading-4 text-stone-700 lg:col-span-2">
+                  <div className="text-[8px] font-semibold uppercase tracking-[0.14em] text-sky-700">
+                    {waitingSupportTitle}
+                  </div>
+                  <div className="mt-1 text-[10px] font-semibold text-stone-900">
+                    {selectedDetail?.currentStageLabel ||
+                      t(locale, "等待继续推进", "Waiting to continue")}
+                  </div>
+                  <div className="mt-1 text-[9px] leading-4 text-stone-600">
+                    {waitingSupportDetail}
+                  </div>
+                  {waitingSupportMeta ? (
+                    <div className="mt-1 text-[8px] leading-4 text-sky-700">
+                      {waitingSupportMeta}
+                    </div>
                   ) : null}
                 </div>
-                <div className="mt-1 text-[9px] leading-4 text-stone-600">
-                  {compactText(currentOwnerInsight.detail, 180)}
-                </div>
-              </div>
-            ) : null}
+              ) : null}
 
-            {pendingLaunch ? (
-              <div className="rounded-[12px] border border-amber-200/70 bg-amber-50/78 px-3 py-2 text-[9px] leading-4 text-stone-700 lg:col-span-2">
-                <div className="text-[8px] font-semibold uppercase tracking-[0.14em] text-amber-700">
-                  {t(locale, "待启动团队", "Pending launch")}
+              {showSupportBlockerCard ? (
+                <div className="rounded-[12px] border border-white/60 bg-white/64 px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)]">
+                  <div className="text-[8px] font-semibold uppercase tracking-[0.14em] text-stone-500">
+                    {blockerInsight?.label || t(locale, "阻塞", "Blocker")}
+                  </div>
+                  <div className="mt-1 text-[10px] font-semibold text-stone-900">
+                    {blockerInsight?.title || t(locale, "当前无阻塞", "No blocker")}
+                  </div>
+                  <div className="mt-1 text-[9px] leading-4 text-stone-600">
+                    {compactText(
+                      blockerInsight?.detail ||
+                        t(
+                          locale,
+                          "当前没有新的等待项。",
+                          "No blocking item is active right now."
+                        ),
+                      140
+                    )}
+                  </div>
                 </div>
-                <div className="mt-1 text-[10px] font-semibold text-stone-900">
-                  {compactText(
-                    pendingLaunch.directive ||
-                      t(
-                        locale,
-                        "团队正在准备，稍后会自动切回任务视图。",
-                        "The team is preparing and will return to the task view soon."
-                      ),
-                    90
-                  )}
-                </div>
-                <div className="mt-1 text-[9px] leading-4 text-stone-600">
-                  {t(
-                    locale,
-                    `已挂载 ${pendingLaunch.attachmentCount} 个附件，等待 workflow 接线完成。`,
-                    `${pendingLaunch.attachmentCount} attachments are already queued while the workflow connection is completing.`
-                  )}
-                </div>
-              </div>
-            ) : null}
+              ) : null}
 
-            {hasActiveClarification && currentCommand ? (
-              <div className="rounded-[12px] border border-amber-200/70 bg-amber-50/78 px-3 py-2 text-[9px] leading-4 text-stone-700 lg:col-span-2">
-                <div className="text-[8px] font-semibold uppercase tracking-[0.14em] text-amber-700">
-                  {t(locale, "补问信息", "Clarification context")}
+              {showSupportNextStepCard ? (
+                <div className="rounded-[12px] border border-white/60 bg-white/64 px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)]">
+                  <div className="text-[8px] font-semibold uppercase tracking-[0.14em] text-stone-500">
+                    {nextStepInsight?.label || t(locale, "下一步", "Next step")}
+                  </div>
+                  <div className="mt-1 text-[10px] font-semibold text-stone-900">
+                    {nextStepInsight?.title ||
+                      t(locale, "等待继续推进", "Ready to continue")}
+                  </div>
+                  <div className="mt-1 text-[9px] leading-4 text-stone-600">
+                    {compactText(
+                      nextStepInsight?.detail ||
+                        t(
+                          locale,
+                          "继续沿着当前主线推进即可。",
+                          "Continue along the active mainline."
+                        ),
+                      140
+                    )}
+                  </div>
                 </div>
-                <div className="mt-1">
-                  {compactText(
-                    currentCommand.commandText ||
-                      t(
-                        locale,
-                        "当前补问没有额外上下文。",
-                        "No extra clarification context is available."
-                      ),
-                    180
-                  )}
+              ) : null}
+
+              {supportOwnerInsight ? (
+                <div className="rounded-[12px] border border-white/60 bg-white/64 px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)] lg:col-span-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[8px] font-semibold uppercase tracking-[0.14em] text-stone-500">
+                      {supportOwnerInsight.label}
+                    </span>
+                    <span
+                      className={cn(
+                        "workspace-status !gap-0.5 !px-1 !py-0.5 !text-[8px] font-semibold",
+                        `workspace-tone-${supportOwnerInsight.tone || "neutral"}`
+                      )}
+                    >
+                      {supportOwnerInsight.title}
+                    </span>
+                    {supportOwnerInsight.meta ? (
+                      <span className="truncate text-[8px] text-stone-500">
+                        {supportOwnerInsight.meta}
+                      </span>
+                    ) : null}
+                  </div>
+                  <div className="mt-1 text-[9px] leading-4 text-stone-600">
+                    {compactText(supportOwnerInsight.detail, 180)}
+                  </div>
                 </div>
-              </div>
-            ) : null}
-          </div>
+              ) : null}
+
+              {pendingLaunch ? (
+                <div className="rounded-[12px] border border-amber-200/70 bg-amber-50/78 px-3 py-2 text-[9px] leading-4 text-stone-700 lg:col-span-2">
+                  <div className="text-[8px] font-semibold uppercase tracking-[0.14em] text-amber-700">
+                    {t(locale, "待启动团队", "Pending launch")}
+                  </div>
+                  <div className="mt-1 text-[10px] font-semibold text-stone-900">
+                    {compactText(
+                      pendingLaunch.directive ||
+                        t(
+                          locale,
+                          "团队正在准备，稍后会自动切回任务视图。",
+                          "The team is preparing and will return to the task view soon."
+                        ),
+                      90
+                    )}
+                  </div>
+                  <div className="mt-1 text-[9px] leading-4 text-stone-600">
+                    {t(
+                      locale,
+                      `已挂载 ${pendingLaunch.attachmentCount} 个附件，等待 workflow 接线完成。`,
+                      `${pendingLaunch.attachmentCount} attachments are already queued while the workflow connection is completing.`
+                    )}
+                  </div>
+                </div>
+              ) : null}
+
+              {hasActiveClarification && currentCommand ? (
+                <div className="rounded-[12px] border border-amber-200/70 bg-amber-50/78 px-3 py-2 text-[9px] leading-4 text-stone-700 lg:col-span-2">
+                  <div className="text-[8px] font-semibold uppercase tracking-[0.14em] text-amber-700">
+                    {t(locale, "补问信息", "Clarification context")}
+                  </div>
+                  <div className="mt-1">
+                    {compactText(
+                      currentCommand.commandText ||
+                        t(
+                          locale,
+                          "当前补问没有额外上下文。",
+                          "No extra clarification context is available."
+                        ),
+                      180
+                    )}
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          ) : (
+            <div className="rounded-[14px] border border-dashed border-stone-300/80 bg-white/70 px-3 py-4 text-[10px] leading-5 text-stone-500">
+              {t(
+                locale,
+                "当前没有需要人工介入的辅助判断信息。任务执行证据统一留在 Logs / Artifacts / Runtime。",
+                "There is no support context that needs manual attention right now. Runtime evidence stays in Logs / Artifacts / Runtime."
+              )}
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent
@@ -1202,15 +1350,33 @@ export function OfficeTaskCockpit({
               className="min-h-0 overflow-y-auto rounded-[16px] border border-white/50 bg-[rgba(255,255,255,0.48)] p-2"
               style={{ maxHeight: "clamp(170px, 22vh, 220px)" }}
             >
+              <div className="mb-2 rounded-[12px] border border-white/60 bg-white/72 px-3 py-2 text-[10px] leading-4 text-stone-600">
+                {t(
+                  locale,
+                  "这里统一承接 executor、socket / callback、最近动作与失败原因；完整日志流统一进入 Logs。",
+                  "This tab is the single home for executor, socket / callback, recent action, and failure. Full logs live in Logs."
+                )}
+              </div>
               <div className="grid gap-2 lg:grid-cols-2">
-                {runtimeRecentSignals.map(signal => (
-                  <RuntimeSignalCard
-                    key={`${signal.label}-${signal.value}`}
-                    label={signal.label}
-                    value={signal.value}
-                    tone="neutral"
-                  />
-                ))}
+                <RuntimeSignalCard
+                  label={t(locale, "Socket", "Socket")}
+                  value={selectedDetail.runtimeChannels.socket.label}
+                  tone={
+                    selectedDetail.runtimeChannels.socket.status ===
+                    "connected"
+                      ? "success"
+                      : "warning"
+                  }
+                />
+                <RuntimeSignalCard
+                  label={t(locale, "Callback", "Callback")}
+                  value={selectedDetail.runtimeChannels.callback.label}
+                  tone={
+                    selectedDetail.runtimeChannels.callback.status === "active"
+                      ? "success"
+                      : "neutral"
+                  }
+                />
                 {selectedDetail.failureReasons[0] ? (
                   <RuntimeSignalCard
                     label={t(locale, "最近失败原因", "Recent failure")}
@@ -1226,13 +1392,28 @@ export function OfficeTaskCockpit({
                   />
                 ) : null}
               </div>
+              {!selectedDetail.failureReasons[0] && !selectedDetail.lastSignal ? (
+                <div className="mt-2 rounded-[12px] border border-dashed border-stone-300/80 bg-white/72 px-3 py-3 text-[10px] leading-4 text-stone-500">
+                  {t(
+                    locale,
+                    "当前没有新的失败或动作记录，完整输出仍可在 Logs 查看。",
+                    "There is no recent failure or action record right now. Full output remains available in Logs."
+                  )}
+                </div>
+              ) : null}
+              <div className="mt-2 grid gap-2 lg:grid-cols-2">
+                <div className="rounded-[12px] border border-white/60 bg-white/74 px-3 py-2 text-[10px] leading-4 text-stone-600">
+                  {selectedDetail.runtimeChannels.socket.detail}
+                </div>
+                <div className="rounded-[12px] border border-white/60 bg-white/74 px-3 py-2 text-[10px] leading-4 text-stone-600">
+                  {selectedDetail.runtimeChannels.callback.detail}
+                </div>
+              </div>
               {selectedDetail.executor ? (
                 <div className="mt-2 rounded-[16px] border border-white/60 bg-white/78 p-3">
                   <ExecutorStatusPanel
                     executor={selectedDetail.executor}
                     instance={selectedDetail.instance}
-                    artifacts={selectedDetail.missionArtifacts}
-                    missionStatus={selectedDetail.status}
                   />
                 </div>
               ) : (

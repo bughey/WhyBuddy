@@ -556,13 +556,12 @@ export const messages = {
         selectDescription:
           "从左侧队列选择任务，查看执行摘要、内部状态、时间线、交付物与决策入口。",
       },
-      hero: {
-        updated: "最近更新",
-        recommended: "建议优先操作",
-        pendingDecision: "需要处理的决策",
-        runtimeLabel: "执行阶段 / 运行态",
-        statusStack: "状态概览",
-      },
+        hero: {
+          updated: "最近更新",
+          recommended: "建议优先操作",
+          pendingDecision: "需要处理的决策",
+          statusStack: "状态概览",
+        },
       operatorBar: {
         title: "任务操作",
         latestAction: "最近操作",
@@ -588,7 +587,7 @@ export const messages = {
       },
       detailView: {
         overviewTab: "概览",
-        executionTab: "执行",
+        executionTab: "工作区",
         decisionsTab: "决策",
         artifactsTab: "交付物",
         costTab: "成本",
@@ -1359,13 +1358,12 @@ export const messages = {
         selectDescription:
           "Pick a mission from the queue to inspect its execution summary, runtime state, timeline, artifacts, and decision entry.",
       },
-      hero: {
-        updated: "Latest update",
-        recommended: "Recommended now",
-        pendingDecision: "Action needed",
-        runtimeLabel: "Execution stage / runtime",
-        statusStack: "Status overview",
-      },
+        hero: {
+          updated: "Latest update",
+          recommended: "Recommended now",
+          pendingDecision: "Action needed",
+          statusStack: "Status overview",
+        },
       operatorBar: {
         title: "Operator Actions",
         latestAction: "Latest action",
@@ -1394,7 +1392,7 @@ export const messages = {
       },
       detailView: {
         overviewTab: "Overview",
-        executionTab: "Execution",
+        executionTab: "Workspace",
         decisionsTab: "Decisions",
         artifactsTab: "Deliverables",
         costTab: "Cost",

@@ -81,7 +81,6 @@ import { useDemoMode } from "@/hooks/useDemoMode";
 import { MemoryTimeline } from "@/components/demo/MemoryTimeline";
 import { EvolutionScoreCard } from "@/components/demo/EvolutionScoreCard";
 import { SessionHistoryTab } from "@/components/SessionHistoryTab";
-import { ArtifactListBlock } from "@/components/tasks/ArtifactListBlock";
 import { WorkflowPanelCompatibility } from "@/components/WorkflowPanelCompatibility";
 import { useAutonomyStore } from "@/lib/autonomy-store";
 import { useTasksStore } from "@/lib/tasks-store";
@@ -2477,13 +2476,12 @@ function ProgressView() {
             ) : null}
           </div>
           {workflowMissionDetail?.artifacts?.length ? (
-            <div className="mt-4">
-              <ArtifactListBlock
-                missionId={workflowMissionDetail.id}
-                artifacts={workflowMissionDetail.artifacts}
-                missionStatus={currentWorkflow.status}
-                variant="compact"
-              />
+            <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-[11px] leading-5 text-white/55">
+              {t(
+                locale,
+                `当前任务已有 ${workflowMissionDetail.artifacts.length} 个交付物，主入口已统一收敛到任务详情页与首页底部运行区的 Artifacts。`,
+                `${workflowMissionDetail.artifacts.length} deliverables are already attached to this mission. Their primary entry now lives in task detail and the bottom Artifacts runtime dock on home.`
+              )}
             </div>
           ) : null}
         </div>

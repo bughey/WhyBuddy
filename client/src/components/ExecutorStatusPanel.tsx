@@ -1,10 +1,9 @@
-import { Box, Clock, FileOutput, Loader2, Server } from "lucide-react";
+import { Box, Clock, Loader2, Server } from "lucide-react";
 
 import { EmptyHintBlock } from "@/components/tasks/EmptyHintBlock";
 import { useI18n } from "@/i18n";
 import { Progress } from "@/components/ui/progress";
 import type {
-  MissionArtifact,
   MissionExecutorContext,
   MissionInstanceContext,
 } from "@shared/mission/contracts";
@@ -13,8 +12,6 @@ import { cn } from "@/lib/utils";
 export interface ExecutorStatusPanelProps {
   executor?: MissionExecutorContext;
   instance?: MissionInstanceContext;
-  artifacts?: MissionArtifact[];
-  missionStatus?: string;
 }
 
 const STATUS_STYLES: Record<
@@ -55,13 +52,6 @@ const STATUS_STYLES: Record<
     badge: "border-amber-200 bg-amber-50 text-amber-700",
     labelKey: "statusWarning",
   },
-};
-
-const ARTIFACT_KIND_ICON: Record<string, typeof FileOutput> = {
-  file: FileOutput,
-  report: FileOutput,
-  url: FileOutput,
-  log: FileOutput,
 };
 
 function statusStyle(status: string | undefined) {
@@ -107,38 +97,14 @@ function isExecutorUnavailable(executor?: MissionExecutorContext): boolean {
 export function ExecutorStatusPanel({
   executor,
   instance,
-  artifacts,
-  missionStatus,
 }: ExecutorStatusPanelProps) {
   const { locale, copy } = useI18n();
-
-  function artifactKindLabel(kind: string) {
-    switch (kind) {
-      case "file":
-        return locale === "zh-CN" ? "文件" : "File";
-      case "report":
-        return locale === "zh-CN" ? "报告" : "Report";
-      case "url":
-        return locale === "zh-CN" ? "链接" : "URL";
-      case "log":
-        return locale === "zh-CN" ? "日志" : "Log";
-      default:
-        return kind;
-    }
-  }
 
   if (!executor) return null;
 
   const style = statusStyle(executor.status);
   const isRunning = executor.status === "running";
   const unavailable = isExecutorUnavailable(executor);
-  const artifactTone =
-    missionStatus === "queued" || missionStatus === "waiting"
-      ? "neutral"
-      : missionStatus === "running"
-        ? "info"
-        : "warning";
-
   return (
     <div className="space-y-3" data-testid="executor-status-panel">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -223,57 +189,6 @@ export function ExecutorStatusPanel({
           </div>
         </div>
       ) : null}
-
-      {artifacts && artifacts.length > 0 ? (
-        <div className="space-y-1.5">
-          <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-stone-500">
-            {copy.tasks.executor.artifacts} ({artifacts.length})
-          </div>
-          <div className="space-y-1">
-            {artifacts.map((artifact, idx) => {
-              const Icon = ARTIFACT_KIND_ICON[artifact.kind] ?? FileOutput;
-              return (
-                <div
-                  key={`${artifact.name}-${idx}`}
-                  className="flex items-start gap-2 rounded-[14px] border border-stone-200/80 bg-white/80 px-3 py-2"
-                >
-                  <Icon className="mt-0.5 size-3.5 shrink-0 text-stone-400" />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="truncate text-xs font-medium text-stone-900">
-                        {artifact.name}
-                      </span>
-                      <span className="shrink-0 rounded-full border border-stone-200 bg-stone-50 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-stone-500">
-                        {artifactKindLabel(artifact.kind)}
-                      </span>
-                    </div>
-                    {artifact.description ? (
-                      <p className="mt-0.5 line-clamp-2 text-[11px] leading-4 text-stone-500">
-                        {artifact.description}
-                      </p>
-                    ) : null}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      ) : (
-        <EmptyHintBlock
-          icon={<FileOutput className="size-4" />}
-          title={
-            missionStatus === "queued" || missionStatus === "waiting"
-              ? copy.tasks.executor.pendingArtifactsTitle
-              : copy.tasks.executor.noArtifactsTitle
-          }
-          description={
-            missionStatus === "queued" || missionStatus === "waiting"
-              ? copy.tasks.executor.pendingArtifactsDescription
-              : copy.tasks.executor.noArtifactsDescription
-          }
-          tone={artifactTone}
-        />
-      )}
     </div>
   );
 }

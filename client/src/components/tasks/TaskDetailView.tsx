@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useMemo, useState } from "react";
+﻿import { type ReactNode, useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
   ArrowUpRight,
@@ -1276,10 +1276,10 @@ export function TaskDetailView({
       <CardHeader className="space-y-1 pb-3">
         <CardTitle className="flex items-center gap-2 text-stone-900">
           <Shield className="size-4 text-stone-600" />
-          {t(locale, "瀹夊叏绛栫暐", "Security Policy")}
+          {t(locale, "安全策略", "Security Policy")}
         </CardTitle>
         <CardDescription className="flex items-center gap-2">
-          {t(locale, "瀹瑰櫒娌欑閰嶇疆", "Container sandbox configuration")}
+          {t(locale, "容器沙箱配置", "Container sandbox configuration")}
           <span
             className={cn(
               "rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em]",
@@ -1347,8 +1347,6 @@ export function TaskDetailView({
         <ExecutorStatusPanel
           executor={detail.executor}
           instance={detail.instance}
-          artifacts={detail.missionArtifacts}
-          missionStatus={detail.status}
         />
       </CardContent>
     </Card>
@@ -1524,7 +1522,6 @@ export function TaskDetailView({
               <TaskPlanetInterior detail={detail} compact={isCockpit} />
               <div className="self-start space-y-3">
                 {sourceDirectivePanel}
-                {runtimeSnapshotPanel}
                 {/* RAG Augmentation Info */}
                 <Card className={DETAIL_CARD_CLASS}>
                   <CardHeader className="space-y-1 pb-3">
@@ -1620,40 +1617,7 @@ export function TaskDetailView({
                 </CardContent>
               </Card>
             )}
-            {detail.executor && (
-              <Card className={cn(DETAIL_CARD_CLASS, "mb-4")}>
-                <CardHeader className="space-y-1 pb-3">
-                  <CardTitle className="flex items-center gap-2 text-stone-900">
-                    <Bot className="size-4 text-sky-600" />
-                    {copy.tasks.executor.title}
-                  </CardTitle>
-                  <CardDescription>
-                    {copy.tasks.executor.description}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <ExecutorStatusPanel
-                    executor={detail.executor}
-                    instance={detail.instance}
-                    artifacts={detail.missionArtifacts}
-                    missionStatus={detail.status}
-                  />
-                </CardContent>
-              </Card>
-            )}
-            {detail.executor && (
-              <div className="mb-4">
-                <ExecutorTerminalPanel
-                  missionId={detail.id}
-                  missionStatus={detail.status}
-                  executorStatus={detail.executor.status}
-                />
-              </div>
-            )}
-            <div className="grid gap-4 xl:grid-cols-[minmax(0,1.04fr)_minmax(0,0.96fr)]">
-              {workPackagesPanel}
-              {timelinePanel}
-            </div>
+            {workPackagesPanel}
           </DetailTabViewport>
         </TabsContent>
 
@@ -1671,10 +1635,7 @@ export function TaskDetailView({
           className="min-h-0 flex-1 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col"
         >
           <DetailTabViewport isDesktop={isDesktop} autoHeight={autoHeight}>
-            <div className="space-y-4">
-              {artifactsPanel}
-              {failurePanel}
-            </div>
+            {artifactsPanel}
           </DetailTabViewport>
         </TabsContent>
 

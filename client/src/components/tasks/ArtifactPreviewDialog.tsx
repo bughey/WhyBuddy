@@ -161,21 +161,13 @@ export function ArtifactPreviewDialog({
             {artifactName}
           </DialogTitle>
           <DialogDescription className="text-sm leading-6 text-stone-500">
-            {t(
-              locale,
-              "正在预览任务产物内容。",
-              "Previewing mission artifact content."
-            )}
+            {t(locale, "正在预览任务产物内容。", "Previewing mission artifact content.")}
           </DialogDescription>
         </DialogHeader>
 
         {state.truncated ? (
           <div className="border-b border-amber-200 bg-amber-50 px-6 py-3 text-xs text-amber-800">
-            {t(
-              locale,
-              "预览已截断到前 1 MB。",
-              "Preview truncated to the first 1 MB."
-            )}
+            {t(locale, "预览已截断到前 1 MB。", "Preview truncated to the first 1 MB.")}
           </div>
         ) : null}
 
@@ -203,7 +195,7 @@ export function ArtifactPreviewDialog({
             <div className="px-6 py-5">
               {previewMode === "markdown" ? (
                 <div className="prose prose-stone max-w-none">
-                  <Streamdown mode="static">{renderedContent}</Streamdown>
+                  <Streamdown>{renderedContent}</Streamdown>
                 </div>
               ) : (
                 <pre className="overflow-x-auto whitespace-pre-wrap rounded-[20px] bg-stone-950 px-4 py-4 text-sm leading-6 text-stone-100">

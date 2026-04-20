@@ -3,14 +3,17 @@ import type {
   InteriorStageStatus,
   MissionTaskDetail,
   MissionTaskStatus,
+  TaskStageRing,
   TaskInteriorAgent,
   TaskArtifact,
   TimelineLevel,
 } from "@/lib/tasks-store";
 import type {
+  MissionStage,
   MissionOperatorActionType,
   MissionOperatorState,
 } from "@shared/mission/contracts";
+import { MISSION_CORE_STAGE_BLUEPRINT } from "@shared/mission/contracts";
 import {
   workspaceToneClass,
   type WorkspaceTone,
@@ -211,13 +214,13 @@ const TASK_HELPER_COPY: Record<AppLocale, TaskHelperCopy> = {
       blockedDetail: "当前需要人工跟进才能继续推进任务。",
       pausedDetail: "任务已被人工暂停。",
       executorRuntime: "执行器运行时",
-      executorFallback: status => `执行器 ${status} 正在处理当前尝试。`,
+      executorFallback: status => `执行器 ${status} 正在推进当前阶段。`,
       humanFollowUp: "需要人工跟进",
       humanFollowUpDetail: "建议先审阅失败原因，再决定是否重试。",
       missionComplete: "任务已完成",
       missionCompleteDetail: "当前不再需要活跃负责人。",
       missionCoordination: "任务协同中",
-      missionCoordinationDetail: "任务正在等待下一条执行更新。",
+      missionCoordinationDetail: "任务正在沿当前阶段继续协同推进。",
       completedMeta: relative => `完成于 ${relative}`,
     },
     blocker: {
@@ -238,7 +241,7 @@ const TASK_HELPER_COPY: Record<AppLocale, TaskHelperCopy> = {
       noActiveBlocker: "当前无阻塞",
       clearToContinue: "可继续推进",
       completedWithoutBlocker: "任务已完成，且没有活跃阻塞。",
-      clearToContinueDetail: "当前没有记录阻塞项或等待条件。",
+      clearToContinueDetail: "当前没有记录阻塞项，流程可按既定阶段继续推进。",
     },
     nextStep: {
       waitForTerminationTitle: "等待终止完成",
@@ -256,9 +259,9 @@ const TASK_HELPER_COPY: Record<AppLocale, TaskHelperCopy> = {
       waitExecutionTitle: "等待执行开始",
       queuedAccepted: "执行器已经接收任务，预计很快开始。",
       queuedFallback: "任务正在排队等待下一个可用运行时。",
-      runningExecutorTitle: "等待下一条执行器更新",
+      runningExecutorTitle: "让执行器继续推进当前阶段",
       runningStageTitle: "让当前阶段继续推进",
-      runningExecutorFallback: "运行时仍在工作，会继续产出下一条信号或交付物。",
+      runningExecutorFallback: "执行器仍在工作，会继续推进当前阶段并产出后续交付。",
       runningStageFallback: "任务会沿当前阶段自动继续推进。",
       reviewFailureTitle: "审阅失败原因并决定是否重试",
       failureFallback: "任务在完成前提前中断。",
@@ -364,14 +367,14 @@ const TASK_HELPER_COPY: Record<AppLocale, TaskHelperCopy> = {
       pausedDetail: "Execution is paused under manual control.",
       executorRuntime: "Executor runtime",
       executorFallback: status =>
-        `Executor ${status} is handling the current attempt.`,
+        `Executor ${status} is advancing the current stage.`,
       humanFollowUp: "Human follow-up",
       humanFollowUpDetail: "A human should review the failure before retrying.",
       missionComplete: "Mission complete",
       missionCompleteDetail: "No active owner is required right now.",
       missionCoordination: "Mission coordination",
       missionCoordinationDetail:
-        "The mission is waiting for the next runtime update.",
+        "The mission is continuing through the current stage.",
       completedMeta: relative => `Completed ${relative}`,
     },
     blocker: {
@@ -395,7 +398,7 @@ const TASK_HELPER_COPY: Record<AppLocale, TaskHelperCopy> = {
       completedWithoutBlocker:
         "This mission has completed without an active blocker.",
       clearToContinueDetail:
-        "No blocker or waiting condition is recorded right now.",
+        "No blocker is recorded right now, so the workflow can continue as planned.",
     },
     nextStep: {
       waitForTerminationTitle: "Wait for termination to finish",
@@ -418,10 +421,10 @@ const TASK_HELPER_COPY: Record<AppLocale, TaskHelperCopy> = {
       queuedAccepted:
         "The executor has already accepted the job and should start soon.",
       queuedFallback: "The mission is queued for the next available runtime.",
-      runningExecutorTitle: "Wait for the next executor update",
+      runningExecutorTitle: "Let the executor continue the current stage",
       runningStageTitle: "Let the current stage continue",
       runningExecutorFallback:
-        "The runtime is still working and will publish the next artifact or signal.",
+        "The executor is still working and will continue producing the next deliverables.",
       runningStageFallback:
         "The mission is progressing automatically through the current stage.",
       reviewFailureTitle: "Review failure details and retry if appropriate",
@@ -551,6 +554,59 @@ export interface TaskInsightSummary {
   tone: TaskInsightTone;
 }
 
+export interface MissionStepFocus {
+  title: string;
+  stageLabel: string;
+  signal: string;
+  progress: number;
+  tone: WorkspaceTone;
+}
+
+type MissionStepFocusSource = {
+  title?: string | null;
+  status?: MissionTaskStatus;
+  progress?: number | null;
+  currentStageLabel?: string | null;
+  waitingFor?: string | null;
+  summary?: string | null;
+  lastSignal?: string | null;
+  failureReasons?: string[] | null;
+};
+
+type MissionStepFlowSource = MissionStepFocusSource & {
+  currentStageKey?: string | null;
+  decisionPrompt?: string | null;
+  decisionPresets?: Array<unknown> | null;
+  decision?: {
+    prompt?: string | null;
+  } | null;
+  stages?: Array<
+    Pick<TaskStageRing, "key" | "label" | "status" | "progress" | "detail">
+  > | null;
+};
+
+export type MissionStepFlowStatus =
+  | "pending"
+  | "active"
+  | "done"
+  | "waiting"
+  | "failed"
+  | "timeout";
+
+export interface MissionStepFlowItem {
+  key: string;
+  label: string;
+  status: MissionStepFlowStatus;
+  progress: number;
+  detail: string | null;
+}
+
+export interface MissionStepFlow {
+  items: MissionStepFlowItem[];
+  currentKey: string | null;
+  overallProgress: number;
+}
+
 export interface TaskPrimaryActionChip {
   key: "submit-decision" | MissionOperatorActionType;
   label: string;
@@ -597,6 +653,227 @@ export function missionOperatorActionDescription(
     case "terminate":
       return copy.actionDescriptions.terminate;
   }
+}
+
+export function deriveMissionStepFocus(
+  mission: MissionStepFocusSource | null,
+  locale: AppLocale = "en-US",
+  options?: {
+    pendingDirective?: string | null;
+    pendingStageLabel?: string | null;
+  }
+): MissionStepFocus {
+  const pendingDirective = options?.pendingDirective?.trim() || null;
+  const pendingStageLabel = options?.pendingStageLabel?.trim() || null;
+
+  const title =
+    mission?.title ||
+    pendingDirective ||
+    (locale === "zh-CN"
+      ? "等待把执行焦点钉在场景里"
+      : "Waiting to pin an execution focus into the scene");
+
+  const stageLabel =
+    mission?.currentStageLabel ||
+    pendingStageLabel ||
+    (pendingDirective
+      ? locale === "zh-CN"
+        ? "团队准备中"
+        : "Team preparing"
+      : locale === "zh-CN"
+        ? "等待焦点"
+        : "Awaiting focus");
+
+  const signal =
+    compactText(
+      mission?.failureReasons?.[0] ||
+        mission?.waitingFor ||
+        mission?.summary ||
+        mission?.lastSignal ||
+        pendingDirective ||
+        (locale === "zh-CN"
+          ? "点击左侧任务或场景 Agent，把当前执行焦点钉在办公室里。"
+          : "Pick a task or scene agent to focus the current scene."),
+      160
+    ) ||
+    (locale === "zh-CN"
+      ? "等待任务进入下一步推进。"
+      : "Waiting for the mission to advance to the next step.");
+
+  const progress = Math.max(
+    0,
+    Math.min(100, Math.round(mission?.progress ?? 0))
+  );
+
+  const tone: WorkspaceTone = pendingDirective
+    ? "warning"
+    : mission?.status === "failed"
+      ? "danger"
+      : mission?.status === "done"
+        ? "success"
+        : mission?.status === "waiting"
+          ? "info"
+          : mission?.status === "running"
+            ? "warning"
+            : "neutral";
+
+  return {
+    title,
+    stageLabel,
+    signal,
+    progress,
+    tone,
+  };
+}
+
+function deriveMissionStepFlowStatus(
+  status: InteriorStageStatus,
+  missionStatus: MissionTaskStatus | undefined,
+  timeoutDetected: boolean
+): MissionStepFlowStatus {
+  if (status === "done") {
+    return "done";
+  }
+  if (timeoutDetected) {
+    return "timeout";
+  }
+  if (status === "failed") {
+    return "failed";
+  }
+  if (status === "running") {
+    if (missionStatus === "waiting") {
+      return "waiting";
+    }
+    if (missionStatus === "failed") {
+      return "failed";
+    }
+    return "active";
+  }
+  return "pending";
+}
+
+function detectMissionTimeout(mission: MissionStepFlowSource | null): boolean {
+  const hints = [
+    mission?.waitingFor,
+    mission?.summary,
+    mission?.lastSignal,
+    mission?.failureReasons?.[0] ?? null,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+
+  return /timeout|timed out|超时|超时结束|执行超时/.test(hints);
+}
+
+function hasMissionStepFlowDecision(
+  mission: MissionStepFlowSource | null
+): boolean {
+  return Boolean(
+    mission?.status === "waiting" &&
+      (mission?.decision != null ||
+        (mission?.decisionPresets?.length ?? 0) > 0 ||
+        mission?.decisionPrompt)
+  );
+}
+
+function fallbackMissionStages(
+  mission: MissionStepFlowSource | null
+): MissionStage[] {
+  const currentStageKey =
+    mission?.currentStageKey ||
+    MISSION_CORE_STAGE_BLUEPRINT[0]?.key ||
+    "receive";
+  const currentStageIndex = MISSION_CORE_STAGE_BLUEPRINT.findIndex(
+    stage => stage.key === currentStageKey
+  );
+
+  return MISSION_CORE_STAGE_BLUEPRINT.map((stage, index) => ({
+    key: stage.key,
+    label: stage.label,
+    status:
+      mission?.status === "failed" && stage.key === currentStageKey
+        ? "failed"
+        : mission?.status === "done"
+          ? "done"
+          : index < currentStageIndex
+            ? "done"
+            : index === currentStageIndex && mission?.status !== "queued"
+              ? "running"
+              : "pending",
+  }));
+}
+
+export function deriveMissionStepFlow(
+  mission: MissionStepFlowSource | null
+): MissionStepFlow {
+  const decisionRequired = hasMissionStepFlowDecision(mission);
+  const timeoutDetected = detectMissionTimeout(mission);
+  const waitingDetail =
+    mission?.waitingFor ||
+    mission?.decisionPrompt ||
+    mission?.decision?.prompt ||
+    null;
+  const rawStages =
+    mission?.stages && mission.stages.length > 0
+      ? mission.stages.map(stage => ({
+          key: stage.key,
+          label: stage.label,
+          status: stage.status,
+          detail: stage.detail,
+          progress: stage.progress,
+        }))
+      : fallbackMissionStages(mission).map(stage => ({
+          key: stage.key,
+          label: stage.label,
+          status: stage.status,
+          detail: stage.detail ?? null,
+          progress:
+            stage.status === "done"
+              ? 100
+              : stage.status === "running"
+                ? Math.max(12, Math.round(mission?.progress ?? 12))
+                : 0,
+        }));
+
+  const currentKey =
+    mission?.currentStageKey ||
+    rawStages.find(stage => stage.status === "running")?.key ||
+    rawStages.find(stage => stage.status === "failed")?.key ||
+    rawStages[0]?.key ||
+    null;
+
+  const items = rawStages.map(stage => ({
+    key: stage.key,
+    label: stage.label,
+    status: deriveMissionStepFlowStatus(
+      stage.status,
+      mission?.status,
+      timeoutDetected &&
+        ((mission?.currentStageKey && stage.key === mission.currentStageKey) ||
+          stage.status === "failed")
+    ),
+    progress: Math.max(0, Math.min(100, Math.round(stage.progress ?? 0))),
+    detail:
+      deriveMissionStepFlowStatus(
+        stage.status,
+        mission?.status,
+        timeoutDetected &&
+          ((mission?.currentStageKey && stage.key === mission.currentStageKey) ||
+            stage.status === "failed")
+      ) === "waiting"
+        ? waitingDetail || stage.detail || null
+        : stage.detail ?? null,
+  }));
+
+  return {
+    items,
+    currentKey,
+    overallProgress: Math.max(
+      0,
+      Math.min(100, Math.round(mission?.progress ?? 0))
+    ),
+  };
 }
 
 function hasPendingDecision(detail: MissionTaskDetail): boolean {
@@ -807,12 +1084,7 @@ export function deriveCurrentOwner(
     return {
       label: copy.summaryLabels.currentOwner,
       title: copy.owner.executorRuntime,
-      detail:
-        compactText(
-          detail.lastSignal ||
-            copy.owner.executorFallback(detail.executor.status || "runtime"),
-          140
-        ) || copy.owner.executorFallback(detail.executor.status || "runtime"),
+      detail: copy.owner.executorFallback(detail.executor.status || "runtime"),
       meta: [detail.executor.status, detail.currentStageLabel]
         .filter(Boolean)
         .join(" / "),
@@ -849,7 +1121,7 @@ export function deriveCurrentOwner(
     label: copy.summaryLabels.currentOwner,
     title: detail.currentStageLabel || copy.owner.missionCoordination,
     detail: copy.owner.missionCoordinationDetail,
-    meta: compactText(detail.lastSignal, 120) || undefined,
+    meta: detail.currentStageLabel || undefined,
     tone: "neutral",
   };
 }
@@ -945,7 +1217,10 @@ export function deriveTaskBlocker(
       detail.status === "done"
         ? copy.blocker.completedWithoutBlocker
         : copy.blocker.clearToContinueDetail,
-    meta: compactText(detail.lastSignal, 120) || undefined,
+    meta:
+      detail.status === "done"
+        ? undefined
+        : detail.currentStageLabel || missionStatusLabel(detail.status, locale),
     tone: detail.status === "done" ? "success" : "neutral",
   };
 }
@@ -1024,18 +1299,9 @@ export function deriveNextStep(
       title: detail.executor
         ? copy.nextStep.runningExecutorTitle
         : copy.nextStep.runningStageTitle,
-      detail:
-        compactText(
-          detail.lastSignal ||
-            detail.waitingFor ||
-            (detail.executor
-              ? copy.nextStep.runningExecutorFallback
-              : copy.nextStep.runningStageFallback),
-          160
-        ) ||
-        (detail.executor
-          ? copy.nextStep.runningExecutorFallback
-          : copy.nextStep.runningStageFallback),
+      detail: detail.executor
+        ? copy.nextStep.runningExecutorFallback
+        : copy.nextStep.runningStageFallback,
       meta: detail.currentStageLabel || undefined,
       tone: "neutral",
     };

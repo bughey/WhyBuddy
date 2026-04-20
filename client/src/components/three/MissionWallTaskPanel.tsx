@@ -4,12 +4,33 @@ import { useI18n } from "@/i18n";
 import type { MissionTaskDetail, MissionTaskSummary } from "@/lib/tasks-store";
 import {
   compactText,
-  missionOperatorStateLabel,
+  deriveMissionStepFlow,
+  deriveMissionStepFocus,
   missionStatusLabel,
 } from "@/components/tasks/task-helpers";
 
 function t(locale: string, zh: string, en: string) {
   return locale === "zh-CN" ? zh : en;
+}
+
+function stepFlowStatusLabel(
+  locale: string,
+  status: "pending" | "active" | "done" | "waiting" | "failed" | "timeout"
+) {
+  switch (status) {
+    case "done":
+      return t(locale, "完成", "Done");
+    case "failed":
+      return t(locale, "失败", "Failed");
+    case "timeout":
+      return t(locale, "超时", "Timeout");
+    case "waiting":
+      return t(locale, "等待", "Waiting");
+    case "active":
+      return t(locale, "进行中", "Active");
+    default:
+      return t(locale, "待开始", "Pending");
+  }
 }
 
 function formatClock(locale: string, timestamp: number | null | undefined) {
@@ -33,30 +54,6 @@ function activeAgentCount(
     ).length;
   }
   return summary?.activeAgentCount ?? 0;
-}
-
-function buildSignalLine(
-  locale: string,
-  mission: MissionTaskSummary | null,
-  detail: MissionTaskDetail | null
-) {
-  const rawSignal =
-    detail?.failureReasons[0] ||
-    detail?.lastSignal ||
-    detail?.waitingFor ||
-    mission?.lastSignal ||
-    mission?.waitingFor ||
-    detail?.summary ||
-    mission?.summary ||
-    "";
-
-  const fallback = t(
-    locale,
-    "当前没有新的异常或等待信号，监控屏保持待命。",
-    "No urgent blocker or failure signal is active right now."
-  );
-
-  return compactText(rawSignal || fallback, 96);
 }
 
 function missionTone(status: MissionTaskSummary["status"] | null) {
@@ -164,18 +161,32 @@ function MissionWallTaskPanelInner({
   const statusLabel = mission
     ? missionStatusLabel(mission.status, locale)
     : t(locale, "待命", "Standby");
-  const operatorLabel = mission
-    ? missionOperatorStateLabel(mission.operatorState, locale)
-    : t(locale, "空闲", "Idle");
-  const stageLabel =
-    detail?.currentStageLabel ||
-    mission?.currentStageLabel ||
-    t(locale, "等待任务", "Awaiting mission");
+  const stepFocus = deriveMissionStepFocus(detail ?? mission, locale, {
+    pendingStageLabel: t(locale, "等待任务", "Awaiting mission"),
+  });
+  const stepFlow = deriveMissionStepFlow(detail ?? mission);
+  const stageLabel = stepFocus.stageLabel;
   const title =
-    mission?.title ||
+    stepFocus.title ||
     t(locale, "办公室后墙监控屏待命中", "Office wall monitor is standing by");
-  const signalLine = buildSignalLine(locale, mission, detail);
-  const progress = mission?.progress ?? 0;
+  const wallSummary =
+    mission?.status === "waiting" || stepFlow.items.some(item => item.status === "waiting")
+      ? t(
+          locale,
+          "当前任务停留在等待步骤，详细决策与补充说明统一留在辅助区。",
+          "The mission is currently paused at a waiting step. Detailed decisions and guidance stay in the support dock."
+        )
+      : stepFocus.signal ||
+        t(
+          locale,
+          "当前没有新的异常或等待信号，监控屏保持待命。",
+          "No urgent blocker or failure signal is active right now."
+        );
+  const signalLine = compactText(
+    wallSummary,
+    96
+  );
+  const progress = stepFocus.progress;
   const totalAgents = detail?.agents.length ?? mission?.activeAgentCount ?? 0;
   const runningAgents = activeAgentCount(detail, mission);
   const warningCount =
@@ -187,9 +198,7 @@ function MissionWallTaskPanelInner({
     mission?.status === "waiting" ||
     (detail?.failureReasons.length ?? 0) > 0;
   const compactWallView = !fullscreen;
-  const summaryLabels = fullscreen
-    ? [statusLabel, operatorLabel, stageLabel]
-    : [statusLabel, stageLabel];
+  const summaryLabels = [statusLabel, stageLabel];
 
   const rootStyle: React.CSSProperties = fullscreen
     ? {
@@ -502,6 +511,110 @@ function MissionWallTaskPanelInner({
                 }}
               />
             </div>
+          </div>
+
+          <div
+            style={{
+              marginTop: fullscreen ? 16 : 8,
+              display: "grid",
+              gridTemplateColumns: `repeat(${Math.max(stepFlow.items.length, 1)}, minmax(0, 1fr))`,
+              gap: fullscreen ? 10 : 6,
+            }}
+          >
+            {stepFlow.items.map(item => {
+              const isCurrent = item.key === stepFlow.currentKey;
+              const statusColor =
+                item.status === "done"
+                  ? "#4ade80"
+                  : item.status === "timeout"
+                    ? "#f59e0b"
+                  : item.status === "failed"
+                    ? "#f87171"
+                    : item.status === "waiting"
+                      ? "#60a5fa"
+                      : item.status === "active"
+                        ? tone.accent
+                        : "rgba(148,163,184,0.52)";
+              const barWidth =
+                item.progress <= 0 ? 0 : Math.max(8, Math.min(100, item.progress));
+
+              return (
+                <div
+                  key={item.key}
+                  style={{
+                    minWidth: 0,
+                    borderRadius: fullscreen ? 14 : 10,
+                    padding: fullscreen ? "12px 12px 10px" : "7px 7px 6px",
+                    background: isCurrent
+                      ? "rgba(15,23,42,0.82)"
+                      : "rgba(15,23,42,0.52)",
+                    border: `1px solid ${isCurrent ? statusColor : "rgba(71,85,105,0.18)"}`,
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: 8,
+                    }}
+                  >
+                    <span
+                      style={{
+                        minWidth: 0,
+                        fontSize: fullscreen ? 13 : 8,
+                        lineHeight: 1.2,
+                        color: "rgba(226,232,240,0.92)",
+                        fontWeight: isCurrent ? 700 : 600,
+                      }}
+                    >
+                      {compactText(item.label, fullscreen ? 28 : 16)}
+                    </span>
+                    <span
+                      style={{
+                        width: fullscreen ? 10 : 6,
+                        height: fullscreen ? 10 : 6,
+                        borderRadius: 999,
+                        background: statusColor,
+                        boxShadow: `0 0 12px ${statusColor}`,
+                        flexShrink: 0,
+                      }}
+                      />
+                  </div>
+                  <div
+                    style={{
+                      marginTop: fullscreen ? 6 : 4,
+                      fontSize: fullscreen ? 11 : 7,
+                      lineHeight: 1.1,
+                      color: statusColor,
+                      fontWeight: 600,
+                      letterSpacing: "0.04em",
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    {stepFlowStatusLabel(locale, item.status)}
+                  </div>
+                  <div
+                    style={{
+                      marginTop: fullscreen ? 8 : 5,
+                      height: fullscreen ? 6 : 4,
+                      borderRadius: 999,
+                      background: "rgba(51,65,85,0.72)",
+                      overflow: "hidden",
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: `${barWidth}%`,
+                        height: "100%",
+                        borderRadius: 999,
+                        background: statusColor,
+                      }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
           </div>
 
           <div

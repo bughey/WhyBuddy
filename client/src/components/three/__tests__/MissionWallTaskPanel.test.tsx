@@ -74,6 +74,18 @@ function makeDetail(
     decision: null,
     instanceInfo: [],
     logSummary: [],
+    runtimeChannels: {
+      socket: {
+        status: "connected",
+        label: "Socket connected",
+        detail: "Mission socket is connected and can receive live runtime updates.",
+      },
+      callback: {
+        status: "idle",
+        label: "Callback idle",
+        detail: "No executor callback has been recorded for this mission yet.",
+      },
+    },
     decisionHistory: [],
     operatorActions: [],
     missionArtifacts: [],
@@ -107,5 +119,29 @@ describe("MissionWallTaskPanel", () => {
     expect(markup).toContain("Run execution");
     expect(markup).toContain("46%");
     expect(markup).toContain("MC");
+  });
+
+  it("keeps waiting-detail copy out of the wall center summary", () => {
+    const mission = makeMission({
+      status: "waiting",
+      currentStageLabel: "Await approval",
+      waitingFor: "Approve artifact publishing before continuing.",
+    });
+    const detail = makeDetail({
+      status: "waiting",
+      currentStageLabel: "Await approval",
+      waitingFor: "Approve artifact publishing before continuing.",
+      decisionPrompt: "Approve artifact publishing before continuing.",
+    });
+    const markup = renderToStaticMarkup(
+      <MissionWallTaskPanel mission={mission} detail={detail} />
+    );
+
+    expect(markup).toContain(
+      "当前任务停留在等待步骤，详细决策与补充说明统一留在辅助区。"
+    );
+    expect(markup).not.toContain(
+      "Approve artifact publishing before continuing."
+    );
   });
 });

@@ -1,27 +1,21 @@
 /**
- * Unit tests for MissionDetailOverlay component logic
+ * Unit tests for MissionDetailOverlay helper integration.
  *
- * Tests the data transformation logic, event handling contracts,
- * and helper function integration used by MissionDetailOverlay.
- *
- * Requirements: 3.5, 3.7
+ * The overlay now stays focused on mission summary, coordination context,
+ * and crew state instead of duplicating runtime timeline snippets.
  */
 import { describe, it, expect, vi } from "vitest";
 
 import type {
   MissionTaskDetail,
-  TaskTimelineEvent,
   TaskInteriorAgent,
 } from "@/lib/tasks-store";
-import { sliceRecentEvents } from "@/components/tasks/mission-island-helpers";
 import {
   agentStatusLabel,
   agentStatusTone,
+  compactText,
   formatTaskRelative,
-  timelineTone,
 } from "@/components/tasks/task-helpers";
-
-/* ─── Helpers ─── */
 
 function makeAgent(overrides?: Partial<TaskInteriorAgent>): TaskInteriorAgent {
   return {
@@ -35,18 +29,6 @@ function makeAgent(overrides?: Partial<TaskInteriorAgent>): TaskInteriorAgent {
     stageLabel: "Execution",
     progress: 50,
     angle: 0,
-    ...overrides,
-  };
-}
-
-function makeEvent(overrides?: Partial<TaskTimelineEvent>): TaskTimelineEvent {
-  return {
-    id: "evt-1",
-    type: "progress",
-    time: Date.now(),
-    level: "info",
-    title: "Task started",
-    description: "Agent began working",
     ...overrides,
   };
 }
@@ -105,13 +87,23 @@ function makeDetail(overrides?: Partial<MissionTaskDetail>): MissionTaskDetail {
     decision: null,
     instanceInfo: [],
     logSummary: [],
+    runtimeChannels: {
+      socket: {
+        status: "connected",
+        label: "Socket connected",
+        detail: "Live updates are available.",
+      },
+      callback: {
+        status: "idle",
+        label: "Callback idle",
+        detail: "No callback yet.",
+      },
+    },
     decisionHistory: [],
     operatorActions: [],
     ...overrides,
   } as MissionTaskDetail;
 }
-
-/* ─── Close button / onClose contract ─── */
 
 describe("MissionDetailOverlay close behavior", () => {
   it("onClose callback is invocable", () => {
@@ -142,8 +134,6 @@ describe("MissionDetailOverlay close behavior", () => {
   });
 });
 
-/* ─── Navigate to detail contract ─── */
-
 describe("MissionDetailOverlay navigate behavior", () => {
   it("onNavigateToDetail receives the task id", () => {
     const onNavigateToDetail = vi.fn();
@@ -154,53 +144,64 @@ describe("MissionDetailOverlay navigate behavior", () => {
   });
 });
 
-/* ─── Null detail guard ─── */
-
 describe("MissionDetailOverlay null detail", () => {
   it("null detail means component returns null (no render)", () => {
     const detail: MissionTaskDetail | null = null;
-    // Component early-returns null when detail is null
     expect(detail).toBeNull();
   });
 });
 
-/* ─── Timeline slicing integration ─── */
+describe("MissionDetailOverlay summary", () => {
+  it("prefers summary text and trims it for the overlay overview", () => {
+    const detail = makeDetail({
+      summary:
+        "This mission keeps a longer summary so the compact overlay can trim it before showing the top-level overview.",
+    });
+    const summary = compactText(detail.summary || detail.sourceText, 80);
 
-describe("MissionDetailOverlay timeline", () => {
-  it("slices timeline to 10 most recent events", () => {
-    const events = Array.from({ length: 20 }, (_, i) =>
-      makeEvent({ id: `evt-${i}`, time: 1000 + i })
-    );
-    const detail = makeDetail({ timeline: events });
-    const recent = sliceRecentEvents(detail.timeline);
-
-    expect(recent).toHaveLength(10);
-    // Most recent first
-    expect(recent[0].time).toBeGreaterThanOrEqual(recent[9].time);
+    expect(summary).toContain("This mission keeps");
+    expect(summary.length).toBeLessThanOrEqual(83);
   });
 
-  it("empty timeline shows no events", () => {
-    const detail = makeDetail({ timeline: [] });
-    const recent = sliceRecentEvents(detail.timeline);
+  it("uses waiting or blocker context for the coordination note", () => {
+    const waitingDetail = makeDetail({
+      status: "waiting",
+      waitingFor: "Need operator approval before continuing the release.",
+    });
+    const blockerDetail = makeDetail({
+      operatorState: "blocked",
+      blocker: {
+        type: "manual",
+        reason: "The approval checklist is incomplete.",
+        createdAt: Date.now(),
+        createdBy: "ops",
+      },
+    });
 
-    expect(recent).toHaveLength(0);
-  });
-
-  it("timeline tone returns correct classes for each level", () => {
-    expect(timelineTone("info")).toContain("workspace-tone-info");
-    expect(timelineTone("success")).toContain("workspace-tone-success");
-    expect(timelineTone("warn")).toContain("workspace-tone-warning");
-    expect(timelineTone("error")).toContain("workspace-tone-danger");
+    expect(
+      compactText(
+        waitingDetail.waitingFor ||
+          waitingDetail.decisionPrompt ||
+          waitingDetail.blocker?.reason,
+        180
+      )
+    ).toContain("operator approval");
+    expect(
+      compactText(
+        blockerDetail.waitingFor ||
+          blockerDetail.decisionPrompt ||
+          blockerDetail.blocker?.reason,
+        180
+      )
+    ).toContain("approval checklist");
   });
 
   it("formatTaskRelative returns a human-readable string", () => {
-    const recent = Date.now() - 120_000; // 2 minutes ago
+    const recent = Date.now() - 120_000;
     const result = formatTaskRelative(recent);
     expect(result).toMatch(/min ago/);
   });
 });
-
-/* ─── Agent list integration ─── */
 
 describe("MissionDetailOverlay agent list", () => {
   it("agent status labels are correct", () => {
