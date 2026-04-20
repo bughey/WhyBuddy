@@ -17,7 +17,7 @@
 
 ## 当前状态快照（2026-04-20）
 
-- 总体状态：进行中，约 98%
+- 总体状态：进行中，约 99%
 - 已有落地：
   - 首页中央浮层已完成第一轮信息归位，顶部辅助区只保留 `blocker detail / next step / current owner / pending launch / clarification context`
   - 首页中央浮层已移除一批与墙上中心重复的焦点摘要、阶段摘要、重复状态信息
@@ -58,6 +58,9 @@
   - [`MissionWallTaskPanel.tsx`](../../../client/src/components/three/MissionWallTaskPanel.tsx) 已去掉残留的 operator 汇总标签死代码，墙上摘要继续稳定保持 `status + stage` 最小组合
   - [`MissionWallTaskPanel.tsx`](../../../client/src/components/three/MissionWallTaskPanel.tsx) 在 `waiting` 场景下已改为只广播“停留在等待步骤”，不再直接展开 decision / waiting 细节，等待说明统一回到辅助区
   - [`MissionWallTaskPanel.tsx`](../../../client/src/components/three/MissionWallTaskPanel.tsx) 已进一步把 timeout / failed 收口成步骤流主状态广播，墙上中心不再泄露失败细节或 callback 运行证据
+  - [`MissionWallTaskPanel.tsx`](../../../client/src/components/three/MissionWallTaskPanel.tsx) 本轮已移除墙上中心里的辅助徽标、底部统计与广播脚注，墙面只保留状态标签、步骤流、一句话摘要与进度
+  - [`SandboxMonitor.tsx`](../../../client/src/components/three/SandboxMonitor.tsx) 已停止向墙上中心回灌 execution / browser / sync 辅助徽标，避免墙上中心再次承担辅助判断信息
+  - [`TasksPage.tsx`](../../../client/src/pages/tasks/TasksPage.tsx) 本轮已从任务页头部总览中移除阶段 / 进度 chips，任务页继续保留任务摘要与只读语义，不再与墙上步骤流主入口并列竞争
   - [`TaskDetailView.tsx`](../../../client/src/components/tasks/TaskDetailView.tsx) 在 cockpit 内嵌态下已真正停止重复渲染 runtime snapshot / executor / terminal / timeline / artifacts / failure，运行证据继续统一回收到首页 `Logs / Artifacts / Runtime`
   - [`OfficeTaskCockpit.tsx`](../../../client/src/components/office/OfficeTaskCockpit.tsx) 已移除中央控制区里与墙上 HUD 重复的紧凑步骤进度条，首页只保留 HUD 屏幕上的步骤 / 总体进度主入口
   - [`OfficeTaskCockpit.tsx`](../../../client/src/components/office/OfficeTaskCockpit.tsx) 已收紧底部 launcher 浮层的高度与底边定位，去掉内容变少时的空白底边，并降低对场景中央区域的遮挡
@@ -70,12 +73,12 @@
   - `npx vitest run client/src/components/tasks/__tests__/TaskDetailView.runtime-evidence.test.tsx client/src/components/three/__tests__/MissionWallTaskPanel.test.tsx client/src/components/__tests__/ExecutorTerminalPanel.test.tsx client/src/i18n/messages.execution-language-refresh.test.ts client/src/components/tasks/__tests__/TasksCockpitDetail.runtime-defer.test.tsx client/src/components/tasks/__tests__/TaskOperationsHero.test.tsx` 已通过
   - `npx vitest run client/src/components/tasks/__tests__/task-operations-helpers.test.ts client/src/components/three/__tests__/MissionWallTaskPanel.test.tsx client/src/components/tasks/__tests__/TaskDetailView.runtime-evidence.test.tsx` 已通过，success / timeout / cancel 的步骤流回归已补齐
   - `npx vitest run client/src/components/tasks/__tests__/mission-detail-overlay.test.ts client/src/components/tasks/__tests__/TaskDetailView.runtime-evidence.test.tsx client/src/components/three/__tests__/MissionWallTaskPanel.test.tsx` 已通过，首页 overlay 单归口文案、详情页 deliverable handoff 与墙上 / 详情 runtime 归位未被本轮收尾破坏
+  - `npx vitest run client/src/components/three/__tests__/MissionWallTaskPanel.test.tsx client/src/components/tasks/__tests__/TaskDetailView.runtime-evidence.test.tsx client/src/components/tasks/__tests__/mission-detail-overlay.test.ts client/src/components/tasks/__tests__/task-operations-helpers.test.ts client/src/components/tasks/__tests__/TaskOperationsHero.test.tsx` 已通过，墙上步骤流最小集合与日志 / runtime 归口边界继续保持稳定
   - 相关代码主落点：[`OfficeTaskCockpit.tsx`](../../../client/src/components/office/OfficeTaskCockpit.tsx)
 - 当前仍未完成：
-  - 墙上中心“步骤流真相源”尚未完整收口，首页主墙还没有完全切成 spec 目标里的步骤流模型
   - 首页主视图与独立详情页里仍有少量重复入口尚未系统清空，尤其是日志与 artifact 主入口的彻底归口
   - `socket / callback` 当前还是前端派生轻量摘要，尚未细化到完整 relay / callback 事件粒度
-  - 运行态回归已补到关键归位链路，但墙上“唯一步骤流真相源”与日志 / artifact 的最终清空仍待继续收尾
+  - 运行态回归已补到关键归位链路，但日志 / artifact 的最终清空仍待继续收尾
 
 ## 分项状态
 
@@ -91,7 +94,7 @@
     - `waiting` 场景下的 decision prompt / waitingFor 已开始回填到步骤卡 detail，等待态不再只停留在旁路摘要文案里
     - 已补入一层 timeout 文本识别，超时场景开始以步骤流状态显示，而不再完全退回普通失败文案
     - 墙上中心的等待态摘要已开始回收为“停留在 waiting 步骤”，decision / waiting 细节不再直接在墙面广播层展开
-    - 但“墙上中心 = 步骤流主真相源”还没完全落完
+    - 本轮已移除墙上中心里的辅助徽标、底部统计与广播脚注，墙上主内容收紧到状态标签、步骤流、一句话摘要与进度
 - `2. 建立底部运行区`
   - 状态：进行中
   - 当前说明：
@@ -156,11 +159,11 @@
   - [x] 1.2 定义首页步骤表现模型
   - [x] 1.3 把现有计划与状态映射成步骤流
   - [x] 1.4 当前步骤高亮
-  - [ ] 1.5 明确“墙上中心主内容”只保留步骤、状态、摘要、进度，不再复制 blocker / next step / owner
+  - [x] 1.5 明确“墙上中心主内容”只保留步骤、状态、摘要、进度，不再复制 blocker / next step / owner
     - [x] 墙上中心顶部已收紧为状态标签，不再扩展 owner / blocker 辅助语义
     - [x] 墙上中心主区域以步骤 rail + 摘要 + 进度为主，不再回退为多块辅助信息卡
     - [x] 首页中央控制区中与 HUD 重复的步骤 / 进度条带已移除，首页主视图只保留墙上 HUD 作为进度主入口
-  - [ ] 1.6 墙上中心的 decision / waiting / failed / timeout 要直接成为步骤流的一部分，而不是旁路提示
+  - [x] 1.6 墙上中心的 decision / waiting / failed / timeout 要直接成为步骤流的一部分，而不是旁路提示
     - [x] waiting / failed 已开始直接显示在步骤卡状态上
     - [x] decision prompt / waitingFor 已开始回填到 waiting 步骤卡 detail
     - [x] timeout 已开始通过文本识别映射到步骤流状态
@@ -188,12 +191,12 @@
   - [x] 3.2 日志暂停滚动
   - [x] 3.3 日志类型高亮
   - [ ] 3.4 移除首页其他位置重复展示的关键日志摘要卡
-    - [ ] 不再在墙上中心重复显示日志流
+    - [x] 不再在墙上中心重复显示日志流
     - [x] 墙上中心一句话摘要已优先回到任务摘要，不再默认优先透传 `lastSignal`
     - [x] mission island 首页弹层不再重复显示 recent timeline
     - [ ] 不再在中央浮层常驻区域重复显示最近日志片段
     - [x] runtime tab 不再混入 `logSummary / instanceInfo` 充当日志摘要卡
-    - [ ] 不再在任务详情顶部保留与首页 runtime dock 并列竞争的日志主入口
+    - [x] 不再在任务详情顶部保留与首页 runtime dock 并列竞争的日志主入口
 
 - [ ] 4. 收口 artifact 能力
   - [x] 4.1 统一 artifact 列表
@@ -257,8 +260,8 @@
 
 ## 重复项移除清单
 
-- [ ] 墙上中心已承接的内容，不再在中央浮层顶部重复
-  - 状态：进行中
+- [x] 墙上中心已承接的内容，不再在中央浮层顶部重复
+  - 状态：已完成
   - [x] 当前步骤
   - [x] 当前步骤状态
   - [x] 当前一句话摘要
@@ -281,6 +284,7 @@
   - 进展说明补充：`OfficeTaskCockpit` 的 `Runtime` tab 已停止混入 `logSummary / instanceInfo` 摘要卡，并明确把完整日志流导向 `Logs`；`TasksCockpitDetail` 顶部 updated 提示也改为中性工作区同步文案，减少顶部与 runtime / logs 的竞争
   - 进展说明补充：`TasksCockpitDetail` 与 `TaskOperationsHero` 复用的 `current owner / blocker / next step` 洞察卡已不再默认回显 `lastSignal`，运行中场景改回阶段推进、阻塞判断和协作语义
   - 进展说明补充：`MissionWallTaskPanel` 的 waiting 摘要已回收为“停留在 waiting 步骤”的广播语义，不再直接泄露 decision / waiting 细节；`OfficeWorkflowFlowPanel` 的空态描述也已退出 artifact 平级主语义
+  - 进展说明补充：`MissionWallTaskPanel` 本轮已移除墙上中心里的辅助徽标、底部统计与广播脚注；`SandboxMonitor` 也已停止向墙上中心回灌 execution / browser / sync 辅助徽标，墙面继续只承接步骤流主语义
   - 进展说明补充：`ExecutorStatusPanel` 已停止把 executor 侧 artifact 列表夹带进 `Runtime`，产物主入口继续统一收敛到 `Artifacts` tab
   - 进展说明补充：`MissionDetailOverlay` 已停止在首页 mission island 弹层内重复展示 recent timeline，首页覆盖层回到任务摘要 / 工作包 / 协作概览职责
   - 进展说明补充：`MissionDetailOverlay` 文案已明确为“首页运行证据统一留在底部 dock”，不再保留“任务详情页 + 首页底部运行区”的双归口提示

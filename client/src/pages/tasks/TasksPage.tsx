@@ -183,12 +183,6 @@ export default function TasksPage({
       "任务页现在只负责展示队列、任务详情和执行轨迹；发起与补充信息入口统一保留在办公室首页。",
       "Tasks is now display-only for queue, details, and execution history. Launch and clarification live on the office home page."
     );
-  const focusStage =
-    selectedDetail?.currentStageLabel ||
-    selectedTaskSummary?.currentStageLabel ||
-    t(locale, "等待任务焦点", "Awaiting task focus");
-  const focusProgress =
-    selectedDetail?.progress ?? selectedTaskSummary?.progress ?? 0;
   const queueSummary = t(
     locale,
     `可见 ${filteredTasks.length} / 共 ${tasks.length} 条`,
@@ -243,12 +237,6 @@ export default function TasksPage({
           {selectedDetail
             ? missionOperatorStateLabel(selectedDetail.operatorState, locale)
             : t(locale, "只读展示", "Display only")}
-        </span>
-        <span className="workspace-status workspace-tone-info px-3 py-1 text-xs font-semibold">
-          {focusStage}
-        </span>
-        <span className="workspace-status workspace-tone-neutral px-3 py-1 text-xs font-semibold">
-          {t(locale, `进度 ${focusProgress}%`, `Progress ${focusProgress}%`)}
         </span>
         <span className="workspace-status workspace-tone-warning px-3 py-1 text-xs font-semibold">
           {displayOnlyHint}

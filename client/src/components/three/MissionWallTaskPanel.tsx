@@ -53,18 +53,6 @@ function formatClock(locale: string, timestamp: number | null | undefined) {
   }).format(new Date(timestamp));
 }
 
-function activeAgentCount(
-  detail: MissionTaskDetail | null,
-  summary: MissionTaskSummary | null
-) {
-  if (detail) {
-    return detail.agents.filter(
-      agent => agent.status === "working" || agent.status === "thinking"
-    ).length;
-  }
-  return summary?.activeAgentCount ?? 0;
-}
-
 function missionTone(status: MissionTaskSummary["status"] | null) {
   switch (status) {
     case "failed":
@@ -100,61 +88,12 @@ function missionTone(status: MissionTaskSummary["status"] | null) {
   }
 }
 
-function MetricTile({
-  label,
-  value,
-  color,
-}: {
-  label: string;
-  value: string;
-  color: string;
-}) {
-  return (
-    <div
-      style={{
-        flex: 1,
-        minWidth: 0,
-        textAlign: "center",
-        padding: "0 8px",
-      }}
-    >
-      <div
-        style={{
-          fontSize: 10,
-          lineHeight: 1.2,
-          letterSpacing: "0.08em",
-          textTransform: "uppercase",
-          color: "rgba(148,163,184,0.8)",
-        }}
-      >
-        {label}
-      </div>
-      <div
-        style={{
-          marginTop: 8,
-          fontSize: 26,
-          lineHeight: 1,
-          fontWeight: 700,
-          color,
-        }}
-      >
-        {value}
-      </div>
-    </div>
-  );
-}
-
 export interface MissionWallTaskPanelProps {
   mission: MissionTaskSummary | null;
   detail: MissionTaskDetail | null;
   fullscreen?: boolean;
   onActivate?: () => void;
   onClose?: () => void;
-  auxiliaryPanes?: Array<{
-    label: string;
-    value: string;
-    tone?: "default" | "active" | "info";
-  }>;
 }
 
 function MissionWallTaskPanelInner({
@@ -163,7 +102,6 @@ function MissionWallTaskPanelInner({
   fullscreen = false,
   onActivate,
   onClose,
-  auxiliaryPanes = [],
 }: MissionWallTaskPanelProps) {
   const { locale } = useI18n();
   const tone = missionTone(mission?.status ?? null);
@@ -191,29 +129,22 @@ function MissionWallTaskPanelInner({
             "当前步骤已进入超时态，排障与后续动作统一留在辅助区与 Runtime。",
             "The current step has timed out. Troubleshooting and follow-up stay in Support and Runtime."
           )
-        : stepFlow.items.some(item => item.status === "failed")
-          ? t(
-              locale,
-              "当前步骤已进入失败态，详细失败原因与运行证据统一留在 Runtime。",
-              "The current step has failed. Detailed failure evidence stays in Runtime."
-            )
-      : stepFocus.signal ||
-        t(
+      : stepFlow.items.some(item => item.status === "failed")
+        ? t(
+            locale,
+            "当前步骤已进入失败态，详细失败原因与运行证据统一留在 Runtime。",
+            "The current step has failed. Detailed failure evidence stays in Runtime."
+          )
+      : t(
           locale,
-          "当前没有新的异常或等待信号，监控屏保持待命。",
-          "No urgent blocker or failure signal is active right now."
+          "当前任务正按步骤流推进，日志与运行细节统一留在 Logs / Runtime。",
+          "The mission is progressing through its step flow. Logs and runtime details stay in Logs / Runtime."
         );
   const signalLine = compactText(
     wallSummary,
     96
   );
   const progress = stepFocus.progress;
-  const totalAgents = detail?.agents.length ?? mission?.activeAgentCount ?? 0;
-  const runningAgents = activeAgentCount(detail, mission);
-  const warningCount =
-    mission?.issueCount ?? detail?.failureReasons.length ?? 0;
-  const completedCount = mission?.completedTaskCount ?? 0;
-  const packageCount = mission?.taskCount ?? detail?.tasks.length ?? 0;
   const needsAttention =
     mission?.status === "failed" ||
     mission?.status === "waiting" ||
@@ -398,51 +329,6 @@ function MissionWallTaskPanelInner({
                     </span>
                   ))}
                 </div>
-                {!fullscreen && auxiliaryPanes.length > 0 ? (
-                  <div
-                    style={{
-                      marginTop: 6,
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 6,
-                      flexWrap: "wrap",
-                    }}
-                  >
-                    {auxiliaryPanes
-                      .filter(item => item.tone !== "info")
-                      .map(item => {
-                      const accentColor =
-                        item.tone === "active"
-                          ? "#34d399"
-                          : item.tone === "info"
-                            ? "#60a5fa"
-                            : "rgba(148,163,184,0.88)";
-
-                      return (
-                        <span
-                          key={`${item.label}-${item.value}`}
-                          style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: 4,
-                            borderRadius: 999,
-                            padding: "2px 7px",
-                            fontSize: 8,
-                            lineHeight: 1.1,
-                            color: "rgba(226,232,240,0.9)",
-                            background: "rgba(15,23,42,0.42)",
-                            border: "1px solid rgba(71,85,105,0.18)",
-                          }}
-                        >
-                          <span style={{ color: "rgba(148,163,184,0.72)" }}>
-                            {item.label}
-                          </span>
-                          <span style={{ color: accentColor }}>{item.value}</span>
-                        </span>
-                      );
-                    })}
-                  </div>
-                ) : null}
               </div>
             </div>
             <div
@@ -680,102 +566,6 @@ function MissionWallTaskPanelInner({
             </div>
           </div>
 
-          {fullscreen ? (
-            <div
-              style={{
-                marginTop: "auto",
-                paddingTop: 30,
-                borderTop: "1px solid rgba(71,85,105,0.34)",
-                display: "flex",
-                alignItems: "stretch",
-              }}
-            >
-              <MetricTile
-                label={t(locale, "完成", "Done")}
-                value={String(completedCount)}
-                color="#4ade80"
-              />
-              <div
-                style={{
-                  width: 1,
-                  background: "rgba(71,85,105,0.36)",
-                }}
-              />
-              <MetricTile
-                label={t(locale, "关注", "Alerts")}
-                value={String(warningCount)}
-                color="#f87171"
-              />
-              <div
-                style={{
-                  width: 1,
-                  background: "rgba(71,85,105,0.36)",
-                }}
-              />
-              <MetricTile
-                label={t(locale, "运行", "Active")}
-                value={String(runningAgents)}
-                color="#60a5fa"
-              />
-              <div
-                style={{
-                  width: 1,
-                  background: "rgba(71,85,105,0.36)",
-                }}
-              />
-              <MetricTile
-                label={t(locale, "Agent", "Agent")}
-                value={String(totalAgents || packageCount)}
-                color="#fbbf24"
-              />
-            </div>
-          ) : (
-            <div
-              style={{
-                marginTop: 8,
-                display: "flex",
-                alignItems: "center",
-                gap: 6,
-                flexWrap: "wrap",
-                color: "rgba(191,219,254,0.88)",
-                fontSize: 8,
-              }}
-            >
-              {[
-                `${t(locale, "运行", "Active")} ${runningAgents}`,
-                `${t(locale, "关注", "Alerts")} ${warningCount}`,
-                `${t(locale, "Agent", "Agent")} ${totalAgents || packageCount}`,
-              ].map(item => (
-                <span
-                  key={item}
-                  style={{
-                    borderRadius: 999,
-                    padding: "2px 7px",
-                    background: "rgba(15,23,42,0.38)",
-                    border: "1px solid rgba(71,85,105,0.16)",
-                  }}
-                >
-                  {item}
-                </span>
-              ))}
-            </div>
-          )}
-
-          {fullscreen ? (
-            <div
-              style={{
-                marginTop: 18,
-                fontSize: 13,
-                color: "rgba(148,163,184,0.88)",
-              }}
-            >
-              {t(
-                locale,
-                "这是墙面广播版任务视图，完整操作与详细事件流仍在右侧任务详情和 /tasks 页面中继续承载。",
-                "This is the wall-broadcast task view. Full controls and detailed event flow remain in the right task detail and /tasks workbench."
-              )}
-            </div>
-          ) : null}
         </div>
       </div>
     </div>

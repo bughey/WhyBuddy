@@ -201,25 +201,6 @@ export function SandboxMonitor() {
                   mission={displayMission}
                   detail={missionDetail}
                   onActivate={() => togglePane("task")}
-                  auxiliaryPanes={[
-                    {
-                      label: t(locale, "执行流", "Execution"),
-                      value: terminalStatus,
-                      tone: isStreaming || logLines.length > 0 ? "active" : "default",
-                    },
-                    {
-                      label: t(locale, "浏览器", "Browser"),
-                      value: browserStatus,
-                      tone: browserCurrentFrame ? "info" : "default",
-                    },
-                    {
-                      label: t(locale, "同步", "Sync"),
-                      value: displayMission
-                        ? t(locale, "在线", "Online")
-                        : t(locale, "待命", "Standby"),
-                      tone: displayMission ? "active" : "default",
-                    },
-                  ]}
                 />
               </div>
 

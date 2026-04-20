@@ -119,6 +119,13 @@ describe("MissionWallTaskPanel", () => {
     expect(markup).toContain("Run execution");
     expect(markup).toContain("46%");
     expect(markup).toContain("MC");
+    expect(markup).toContain(
+      "当前任务正按步骤流推进，日志与运行细节统一留在 Logs / Runtime。"
+    );
+    expect(markup).not.toContain("All systems nominal");
+    expect(markup).not.toContain("Active 0");
+    expect(markup).not.toContain("Alerts 0");
+    expect(markup).not.toContain("Agent 0");
   });
 
   it("keeps waiting-detail copy out of the wall center summary", () => {
