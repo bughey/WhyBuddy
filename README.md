@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="./banner.png" alt="Cube Pets Office banner" width="100%" />
+  <img src="./docs/assets/banner.png" alt="Cube Pets Office banner" width="100%" />
 </p>
 
 <h1 align="center">Cube Pets Office</h1>
@@ -56,7 +56,7 @@ Cube Pets Office 不是一个“多智能体聊天演示页”，而是一个把
 下面这张图更适合作为产品蓝图来理解 Cube Pets Office 的整体分层：客户端入口、应用服务层、执行层、数据层、外部能力和部署建议一眼能串起来。
 
 <p align="center">
-  <img src="./diagram.png" alt="Cube Pets Office architecture overview" width="100%" />
+  <img src="./docs/assets/diagram.png" alt="Cube Pets Office architecture overview" width="100%" />
 </p>
 
 这张图表达的是产品与平台蓝图。当前仓库里已经落地的核心实现可以概括为：
