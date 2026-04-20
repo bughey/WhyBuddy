@@ -38,6 +38,7 @@
 - 新增近端主线：`mission-cancel-control`、`mission-operator-actions`、`task-detail-operations-first`、`execution-language-refresh`、`mission-ui-polish` 已完成。
 - 新增下一波规划：`navigation-convergence`、`task-hub-convergence`、`api-fallback-empty-states`、`workflow-panel-decomposition`、`scene-agent-interaction`、`workspace-visual-unification` 已完成并合并到 `main`。
 - `office-task-cockpit` 已进入收口阶段，桌面端办公室主壳、三栏驾驶舱、右侧上下文 tab 与统一智能发起入口已落地，剩余桌面兼容回归与手测。
+- `task-os-home-redesign-v1` 已补一处桌面断点稳定性修正：为 `office-cockpit-splitter` 的 panel 增加 `min-width:0` / `min-height:0`，避免 1280+ 下横向溢出导致布局抖动（2026-04-20）。
 - `launch-operator-surface-convergence` 已完成第一阶段实现：`UnifiedLaunchComposer` 接入底部任务操作 rail，`OfficeTaskCockpit.tsx` / `TasksPage.tsx` 已完成接线，`TasksCockpitDetail` 首屏独立任务操作卡已降级为建议与依据区；`tasks.md` 当前仅剩 `7.4` 桌面端与窄宽度手动验证未勾选。
 - `office-cockpit-first-screen-refresh` 已进入近端规划，作为 `office-task-cockpit` 的后续桌面首屏体验收口项，聚焦“克制驾驶舱 + 主次分层”。
 - `office-wall-display-redesign` 已进入近端规划，作为 `scene-mission-fusion`、`sandbox-live-preview` 与 `office-task-cockpit` 的后续墙面监控屏改造项，聚焦把后墙升级为“终端 / 任务 / 浏览器”三分区显示器。
