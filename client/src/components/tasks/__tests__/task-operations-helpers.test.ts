@@ -8,6 +8,7 @@ import type {
 
 import {
   deriveCurrentOwner,
+  deriveMissionStepFlow,
   deriveNextStep,
   derivePrimaryActions,
   deriveTaskBlocker,
@@ -312,5 +313,56 @@ describe("task operation helper derivations", () => {
       "The executor is still working and will continue producing the next deliverables."
     );
     expect(nextStep.detail).not.toContain("preparing the next artifact");
+  });
+
+  it("maps completed missions to a completed step flow", () => {
+    const flow = deriveMissionStepFlow(
+      makeDetail({
+        status: "done",
+        workflowStatus: "completed",
+        progress: 100,
+      })
+    );
+
+    expect(flow.items.every(item => item.status === "done")).toBe(true);
+    expect(flow.overallProgress).toBe(100);
+  });
+
+  it("maps timeout hints onto timeout step states", () => {
+    const flow = deriveMissionStepFlow(
+      makeDetail({
+        status: "failed",
+        waitingFor: "Timed out while waiting for executor callback.",
+        summary: "Timed out while waiting for executor callback.",
+        stages: [
+          {
+            key: "execute",
+            label: "Execute",
+            status: "failed",
+            progress: 76,
+            detail: "Timed out while waiting for executor callback.",
+            arcStart: 0,
+            arcEnd: 180,
+            midAngle: 90,
+          },
+        ],
+      })
+    );
+
+    expect(flow.items[0]?.status).toBe("timeout");
+    expect(flow.items[0]?.detail).toContain("Timed out");
+  });
+
+  it("maps cancelled missions to cancelled-or-done step states instead of active ones", () => {
+    const flow = deriveMissionStepFlow(
+      makeDetail({
+        status: "cancelled",
+        workflowStatus: "completed_with_errors",
+        currentStageKey: "execute",
+      })
+    );
+
+    expect(flow.items.some(item => item.status === "cancelled")).toBe(true);
+    expect(flow.items.some(item => item.status === "active")).toBe(false);
   });
 });

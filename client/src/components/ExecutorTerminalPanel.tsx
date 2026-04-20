@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Terminal } from "lucide-react";
 
 import { EmptyHintBlock } from "@/components/tasks/EmptyHintBlock";
@@ -43,6 +43,7 @@ export function ExecutorTerminalPanel({
   const setActiveMission = useSandboxStore(s => s.setActiveMission);
   const requestLogHistory = useSandboxStore(s => s.requestLogHistory);
   const scrollRef = useRef<HTMLPreElement>(null);
+  const [autoScrollEnabled, setAutoScrollEnabled] = useState(true);
 
   useEffect(() => {
     if (!missionId) {
@@ -59,10 +60,14 @@ export function ExecutorTerminalPanel({
 
   useEffect(() => {
     const el = scrollRef.current;
-    if (el) {
+    if (el && autoScrollEnabled) {
       el.scrollTop = el.scrollHeight;
     }
-  }, [logLines.length]);
+  }, [autoScrollEnabled, logLines.length]);
+
+  useEffect(() => {
+    setAutoScrollEnabled(true);
+  }, [missionId]);
 
   const visibleLines = logLines.slice(-MAX_VISIBLE_LINES);
   const hasLines = visibleLines.length > 0;
@@ -90,16 +95,37 @@ export function ExecutorTerminalPanel({
             {copy.tasks.executor.terminalTitle}
           </span>
         </div>
-        {isStreaming ? (
-          <span className="flex items-center gap-1.5 text-[10px] text-emerald-400">
-            <span className="size-1.5 animate-pulse rounded-full bg-emerald-400" />
-            {copy.tasks.executor.terminalLive}
-          </span>
-        ) : null}
+        <div className="flex items-center gap-2">
+          {isStreaming ? (
+            <span className="flex items-center gap-1.5 text-[10px] text-emerald-400">
+              <span className="size-1.5 animate-pulse rounded-full bg-emerald-400" />
+              {copy.tasks.executor.terminalLive}
+            </span>
+          ) : null}
+          <button
+            type="button"
+            className="rounded-full border border-stone-600/60 px-2 py-0.5 text-[10px] text-stone-300 transition hover:border-stone-500 hover:text-white"
+            onClick={() => setAutoScrollEnabled(current => !current)}
+          >
+            {autoScrollEnabled
+              ? copy.tasks.executor.pauseAutoScroll
+              : copy.tasks.executor.resumeAutoScroll}
+          </button>
+        </div>
       </div>
 
       <pre
         ref={scrollRef}
+        onScroll={event => {
+          const element = event.currentTarget;
+          const nearBottom =
+            element.scrollHeight - element.scrollTop - element.clientHeight < 24;
+          if (autoScrollEnabled && !nearBottom) {
+            setAutoScrollEnabled(false);
+          } else if (!autoScrollEnabled && nearBottom) {
+            setAutoScrollEnabled(true);
+          }
+        }}
         className={cn(
           "h-[200px] overflow-auto px-3 py-2 font-mono text-xs leading-5",
           !hasLines && "flex items-center"

@@ -702,6 +702,8 @@ export const messages = {
         unavailableLogsDescription:
           "执行日志暂时不可用，可重新请求一次历史日志，或先检查执行器状态。",
         retryLogs: "重新请求日志",
+        pauseAutoScroll: "暂停滚动",
+        resumeAutoScroll: "恢复滚动",
       },
       statuses: {
         action: {
@@ -1521,6 +1523,8 @@ export const messages = {
         unavailableLogsDescription:
           "Execution logs are temporarily unavailable. Request log history again or inspect the executor status first.",
         retryLogs: "Request logs again",
+        pauseAutoScroll: "Pause scroll",
+        resumeAutoScroll: "Resume scroll",
       },
       statuses: {
         action: {

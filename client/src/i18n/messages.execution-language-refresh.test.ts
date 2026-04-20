@@ -25,5 +25,7 @@ describe("execution language refresh copy", () => {
     );
     expect(copy.tasks.listPage.title).toBe("Mission Execution Desk");
     expect(copy.tasks.detailPage.eyebrow).toBe("Execution Detail");
+    expect(copy.tasks.executor.pauseAutoScroll).toBe("Pause scroll");
+    expect(copy.tasks.executor.resumeAutoScroll).toBe("Resume scroll");
   });
 });

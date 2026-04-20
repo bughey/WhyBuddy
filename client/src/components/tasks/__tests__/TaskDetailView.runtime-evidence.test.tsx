@@ -67,8 +67,9 @@ function makeDetail(overrides?: Partial<MissionTaskDetail>): MissionTaskDetail {
     timeline: [
       {
         id: "event-1",
+        type: "log",
         time: Date.now() - 120_000,
-        level: "warning",
+        level: "warn",
         title: "Executor retried artifact upload",
         description: "The executor retried the artifact upload after a callback delay.",
         actor: "lobster",
@@ -78,6 +79,7 @@ function makeDetail(overrides?: Partial<MissionTaskDetail>): MissionTaskDetail {
       {
         id: "artifact-1",
         title: "Run report",
+        description: "A runtime handoff artifact.",
         kind: "report",
         format: "md",
         href: "/api/tasks/mission-1/artifacts/0/download",
@@ -168,5 +170,32 @@ describe("TaskDetailView runtime evidence consolidation", () => {
     expect(markup).not.toContain("Executor");
     expect(markup).not.toContain("Failure");
     expect(markup).toContain("安全策略");
+  });
+  it("removes the standalone artifacts tab when runtime evidence is deferred", () => {
+    const markup = renderToStaticMarkup(
+      <TaskDetailView
+        detail={makeDetail()}
+        decisionNote=""
+        onDecisionNoteChange={() => {}}
+        onLaunchDecision={() => {}}
+        deferRuntimeEvidence
+      />
+    );
+
+    expect(markup).not.toContain(">Artifacts<");
+  });
+
+  it("keeps the standalone artifacts tab for the default detail view when runtime evidence is not deferred", () => {
+    const markup = renderToStaticMarkup(
+      <TaskDetailView
+        detail={makeDetail()}
+        decisionNote=""
+        onDecisionNoteChange={() => {}}
+        onLaunchDecision={() => {}}
+      />
+    );
+
+    expect(markup).toContain(">交付物<");
+    expect(markup).not.toContain("Full deliverable payload for task #");
   });
 });

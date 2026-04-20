@@ -477,6 +477,38 @@ function getTaskPrimaryText(task: TaskInfo) {
   return task.deliverable_v3 || task.deliverable_v2 || task.deliverable || "";
 }
 
+function renderDeliverableDockHint(
+  locale: string,
+  deliverableText: string,
+  options?: {
+    className?: string;
+    fallback?: { zh: string; en: string };
+  }
+) {
+  if (!deliverableText.trim()) return null;
+  return (
+    <div
+      className={
+        options?.className ||
+        "mt-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-[10px] leading-5 text-white/55"
+      }
+    >
+      {summarizeText(
+        deliverableText,
+        t(locale, "交付物已归口到 Artifacts。", "Deliverables now live in Artifacts."),
+        56
+      )}
+      <span className="ml-1 text-white/40">
+        {t(
+          locale,
+          options?.fallback?.zh || "完整内容统一收敛到 Artifacts。",
+          options?.fallback?.en || "Open Artifacts for the full handoff."
+        )}
+      </span>
+    </div>
+  );
+}
+
 function getTaskDetailBlocks(task: TaskInfo) {
   const blocks: Array<{ key: string; label: string; content: string | null }> =
     [
@@ -1479,15 +1511,10 @@ function ProgressViewLegacy() {
                             ] || task.status}
                           </span>
                         </div>
-                        {task.deliverable_v3 ||
-                        task.deliverable_v2 ||
-                        task.deliverable ? (
-                          <p className="mt-2 whitespace-pre-wrap text-[11px] leading-5 text-white/80">
-                            {task.deliverable_v3 ||
-                              task.deliverable_v2 ||
-                              task.deliverable}
-                          </p>
-                        ) : null}
+                        {renderDeliverableDockHint(
+                          locale,
+                          getTaskPrimaryText(task)
+                        )}
                         {task.total_score !== null ? (
                           <div className="mt-2 flex flex-wrap gap-2 text-[10px] text-white/50">
                             <Pill>
@@ -2479,8 +2506,8 @@ function ProgressView() {
             <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-[11px] leading-5 text-white/55">
               {t(
                 locale,
-                `当前任务已有 ${workflowMissionDetail.artifacts.length} 个交付物，主入口已统一收敛到任务详情页与首页底部运行区的 Artifacts。`,
-                `${workflowMissionDetail.artifacts.length} deliverables are already attached to this mission. Their primary entry now lives in task detail and the bottom Artifacts runtime dock on home.`
+                `当前任务已有 ${workflowMissionDetail.artifacts.length} 个交付物，首页主入口已统一收敛到底部 dock 的 Artifacts。`,
+                `${workflowMissionDetail.artifacts.length} deliverables are already attached to this mission. Their primary home on home is now the bottom Artifacts dock.`
               )}
             </div>
           ) : null}
@@ -2958,6 +2985,7 @@ function ProgressView() {
 
 function ReviewView() {
   const { copy } = useI18n();
+  const locale = useAppStore(state => state.locale);
   const { tasks } = useWorkflowStore();
   return (
     <div className="flex h-full flex-col">
@@ -2986,29 +3014,14 @@ function ReviewView() {
                     ] || task.status}
                   </span>
                 </div>
-                {task.deliverable_v3 ||
-                task.deliverable_v2 ||
-                task.deliverable ? (
-                  <div className="mt-3 rounded-xl bg-white/5 p-3">
-                    <p className="mb-1 flex items-center text-[10px] font-semibold text-white/50">
-                      {copy.workflow.review.deliverable}
-                      <TtsPlayButton
-                        id={`rv-del-${task.id}`}
-                        content={
-                          task.deliverable_v3 ||
-                          task.deliverable_v2 ||
-                          task.deliverable ||
-                          ""
-                        }
-                      />
-                    </p>
-                    <p className="whitespace-pre-wrap text-[11px] leading-5 text-white/80">
-                      {task.deliverable_v3 ||
-                        task.deliverable_v2 ||
-                        task.deliverable}
-                    </p>
-                  </div>
-                ) : null}
+                {renderDeliverableDockHint(locale, getTaskPrimaryText(task), {
+                  className:
+                    "mt-3 rounded-xl border border-white/10 bg-white/5 px-3 py-3 text-[10px] leading-5 text-white/55",
+                  fallback: {
+                    zh: "评审卡片不再直接铺开交付正文，完整内容统一查看 Artifacts。",
+                    en: "Review cards no longer inline the full deliverable. Open Artifacts for the full handoff.",
+                  },
+                })}
                 {task.manager_feedback ? (
                   <div className="mt-3 rounded-xl bg-emerald-500/10 p-3">
                     <p className="mb-1 flex items-center text-[10px] font-semibold text-emerald-400">

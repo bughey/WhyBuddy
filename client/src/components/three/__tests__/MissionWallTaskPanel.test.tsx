@@ -144,4 +144,36 @@ describe("MissionWallTaskPanel", () => {
       "Approve artifact publishing before continuing."
     );
   });
+  it("keeps failed-step evidence out of the wall center summary", () => {
+    const mission = makeMission({
+      status: "failed",
+      summary: "The executor timed out while waiting for a callback.",
+    });
+    const detail = makeDetail({
+      status: "failed",
+      summary: "The executor timed out while waiting for a callback.",
+      stages: [
+        {
+          key: "execute",
+          label: "Execute",
+          status: "failed",
+          progress: 72,
+          detail: "Timed out while waiting for callback confirmation.",
+          arcStart: 0,
+          arcEnd: 120,
+          midAngle: 60,
+        },
+      ],
+    });
+    const markup = renderToStaticMarkup(
+      <MissionWallTaskPanel mission={mission} detail={detail} />
+    );
+
+    expect(markup).toContain(
+      "当前步骤已进入超时态，排障与后续动作统一留在辅助区与 Runtime。"
+    );
+    expect(markup).not.toContain(
+      "Timed out while waiting for callback confirmation."
+    );
+  });
 });

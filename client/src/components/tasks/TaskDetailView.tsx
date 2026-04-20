@@ -2,7 +2,6 @@
 import {
   AlertTriangle,
   ArrowUpRight,
-  Bot,
   Coins,
   FileText,
   FolderKanban,
@@ -10,7 +9,6 @@ import {
   LoaderCircle,
   Shield,
   Sparkles,
-  TimerReset,
   Workflow,
 } from "lucide-react";
 import {
@@ -60,9 +58,6 @@ import type {
   TaskArtifact,
 } from "@/lib/tasks-store";
 import { cn } from "@/lib/utils";
-import { ExecutorStatusPanel } from "@/components/ExecutorStatusPanel";
-import { ExecutorTerminalPanel } from "@/components/ExecutorTerminalPanel";
-
 import { useCostStore } from "@/lib/cost-store";
 import { useRAGStore } from "@/lib/rag-store";
 import { localizeTaskHubBriefText } from "@/lib/task-hub-copy";
@@ -80,9 +75,7 @@ import { TaskPlanetInterior } from "./TaskPlanetInterior";
 import {
   compactText,
   downloadAttachmentArtifact,
-  formatTaskDate,
   isMissionTerminal,
-  timelineTone,
 } from "./task-helpers";
 
 const WORK_PACKAGE_PROGRESS: Record<string, number> = {
@@ -240,6 +233,26 @@ function ExcerptBlock({
           text={resolved}
         />
       ) : null}
+    </div>
+  );
+}
+
+function RuntimeEvidenceHandoffCard({
+  title,
+  summary,
+  handoff,
+}: {
+  title: string;
+  summary: string;
+  handoff: string;
+}) {
+  return (
+    <div className={cn(DETAIL_INSET_SOFT_CLASS, "space-y-2.5 p-3")}>
+      <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-500">
+        {title}
+      </div>
+      <div className="text-sm leading-6 text-stone-700">{summary}</div>
+      <div className="text-[11px] leading-5 text-stone-500">{handoff}</div>
     </div>
   );
 }
@@ -792,19 +805,7 @@ export function TaskDetailView({
     detail.sourceText.trim(),
     locale
   );
-  const shouldShowEmbeddedRuntimeEvidence = !isCockpit && !deferRuntimeEvidence;
-  const runtimePreviewRows = shouldShowEmbeddedRuntimeEvidence
-    ? [...detail.instanceInfo.slice(0, 4), ...detail.logSummary.slice(0, 4)]
-    : [];
-  const runtimeDetailText = shouldShowEmbeddedRuntimeEvidence
-    ? [
-        t(locale, "实例信息", "Instance Info"),
-        ...detail.instanceInfo.map(row => `${row.label}: ${row.value}`),
-        "",
-        t(locale, "日志摘要", "Log Summary"),
-        ...detail.logSummary.map(row => `${row.label}: ${row.value}`),
-      ].join("\n")
-    : "";
+  const shouldShowStandaloneArtifactsTab = !deferRuntimeEvidence;
 
   const sourceDirectivePanel = (
     <Card className={DETAIL_CARD_CLASS}>
@@ -859,6 +860,9 @@ export function TaskDetailView({
               task.deliverable_v3 ||
               task.deliverable_v2 ||
               task.deliverable ||
+              copy.tasks.detailView.noDeliverable;
+            const deliverableSummary =
+              compactText(deliverableText, 120) ||
               copy.tasks.detailView.noDeliverable;
             const managerText =
               task.manager_feedback || copy.tasks.detailView.noManagerFeedback;
@@ -960,19 +964,15 @@ export function TaskDetailView({
                       emptyText={copy.tasks.detailView.noWorkBrief}
                     />
                   </div>
-                  <div className={cn(DETAIL_INSET_SOFT_CLASS, "p-3")}>
-                    <ExcerptBlock
-                      title={copy.tasks.detailView.deliverablePreviewTitle}
-                      description={t(
-                        locale,
-                        `任务 #${task.id} 的完整交付内容。`,
-                        `Full deliverable payload for task #${task.id}.`
-                      )}
-                      text={deliverableText}
-                      maxLength={150}
-                      emptyText={copy.tasks.detailView.noDeliverable}
-                    />
-                  </div>
+                  <RuntimeEvidenceHandoffCard
+                    title={copy.tasks.detailView.deliverablePreviewTitle}
+                    summary={deliverableSummary}
+                    handoff={t(
+                      locale,
+                      "完整交付内容与下载入口统一归口到交付物 tab。",
+                      "The full deliverable payload and download entry now live in the Deliverables tab."
+                    )}
+                  />
                   <div className="grid gap-2.5">
                     <div className={cn(DETAIL_INSET_SOFT_CLASS, "p-3")}>
                       <ExcerptBlock
@@ -1010,85 +1010,6 @@ export function TaskDetailView({
             icon={<Workflow className="size-4" />}
             title={copy.tasks.emptyHints.workPackagesTitle}
             description={copy.tasks.emptyHints.workPackagesDescription}
-          />
-        )}
-      </CardContent>
-    </Card>
-  );
-
-  const timelinePanel = (
-    <Card className={DETAIL_CARD_CLASS}>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-stone-900">
-          <TimerReset className="size-4 text-sky-600" />
-          {copy.tasks.detailView.timelineTitle}
-        </CardTitle>
-        <CardDescription>
-          {copy.tasks.detailView.timelineDescription}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-2.5">
-        {detail.timeline.length > 0 ? (
-          detail.timeline.map(event => (
-            <div key={event.id} className="relative pl-6">
-              <div className="absolute left-[6px] top-0 h-full w-px bg-[rgba(174,146,120,0.28)]" />
-              <div
-                className={cn(
-                  "absolute left-0 top-1.5 size-[13px] rounded-full border shadow-sm",
-                  timelineTone(event.level)
-                )}
-              />
-              <div className={cn(DETAIL_INSET_CLASS, "px-3.5 py-2.5")}>
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <div className="text-sm font-medium text-stone-900">
-                        {event.title}
-                      </div>
-                      <span
-                        className={cn(
-                          "workspace-status px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em]",
-                          timelineTone(event.level)
-                        )}
-                      >
-                        {localizedTimelineLevel(locale, event.level)}
-                      </span>
-                    </div>
-                    <div className="mt-1.5 text-sm leading-6 text-stone-600">
-                      {compactText(event.description, 96)}
-                    </div>
-                    <div className="mt-2 flex flex-wrap items-center gap-2">
-                      <span className="workspace-status workspace-tone-neutral bg-white/80 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-stone-500">
-                        {formatTaskDate(event.time, locale)}
-                      </span>
-                      {event.actor ? (
-                        <span className="workspace-status workspace-tone-neutral bg-white/80 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-stone-500">
-                          {event.actor}
-                        </span>
-                      ) : null}
-                      {event.description.trim().length > 96 ? (
-                        <DetailTextDialog
-                          title={event.title}
-                          description={
-                            copy.tasks.detailView.timelineEventDescription
-                          }
-                          text={event.description}
-                          buttonLabel={
-                            copy.tasks.detailView.timelineDetailButton
-                          }
-                        />
-                      ) : null}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))
-        ) : (
-          <EmptyHintBlock
-            icon={<TimerReset className="size-4" />}
-            title={copy.tasks.emptyHints.timelineTitle}
-            description={copy.tasks.emptyHints.timelineDescription}
           />
         )}
       </CardContent>
@@ -1157,51 +1078,6 @@ export function TaskDetailView({
     </Card>
   );
 
-  const runtimeSnapshotPanel = (
-    <Card className={DETAIL_CARD_CLASS}>
-      <CardHeader className="space-y-1 pb-3">
-        <CardTitle className="flex items-center gap-2 text-stone-900">
-          <Bot className="size-4 text-sky-600" />
-          {copy.tasks.detailView.runtimeSnapshotTitle}
-        </CardTitle>
-        <CardDescription>
-          {copy.tasks.detailView.runtimeSnapshotDescription}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-3 pt-0">
-        {runtimePreviewRows.length > 0 ? (
-          <>
-            <div className="grid gap-2 sm:grid-cols-2">
-              {runtimePreviewRows.map(row => (
-                <SnapshotTile
-                  key={row.label}
-                  label={row.label}
-                  value={row.value}
-                />
-              ))}
-            </div>
-            <div className="flex justify-end">
-              <DetailTextDialog
-                title={copy.tasks.detailView.runtimeSnapshotDetailsTitle}
-                description={
-                  copy.tasks.detailView.runtimeSnapshotDetailsDescription
-                }
-                text={runtimeDetailText}
-                buttonLabel={copy.tasks.detailView.runtimeSnapshotDetailsButton}
-              />
-            </div>
-          </>
-        ) : (
-          <EmptyHintBlock
-            icon={<Bot className="size-4" />}
-            title={copy.tasks.detailView.runtimeSnapshotEmptyTitle}
-            description={copy.tasks.detailView.runtimeSnapshotEmptyDescription}
-          />
-        )}
-      </CardContent>
-    </Card>
-  );
-
   const artifactsPanel = (
     <Card className={DETAIL_CARD_CLASS}>
       <CardHeader>
@@ -1239,39 +1115,6 @@ export function TaskDetailView({
       </CardContent>
     </Card>
   );
-
-  const failurePanel =
-    detail.failureReasons.length > 0 ? (
-      <Card
-        className={cn(
-          DETAIL_CARD_STRONG_CLASS,
-          "border-[rgba(180,93,77,0.24)] bg-[linear-gradient(180deg,rgba(255,250,249,0.96),rgba(249,233,230,0.92))]"
-        )}
-      >
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-[var(--workspace-text-strong)]">
-            <AlertTriangle className="size-4 text-[var(--workspace-danger)]" />
-            {copy.tasks.detailView.failureTitle}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          {detail.failureReasons.map(reason => (
-            <div
-              key={reason}
-              className="workspace-callout workspace-tone-danger rounded-2xl bg-white/70 px-3 py-3"
-            >
-              <ExcerptBlock
-                title={copy.tasks.detailView.failureSignalTitle}
-                description={copy.tasks.detailView.failureSignalDescription}
-                text={reason}
-                maxLength={160}
-                className="text-[var(--workspace-text-strong)]"
-              />
-            </div>
-          ))}
-        </CardContent>
-      </Card>
-    ) : null;
 
   const securitySummaryPanel = detail.securitySummary ? (
     <Card className={DETAIL_CARD_CLASS}>
@@ -1336,32 +1179,6 @@ export function TaskDetailView({
     </Card>
   ) : null;
 
-  const executorStatusPanel = detail.executor ? (
-    <Card className={DETAIL_CARD_CLASS}>
-      <CardHeader className="space-y-1 pb-3">
-        <CardTitle className="flex items-center gap-2 text-stone-900">
-          <Bot className="size-4 text-sky-600" />
-          {copy.tasks.executor.title}
-        </CardTitle>
-        <CardDescription>{copy.tasks.executor.description}</CardDescription>
-      </CardHeader>
-      <CardContent className="pt-0">
-        <ExecutorStatusPanel
-          executor={detail.executor}
-          instance={detail.instance}
-        />
-      </CardContent>
-    </Card>
-  ) : null;
-
-  const executorTerminalPanel = detail.executor ? (
-    <ExecutorTerminalPanel
-      missionId={detail.id}
-      missionStatus={detail.status}
-      executorStatus={detail.executor.status}
-    />
-  ) : null;
-
   const decisionFocusSection =
     !isCockpit && showDecisionFocusSection ? (
       <section className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
@@ -1419,23 +1236,8 @@ export function TaskDetailView({
           {showCockpitDecisionSection ? decisionsWorkspace : null}
           <TaskPlanetInterior detail={detail} compact />
           {sourceDirectivePanel}
-          {shouldShowEmbeddedRuntimeEvidence && runtimePreviewRows.length > 0
-            ? runtimeSnapshotPanel
-            : null}
           {securitySummaryPanel}
-          {shouldShowEmbeddedRuntimeEvidence ? executorStatusPanel : null}
-          {shouldShowEmbeddedRuntimeEvidence && detail.status === "failed"
-            ? executorTerminalPanel
-            : null}
           {detail.tasks.length > 0 ? workPackagesPanel : null}
-          {shouldShowEmbeddedRuntimeEvidence && detail.timeline.length > 0
-            ? timelinePanel
-            : null}
-          {shouldShowEmbeddedRuntimeEvidence &&
-          (detail.artifacts.length > 0 || artifactError)
-            ? artifactsPanel
-            : null}
-          {shouldShowEmbeddedRuntimeEvidence ? failurePanel : null}
         </DetailTabViewport>
         <ArtifactPreviewDialog
           missionId={detail.id}
@@ -1485,7 +1287,8 @@ export function TaskDetailView({
         >
           <TabsList
             className={cn(
-              "grid h-auto w-full grid-cols-5 bg-[rgba(255,255,255,0.58)] p-1",
+              "grid h-auto w-full bg-[rgba(255,255,255,0.58)] p-1",
+              shouldShowStandaloneArtifactsTab ? "grid-cols-5" : "grid-cols-4",
               isCockpit ? "rounded-[16px]" : "rounded-[18px]"
             )}
           >
@@ -1499,9 +1302,11 @@ export function TaskDetailView({
               <History className="mr-1.5 size-3.5" />
               {copy.tasks.detailView.decisionsTab}
             </TabsTrigger>
-            <TabsTrigger className="rounded-[14px]" value="artifacts">
-              {copy.tasks.detailView.artifactsTab}
-            </TabsTrigger>
+            {shouldShowStandaloneArtifactsTab ? (
+              <TabsTrigger className="rounded-[14px]" value="artifacts">
+                {copy.tasks.detailView.artifactsTab}
+              </TabsTrigger>
+            ) : null}
             <TabsTrigger className="rounded-[14px]" value="cost">
               <Coins className="mr-1.5 size-3.5" />
               {copy.tasks.detailView.costTab}
@@ -1633,14 +1438,16 @@ export function TaskDetailView({
           </DetailTabViewport>
         </TabsContent>
 
-        <TabsContent
-          value="artifacts"
-          className="min-h-0 flex-1 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col"
-        >
-          <DetailTabViewport isDesktop={isDesktop} autoHeight={autoHeight}>
-            {artifactsPanel}
-          </DetailTabViewport>
-        </TabsContent>
+        {shouldShowStandaloneArtifactsTab ? (
+          <TabsContent
+            value="artifacts"
+            className="min-h-0 flex-1 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col"
+          >
+            <DetailTabViewport isDesktop={isDesktop} autoHeight={autoHeight}>
+              {artifactsPanel}
+            </DetailTabViewport>
+          </TabsContent>
+        ) : null}
 
         <TabsContent
           value="cost"

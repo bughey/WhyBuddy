@@ -19,6 +19,7 @@ import {
 } from "@shared/mission/contracts";
 import { MISSION_SOCKET_EVENT, MISSION_SOCKET_TYPES, type MissionSocketPayload } from "@shared/mission/socket";
 import { io, type Socket } from "socket.io-client";
+import type { ExecutorEvent } from "@shared/executor/contracts";
 
 import {
   cancelMission as cancelMissionRequest,
@@ -206,9 +207,11 @@ export interface MissionTaskDetail extends MissionTaskSummary {
       detail: string;
     };
     callback: {
-      status: "active" | "idle";
+      status: "active" | "idle" | "waiting" | "error";
       label: string;
       detail: string;
+      eventType?: string;
+      eventSummary?: string;
     };
   };
   decisionHistory: DecisionHistoryEntry[];
@@ -332,13 +335,35 @@ function buildRuntimeChannels(
         detail: "Mission socket is offline, so runtime updates may be delayed until refresh.",
       };
 
-  const callbackLabel = mission.executor?.lastEventType
-    ? `Callback ${mission.executor.lastEventType}`
+  const lastExecutorEventType = mission.executor?.lastEventType || null;
+  const lastExecutorEventMessage =
+    trimText(
+      [...mission.events]
+        .reverse()
+        .find(event => event.type === "log" || event.source === "executor")
+        ?.message,
+      140
+    ) || null;
+  const isCallbackError =
+    lastExecutorEventType === "job.failed" || mission.status === "failed";
+  const isCallbackWaiting =
+    lastExecutorEventType === "job.waiting" || mission.status === "waiting";
+  const callbackStatus = mission.executor?.lastEventAt
+    ? isCallbackError
+      ? "error"
+      : isCallbackWaiting
+        ? "waiting"
+        : "active"
+    : mission.executor?.jobId
+      ? "waiting"
+      : "idle";
+  const callbackLabel = lastExecutorEventType
+    ? `${lastExecutorEventType.startsWith("job.") ? "Relay" : "Callback"} ${lastExecutorEventType}`
     : mission.executor?.jobId
       ? "Callback pending"
       : "Callback idle";
   const callbackDetail = mission.executor?.lastEventAt
-    ? `Last executor callback at ${formatShortDate(mission.executor.lastEventAt)}.${mission.executor?.jobId ? ` Job ${mission.executor.jobId}.` : ""}${mission.executor?.requestId ? ` Request ${mission.executor.requestId}.` : ""}`
+    ? `Last executor callback at ${formatShortDate(mission.executor.lastEventAt)}.${mission.executor?.jobId ? ` Job ${mission.executor.jobId}.` : ""}${mission.executor?.requestId ? ` Request ${mission.executor.requestId}.` : ""}${lastExecutorEventMessage ? ` ${lastExecutorEventMessage}` : ""}`
     : mission.executor?.jobId
       ? `Waiting for executor callback after dispatch.${mission.executor?.jobId ? ` Job ${mission.executor.jobId}.` : ""}${mission.executor?.requestId ? ` Request ${mission.executor.requestId}.` : ""}`
       : "No executor callback has been recorded for this mission yet.";
@@ -346,9 +371,35 @@ function buildRuntimeChannels(
   return {
     socket,
     callback: {
-      status: mission.executor?.lastEventAt ? "active" : "idle",
+      status: callbackStatus,
       label: callbackLabel,
       detail: callbackDetail,
+      eventType: lastExecutorEventType || undefined,
+      eventSummary: lastExecutorEventMessage || undefined,
+    },
+  };
+}
+
+function applyExecutorEventToRuntimeChannels(
+  runtimeChannels: MissionTaskDetail["runtimeChannels"],
+  event: ExecutorEvent
+): MissionTaskDetail["runtimeChannels"] {
+  const occurredAt = formatShortDate(Date.parse(event.occurredAt));
+  const eventSummary = trimText(
+    event.detail || event.summary || event.message || event.waitingFor,
+    140
+  );
+  const isError = event.status === "failed" || event.type === "job.failed";
+  const isWaiting = event.status === "waiting" || event.type === "job.waiting";
+
+  return {
+    ...runtimeChannels,
+    callback: {
+      status: isError ? "error" : isWaiting ? "waiting" : "active",
+      label: `Relay ${event.type}`,
+      detail: `Last runtime relay at ${occurredAt}. Job ${event.jobId}.`,
+      eventType: event.type,
+      eventSummary: eventSummary || undefined,
     },
   };
 }
@@ -1373,6 +1424,38 @@ function ensureMissionSocket(
         };
       });
       return;
+    }
+
+    if (payload.type === MISSION_SOCKET_TYPES.executorEvent) {
+      const executorEvent = payload.event;
+      set(state => {
+        const detail = state.detailsById[payload.missionId];
+        if (!detail) {
+          return {};
+        }
+
+        return {
+          detailsById: {
+            ...state.detailsById,
+            [payload.missionId]: {
+              ...detail,
+              lastSignal: trimText(
+                executorEvent.summary ||
+                  executorEvent.detail ||
+                  executorEvent.message,
+                180
+              ) || detail.lastSignal,
+              waitingFor:
+                executorEvent.waitingFor ||
+                detail.waitingFor,
+              runtimeChannels: applyExecutorEventToRuntimeChannels(
+                detail.runtimeChannels,
+                executorEvent
+              ),
+            },
+          },
+        };
+      });
     }
 
     void patchMissionRecordInStore(payload.missionId, set, get).catch(error => {

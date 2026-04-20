@@ -5,17 +5,21 @@
  * and crew state instead of duplicating runtime timeline snippets.
  */
 import { describe, it, expect, vi } from "vitest";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 
 import type {
   MissionTaskDetail,
   TaskInteriorAgent,
 } from "@/lib/tasks-store";
+import { useAppStore } from "@/lib/store";
 import {
   agentStatusLabel,
   agentStatusTone,
   compactText,
   formatTaskRelative,
 } from "@/components/tasks/task-helpers";
+import { MissionDetailOverlay } from "../MissionDetailOverlay";
 
 function makeAgent(overrides?: Partial<TaskInteriorAgent>): TaskInteriorAgent {
   return {
@@ -200,6 +204,26 @@ describe("MissionDetailOverlay summary", () => {
     const recent = Date.now() - 120_000;
     const result = formatTaskRelative(recent);
     expect(result).toMatch(/min ago/);
+  });
+
+  it("keeps the home runtime evidence note anchored to the bottom dock", () => {
+    useAppStore.setState({ locale: "zh-CN" });
+
+    const markup = renderToStaticMarkup(
+      createElement(MissionDetailOverlay, {
+        detail: makeDetail({
+          summary: "",
+          sourceText: "",
+        }),
+        onClose: () => {},
+        onNavigateToDetail: () => {},
+      })
+    );
+
+    expect(markup).toContain(
+      "日志、产物和运行证据在首页上统一归口到底部 dock。"
+    );
+    expect(markup).not.toContain("日志、产物和运行证据统一保留在任务详情页与首页底部运行区。");
   });
 });
 

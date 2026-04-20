@@ -591,7 +591,8 @@ export type MissionStepFlowStatus =
   | "done"
   | "waiting"
   | "failed"
-  | "timeout";
+  | "timeout"
+  | "cancelled";
 
 export interface MissionStepFlowItem {
   key: string;
@@ -731,6 +732,9 @@ function deriveMissionStepFlowStatus(
   missionStatus: MissionTaskStatus | undefined,
   timeoutDetected: boolean
 ): MissionStepFlowStatus {
+  if (missionStatus === "cancelled") {
+    return status === "done" ? "done" : "cancelled";
+  }
   if (status === "done") {
     return "done";
   }
@@ -780,24 +784,26 @@ function hasMissionStepFlowDecision(
 function fallbackMissionStages(
   mission: MissionStepFlowSource | null
 ): MissionStage[] {
-  const currentStageKey =
-    mission?.currentStageKey ||
-    MISSION_CORE_STAGE_BLUEPRINT[0]?.key ||
-    "receive";
+    const currentStageKey =
+      mission?.currentStageKey ||
+      MISSION_CORE_STAGE_BLUEPRINT[0]?.key ||
+      "receive";
   const currentStageIndex = MISSION_CORE_STAGE_BLUEPRINT.findIndex(
     stage => stage.key === currentStageKey
   );
 
-  return MISSION_CORE_STAGE_BLUEPRINT.map((stage, index) => ({
-    key: stage.key,
-    label: stage.label,
-    status:
-      mission?.status === "failed" && stage.key === currentStageKey
-        ? "failed"
-        : mission?.status === "done"
-          ? "done"
-          : index < currentStageIndex
+    return MISSION_CORE_STAGE_BLUEPRINT.map((stage, index) => ({
+      key: stage.key,
+      label: stage.label,
+      status:
+        mission?.status === "failed" && stage.key === currentStageKey
+          ? "failed"
+          : mission?.status === "cancelled" && stage.key === currentStageKey
+            ? "failed"
+          : mission?.status === "done"
             ? "done"
+            : index < currentStageIndex
+              ? "done"
             : index === currentStageIndex && mission?.status !== "queued"
               ? "running"
               : "pending",

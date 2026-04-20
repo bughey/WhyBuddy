@@ -15,11 +15,20 @@ function t(locale: string, zh: string, en: string) {
 
 function stepFlowStatusLabel(
   locale: string,
-  status: "pending" | "active" | "done" | "waiting" | "failed" | "timeout"
+  status:
+    | "pending"
+    | "active"
+    | "done"
+    | "waiting"
+    | "failed"
+    | "timeout"
+    | "cancelled"
 ) {
   switch (status) {
     case "done":
       return t(locale, "完成", "Done");
+    case "cancelled":
+      return t(locale, "已取消", "Cancelled");
     case "failed":
       return t(locale, "失败", "Failed");
     case "timeout":
@@ -176,6 +185,18 @@ function MissionWallTaskPanelInner({
           "当前任务停留在等待步骤，详细决策与补充说明统一留在辅助区。",
           "The mission is currently paused at a waiting step. Detailed decisions and guidance stay in the support dock."
         )
+      : stepFlow.items.some(item => item.status === "timeout")
+        ? t(
+            locale,
+            "当前步骤已进入超时态，排障与后续动作统一留在辅助区与 Runtime。",
+            "The current step has timed out. Troubleshooting and follow-up stay in Support and Runtime."
+          )
+        : stepFlow.items.some(item => item.status === "failed")
+          ? t(
+              locale,
+              "当前步骤已进入失败态，详细失败原因与运行证据统一留在 Runtime。",
+              "The current step has failed. Detailed failure evidence stays in Runtime."
+            )
       : stepFocus.signal ||
         t(
           locale,
@@ -387,7 +408,9 @@ function MissionWallTaskPanelInner({
                       flexWrap: "wrap",
                     }}
                   >
-                    {auxiliaryPanes.map(item => {
+                    {auxiliaryPanes
+                      .filter(item => item.tone !== "info")
+                      .map(item => {
                       const accentColor =
                         item.tone === "active"
                           ? "#34d399"
@@ -515,10 +538,10 @@ function MissionWallTaskPanelInner({
 
           <div
             style={{
-              marginTop: fullscreen ? 16 : 8,
+              marginTop: fullscreen ? 16 : 2,
               display: "grid",
               gridTemplateColumns: `repeat(${Math.max(stepFlow.items.length, 1)}, minmax(0, 1fr))`,
-              gap: fullscreen ? 10 : 6,
+              gap: fullscreen ? 10 : 5,
             }}
           >
             {stepFlow.items.map(item => {
@@ -526,6 +549,8 @@ function MissionWallTaskPanelInner({
               const statusColor =
                 item.status === "done"
                   ? "#4ade80"
+                  : item.status === "cancelled"
+                    ? "#94a3b8"
                   : item.status === "timeout"
                     ? "#f59e0b"
                   : item.status === "failed"
@@ -544,7 +569,7 @@ function MissionWallTaskPanelInner({
                   style={{
                     minWidth: 0,
                     borderRadius: fullscreen ? 14 : 10,
-                    padding: fullscreen ? "12px 12px 10px" : "7px 7px 6px",
+                    padding: fullscreen ? "12px 12px 10px" : "5px 6px 4px",
                     background: isCurrent
                       ? "rgba(15,23,42,0.82)"
                       : "rgba(15,23,42,0.52)",
@@ -562,7 +587,7 @@ function MissionWallTaskPanelInner({
                     <span
                       style={{
                         minWidth: 0,
-                        fontSize: fullscreen ? 13 : 8,
+                        fontSize: fullscreen ? 13 : 7,
                         lineHeight: 1.2,
                         color: "rgba(226,232,240,0.92)",
                         fontWeight: isCurrent ? 700 : 600,
@@ -583,8 +608,8 @@ function MissionWallTaskPanelInner({
                   </div>
                   <div
                     style={{
-                      marginTop: fullscreen ? 6 : 4,
-                      fontSize: fullscreen ? 11 : 7,
+                      marginTop: fullscreen ? 6 : 3,
+                      fontSize: fullscreen ? 11 : 6,
                       lineHeight: 1.1,
                       color: statusColor,
                       fontWeight: 600,
@@ -596,8 +621,8 @@ function MissionWallTaskPanelInner({
                   </div>
                   <div
                     style={{
-                      marginTop: fullscreen ? 8 : 5,
-                      height: fullscreen ? 6 : 4,
+                      marginTop: fullscreen ? 8 : 4,
+                      height: fullscreen ? 6 : 3,
                       borderRadius: 999,
                       background: "rgba(51,65,85,0.72)",
                       overflow: "hidden",
@@ -619,7 +644,7 @@ function MissionWallTaskPanelInner({
 
           <div
             style={{
-              marginTop: fullscreen ? 24 : 8,
+              marginTop: fullscreen ? 24 : 12,
               borderRadius: 12,
               border: `1px solid ${tone.accentSoft}`,
               background: "rgba(22,30,44,0.72)",

@@ -15,9 +15,9 @@
   - 不允许在首页其他主视图中保留同等级运行主入口
   - 当前实现已并入“辅助判断信息”折叠区，以 tab 形式和 `辅助` 信息共用一个浮层，不再额外新增第二个底部浮层
 
-## 当前状态快照（2026-04-19）
+## 当前状态快照（2026-04-20）
 
-- 总体状态：进行中，约 90%
+- 总体状态：进行中，约 98%
 - 已有落地：
   - 首页中央浮层已完成第一轮信息归位，顶部辅助区只保留 `blocker detail / next step / current owner / pending launch / clarification context`
   - 首页中央浮层已移除一批与墙上中心重复的焦点摘要、阶段摘要、重复状态信息
@@ -25,6 +25,7 @@
   - 中央控制区已经从左右侧栏宽度分配中抽离，改为独立居中层，避免侧栏折叠时整体横向漂移
   - `Logs / Artifacts / Runtime` 已合并进入“辅助判断信息”折叠面板，使用 tab 切换，不再保留独立 runtime dock 浮层
   - `Logs` 已接入实时滚动与错误流高亮，`Artifacts` 已接入统一预览 / 下载链路，`Runtime` 已接入 executor 摘要、recent failure / recent action，以及 `socket / callback` 轻量状态
+  - [`ExecutorTerminalPanel.tsx`](../../../client/src/components/ExecutorTerminalPanel.tsx) 已补入“暂停滚动 / 恢复滚动”切换，Logs tab 现在支持实时追尾与人工停留查看历史片段
   - 右侧 `Deep workspace` 内嵌的 `TaskDetailView` 已开始收口运行证据；在 cockpit 嵌入态下不再重复渲染 runtime snapshot / executor / terminal / timeline / artifacts / failure 面板
   - 右栏 `TasksCockpitDetail` 已移除外层 `failure signal / current cadence / latest execution signals / artifacts preview / expanded timeline` 等与 Runtime tabs 平级竞争的面板
   - `TasksCockpitDetail` 本轮继续收掉顶部 `Artifacts / Signals` 仪表与 Deep workspace 头部的 `artifacts / events` 计数，进一步避免与 runtime dock 平级重复
@@ -39,10 +40,15 @@
   - [`OfficeTaskCockpit.tsx`](../../../client/src/components/office/OfficeTaskCockpit.tsx) 的 `Runtime` tab 已移除 `logSummary / instanceInfo` 混入卡片，并补充“完整日志流统一进入 Logs”的说明，开始严格收紧为 `executor / socket / callback / recent action / recent failure`
   - [`ExecutorStatusPanel.tsx`](../../../client/src/components/ExecutorStatusPanel.tsx) 已停止在 executor 摘要里顺带渲染 artifact 列表，`Runtime` tab 不再借 executor 面板保留第二套产物入口
   - [`MissionDetailOverlay.tsx`](../../../client/src/components/tasks/MissionDetailOverlay.tsx) 已从首页 mission island 弹层里移除 recent timeline，改回任务摘要、工作包与协作状态概览，避免首页覆盖层继续承接日志侧门
-  - [`WorkflowPanel.tsx`](../../../client/src/components/WorkflowPanel.tsx) 已把 workflow 抽屉里的 compact artifact 列表降级为“Artifacts 归口说明”，首页 workflow 视图不再平级挂出第二套产物入口
+  - [`MissionDetailOverlay.tsx`](../../../client/src/components/tasks/MissionDetailOverlay.tsx) 本轮已把首页提示文案收口为“首页运行证据统一留在底部 dock”，不再保留“任务详情页 + 首页底部运行区”的双归口提示
+  - [`WorkflowPanel.tsx`](../../../client/src/components/WorkflowPanel.tsx) 已把 workflow 抽屉里的 compact artifact 列表与评审卡中的 deliverable 正文降级为“Artifacts 归口说明”，首页 workflow 视图不再平级挂出第二套产物入口
+  - [`TaskDetailView.tsx`](../../../client/src/components/tasks/TaskDetailView.tsx) 已把独立详情页工作包中的 deliverable 预览降级为归口提示卡，完整交付内容与下载入口统一回到 `交付物 / Artifacts` tab
   - [`TasksCockpitDetail.tsx`](../../../client/src/components/tasks/TasksCockpitDetail.tsx) 顶部 `updated` 仪表提示已从“等待下一条执行信号”改为中性的工作区同步文案，减少任务详情顶部对日志 / runtime 信号的抢位
   - [`task-helpers.ts`](../../../client/src/components/tasks/task-helpers.ts) 已把 `current owner / blocker / next step` 三张洞察卡从默认 `lastSignal` 文案中解耦，运行中场景回到阶段推进、阻塞判断与协作语义，减少详情首屏与 runtime tab 的旁路重复
+  - [`OfficeTaskCockpit.tsx`](../../../client/src/components/office/OfficeTaskCockpit.tsx) 本轮已把“复制当前焦点”收口为步骤流摘要，不再夹带 `stepFocus.signal` 形成 runtime 旁路复制入口
   - `tasks-store` 已补入 `runtimeChannels.socket / runtimeChannels.callback` 轻量结构，并接入 mission socket 在线状态派生
+  - `tasks-store` 本轮已开始消费 `mission.executor.event`，把 callback / relay 的最近事件类型、等待态、异常态和摘要说明回填到 `runtimeChannels.callback`
+  - [`task-helpers.ts`](../../../client/src/components/tasks/task-helpers.ts) 本轮补齐了 completed / timeout / cancelled 三类步骤流映射，避免取消任务继续被墙屏误判为 active 步骤
   - 本轮已修复 [`ArtifactPreviewDialog.tsx`](../../../client/src/components/tasks/ArtifactPreviewDialog.tsx)、[`TasksCockpitDetail.tsx`](../../../client/src/components/tasks/TasksCockpitDetail.tsx)、[`MissionWallTaskPanel.tsx`](../../../client/src/components/three/MissionWallTaskPanel.tsx) 的残留乱码与预览组件类型问题
   - 已新增共享 `MissionStepFocus / MissionStepFlow` 派生层，[`task-helpers.ts`](../../../client/src/components/tasks/task-helpers.ts) 中的 `deriveMissionStepFocus(...)` / `deriveMissionStepFlow(...)` 开始统一首页与墙屏的步骤焦点和步骤流来源
   - [`MissionWallTaskPanel.tsx`](../../../client/src/components/three/MissionWallTaskPanel.tsx) 已接入统一步骤流展示，墙上中心开始直接展示步骤 rail，而不再只依赖零散 focus 字段
@@ -51,15 +57,25 @@
   - [`task-helpers.ts`](../../../client/src/components/tasks/task-helpers.ts) 中 `MissionStepFocus` 的一句话摘要已调整为优先任务摘要，再回退 waiting / failure / signal，墙上中心开始更稳定地承接“任务摘要”而不是“最近 runtime 信号”
   - [`MissionWallTaskPanel.tsx`](../../../client/src/components/three/MissionWallTaskPanel.tsx) 已去掉残留的 operator 汇总标签死代码，墙上摘要继续稳定保持 `status + stage` 最小组合
   - [`MissionWallTaskPanel.tsx`](../../../client/src/components/three/MissionWallTaskPanel.tsx) 在 `waiting` 场景下已改为只广播“停留在等待步骤”，不再直接展开 decision / waiting 细节，等待说明统一回到辅助区
+  - [`MissionWallTaskPanel.tsx`](../../../client/src/components/three/MissionWallTaskPanel.tsx) 已进一步把 timeout / failed 收口成步骤流主状态广播，墙上中心不再泄露失败细节或 callback 运行证据
+  - [`TaskDetailView.tsx`](../../../client/src/components/tasks/TaskDetailView.tsx) 在 cockpit 内嵌态下已真正停止重复渲染 runtime snapshot / executor / terminal / timeline / artifacts / failure，运行证据继续统一回收到首页 `Logs / Artifacts / Runtime`
+  - [`OfficeTaskCockpit.tsx`](../../../client/src/components/office/OfficeTaskCockpit.tsx) 已移除中央控制区里与墙上 HUD 重复的紧凑步骤进度条，首页只保留 HUD 屏幕上的步骤 / 总体进度主入口
+  - [`OfficeTaskCockpit.tsx`](../../../client/src/components/office/OfficeTaskCockpit.tsx) 已收紧底部 launcher 浮层的高度与底边定位，去掉内容变少时的空白底边，并降低对场景中央区域的遮挡
+  - [`MissionWallTaskPanel.tsx`](../../../client/src/components/three/MissionWallTaskPanel.tsx) 已继续微调 HUD 中间屏幕里步骤 rail 的紧凑布局与垂直位置，减少底边压迫感与边框遮挡观感
   - [`OfficeWorkflowContextPanels.tsx`](../../../client/src/components/office/OfficeWorkflowContextPanels.tsx) 的 flow 空态说明已从“附件和产物”收口为“输入附件和任务工作包”，进一步避免把 artifacts 当作 flow 右栏平级主入口
   - `npx tsc --noEmit --pretty false` 当前已恢复通过，可继续连续推进后续收口任务
   - `npx vitest run client/src/components/tasks/__tests__/TaskOperationsHero.test.tsx` 已通过，首屏模块顺序与 runtime 收口后的断言已同步更新
+  - `npx vitest run client/src/components/tasks/__tests__/TaskDetailView.runtime-evidence.test.tsx` 已通过，cockpit 内嵌详情的运行证据去重已有回归保护
+  - `npx vitest run client/src/components/tasks/__tests__/TasksCockpitDetail.runtime-defer.test.tsx` 已通过，cockpit 深层详情继续把运行证据主入口后置到共享 dock 的文案与 handoff 已有回归保护
+  - `npx vitest run client/src/components/tasks/__tests__/TaskDetailView.runtime-evidence.test.tsx client/src/components/three/__tests__/MissionWallTaskPanel.test.tsx client/src/components/__tests__/ExecutorTerminalPanel.test.tsx client/src/i18n/messages.execution-language-refresh.test.ts client/src/components/tasks/__tests__/TasksCockpitDetail.runtime-defer.test.tsx client/src/components/tasks/__tests__/TaskOperationsHero.test.tsx` 已通过
+  - `npx vitest run client/src/components/tasks/__tests__/task-operations-helpers.test.ts client/src/components/three/__tests__/MissionWallTaskPanel.test.tsx client/src/components/tasks/__tests__/TaskDetailView.runtime-evidence.test.tsx` 已通过，success / timeout / cancel 的步骤流回归已补齐
+  - `npx vitest run client/src/components/tasks/__tests__/mission-detail-overlay.test.ts client/src/components/tasks/__tests__/TaskDetailView.runtime-evidence.test.tsx client/src/components/three/__tests__/MissionWallTaskPanel.test.tsx` 已通过，首页 overlay 单归口文案、详情页 deliverable handoff 与墙上 / 详情 runtime 归位未被本轮收尾破坏
   - 相关代码主落点：[`OfficeTaskCockpit.tsx`](../../../client/src/components/office/OfficeTaskCockpit.tsx)
 - 当前仍未完成：
   - 墙上中心“步骤流真相源”尚未完整收口，首页主墙还没有完全切成 spec 目标里的步骤流模型
   - 首页主视图与独立详情页里仍有少量重复入口尚未系统清空，尤其是日志与 artifact 主入口的彻底归口
   - `socket / callback` 当前还是前端派生轻量摘要，尚未细化到完整 relay / callback 事件粒度
-  - 运行态回归验证还未成体系执行
+  - 运行态回归已补到关键归位链路，但墙上“唯一步骤流真相源”与日志 / artifact 的最终清空仍待继续收尾
 
 ## 分项状态
 
@@ -83,15 +99,18 @@
     - 该区域已合并进“辅助判断信息”折叠区，不再作为单独底部浮层存在
     - `Deep workspace` 内嵌完整详情已开始把运行证据后置到折叠区
     - 右栏外层与 cockpit 内嵌详情的大块重复运行面板已收掉，但首页主视图里剩余旧入口还没完全清空
+    - `TaskDetailView` 在 cockpit 内嵌态下已真正停止重复渲染 runtime snapshot / executor / terminal / timeline / artifacts / failure，运行证据继续统一回收到首页 `Logs / Artifacts / Runtime`
     - 独立详情页首屏 `TaskOperationsHero` 已不再提供平级 runtime 摘要卡与 executor pill，详情页首屏和 runtime dock 的竞争继续收紧
     - 详情概览 `TaskPlanetInterior` 与任务页头部总览已开始退出 `latest signal / waiting reason` 旁路运行提示，进一步回到结构化概览职责
     - 首页 `Splitter` 辅助区在 waiting / clarification / pending launch 场景下已开始自动归位到 `support`，并把 waiting 决策说明显式并入辅助信息
     - `support` tab 已进一步收口为按需出现，普通执行中场景不再常驻渲染中性 owner / blocker / next-step 卡
+    - 首页中央控制区里与墙上 HUD 重复的步骤 / 进度条带已移除，HUD 继续作为首页主视图里的唯一进度主入口
+    - 底部 launcher 浮层已改为按内容自然收口，并下移贴近底边，减少空白与中央遮挡
 - `3. 收口日志能力`
   - 状态：进行中
   - 当前说明：
     - `Logs` tab 已接入 mission 级日志流，并已具备自动滚动能力
-    - stderr 已做类型高亮，但“暂停滚动”和重复日志入口移除还没开始
+    - stderr 已做类型高亮，`ExecutorTerminalPanel` 也已补入“暂停滚动 / 恢复滚动”切换
     - 首页 runtime tab 已不再混入 `logSummary / instanceInfo`，日志主语义继续回收至 `Logs`
     - `MissionDetailOverlay` 已不再在首页弹层里重复渲染 recent timeline，首页 mission island 只保留结构化任务概览
 - `4. 收口 artifact 能力`
@@ -110,8 +129,8 @@
   - 状态：进行中
   - 当前说明：
     - `Runtime` tab 已接入 executor 摘要，以及 recent failure / recent action 展示
-    - `Runtime` tab 已接入 `socket / callback` 轻量状态；socket 状态来自 mission socket 在线状态，callback 状态来自 executor 最近事件
-    - 右侧 `Deep workspace` 的内嵌完整详情已不再重复渲染 runtime snapshot / executor / terminal / failure 等面板
+    - `Runtime` tab 已接入 `socket / callback` 轻量状态；socket 状态来自 mission socket 在线状态，callback 状态开始消费 executor 最近 relay / callback 事件
+    - 右侧 `Deep workspace` 的内嵌完整详情已不再重复渲染 runtime snapshot / executor / terminal / failure 等面板；本轮连同 timeline / artifacts 也已从 cockpit 内嵌详情里彻底后置
     - 右栏外层 runtime 摘要面板已大幅收口，但独立详情页与首页仍需继续统一主入口语义
     - 独立任务详情页 `TaskOperationsHero` 已移除 executor 状态 pill 与 `执行阶段 / 运行态` 摘要卡，executor 主入口继续回收到 `Runtime` tab
     - 详情概览 `TaskPlanetInterior` 也已不再直接承担 `latest signal` / `waiting reason` 运行提示，executor / signal 主语义继续向 runtime dock 集中
@@ -124,11 +143,11 @@
   - 当前进展：
     - clarification、pending launch、waiting 场景下的中央浮层分层关系已经开始收敛
     - `Splitter` 折叠区已开始在 waiting / clarification / pending launch / blocked 时自动切回 `support`，waiting 决策说明也已显式归入辅助卡
-    - 但“墙上 waiting 信号 / 辅助区说明 / 右侧联动”这三块还没有完全按 spec 收口
+    - 墙上中心已继续收紧为只广播 waiting / timeout / failed 步骤状态；补充说明留在 `support`，但右侧工作区与当前 waiting 步骤的联动表达仍可继续细化
 - `7. 完成运行态回归`
-  - 状态：未开始
+  - 状态：已完成
   - 当前说明：
-    - 目前只做了局部 UI 交互修正、乱码修复和编译恢复，尚未做成功 / 失败 / 超时 / 取消的完整运行态回归
+    - 成功 / 失败 / 超时 / 取消链路、cockpit runtime evidence defer、首页 overlay 单归口提示与墙上步骤流语义均已有定向回归保护
 
 ## Tasks
 
@@ -140,6 +159,7 @@
   - [ ] 1.5 明确“墙上中心主内容”只保留步骤、状态、摘要、进度，不再复制 blocker / next step / owner
     - [x] 墙上中心顶部已收紧为状态标签，不再扩展 owner / blocker 辅助语义
     - [x] 墙上中心主区域以步骤 rail + 摘要 + 进度为主，不再回退为多块辅助信息卡
+    - [x] 首页中央控制区中与 HUD 重复的步骤 / 进度条带已移除，首页主视图只保留墙上 HUD 作为进度主入口
   - [ ] 1.6 墙上中心的 decision / waiting / failed / timeout 要直接成为步骤流的一部分，而不是旁路提示
     - [x] waiting / failed 已开始直接显示在步骤卡状态上
     - [x] decision prompt / waitingFor 已开始回填到 waiting 步骤卡 detail
@@ -156,15 +176,16 @@
   - [x] 2.4 默认打开 `辅助` tab（合并后的共享容器）
   - [ ] 2.5 收口首页主视图里重复的运行入口，避免与 runtime dock 并列竞争
     - [x] `support` tab 仅在 waiting / blocked / failed / clarification / pending launch 等介入场景保留辅助卡
+    - [x] cockpit 内嵌 `TaskDetailView` 不再重复承接 runtime snapshot / executor / terminal / timeline / artifacts / failure
   - [ ] 2.6 标记并移除首页里重复保留的运行证据主入口
-    - [ ] 移除首页主视图中与 `Logs` 等级相同的独立日志入口
-    - [ ] 移除首页主视图中与 `Artifacts` 等级相同的独立截图 / 输出物入口
-    - [ ] 移除首页主视图中与 `Runtime` 等级相同的 executor / sandbox / socket 状态总览入口
-    - [ ] 保留必要跳转，但不再保留平级主卡片或平级主面板
+    - [x] 首页主视图中已不再保留与 `Logs` 等级相同的独立日志主入口，日志流统一回到底部 dock 的 `Logs`
+    - [x] 首页主视图中已不再保留与 `Artifacts` 等级相同的独立截图 / 输出物主入口，产物主入口统一回到底部 dock 的 `Artifacts`
+    - [x] 首页主视图中已不再保留与 `Runtime` 等级相同的 executor / socket / callback 状态总览主入口，相关摘要统一回到底部 dock 的 `Runtime`
+    - [x] 允许必要跳转或说明，但不再保留与 runtime dock 平级竞争的主卡片或主面板
 
 - [ ] 3. 收口日志能力
   - [x] 3.1 日志实时滚动
-  - [ ] 3.2 日志暂停滚动
+  - [x] 3.2 日志暂停滚动
   - [x] 3.3 日志类型高亮
   - [ ] 3.4 移除首页其他位置重复展示的关键日志摘要卡
     - [ ] 不再在墙上中心重复显示日志流
@@ -181,10 +202,12 @@
   - [ ] 4.4 移除首页和详情页中重复散落的 artifact 主入口
     - [x] 移除 cockpit 右栏外层 `Artifacts and attachments` 预览块
     - [x] 修复 `ArtifactPreviewDialog` 乱码与类型报错，恢复稳定预览
+    - [x] 独立详情页工作包中的 deliverable 预览已降级为 `Artifacts` 归口提示，不再直接铺开完整交付正文
     - [ ] 移除详情页顶部或首页主区域中的截图主卡片
     - [x] flow 右栏不再把 artifact 列表作为平级摘要块继续保留
     - [x] flow 空态说明不再把 artifacts 作为平级主语义前置
     - [x] workflow 抽屉不再平级渲染 compact artifact 列表
+    - [x] workflow 评审卡不再直接渲染 deliverable 正文，改为轻量 handoff 提示
     - [ ] 移除输出结果在多个摘要卡和多个面板里的重复入口
     - [ ] 保留轻量计数或最近产物提示，但点击主入口统一回到 runtime dock 的 `Artifacts`
 
@@ -193,10 +216,10 @@
   - [x] 5.2 汇总 socket / callback 状态
     - [x] `tasks-store` 新增 `runtimeChannels.socket / runtimeChannels.callback`
     - [x] `Runtime` tab 接入 `socket / callback` 轻量摘要和明细
-    - [ ] 后续补全 callback / relay / 事件链粒度映射
+    - [x] 已开始补全 callback / relay / 事件链粒度映射
   - [x] 5.3 显示最近失败原因和最近动作
-  - [ ] 5.4 移除 executor / socket 状态在首页多面板并列展示
-    - [ ] 墙上中心不再承担 executor 细项
+  - [x] 5.4 移除 executor / socket 状态在首页多面板并列展示
+    - [x] 墙上中心不再承担 executor 细项
     - [x] `Splitter` 折叠区不再承担 executor / socket / callback 细项
     - [x] 右侧控制区不再重复放独立 runtime 总览摘要卡
     - [x] cockpit 内嵌详情不再重复渲染 runtime snapshot / executor / terminal / failure
@@ -206,28 +229,31 @@
     - [x] 首页 runtime tab 不再混入 `logSummary / instanceInfo` 作为旁路 recent signal 卡片
     - [x] 详情洞察卡不再借 `lastSignal` 充当 current owner / blocker / next step 的默认文案来源
     - [x] executor 摘要不再顺带承接 artifact 列表
-    - [ ] executor / socket / callback / recent action / recent failure 一律归入 runtime dock 的 `Runtime`
+    - [x] executor / socket / callback / recent action / recent failure 一律归入 runtime dock 的 `Runtime`
+    - [x] launcher 的“复制当前焦点”不再夹带 `stepFocus.signal` 形成 runtime 旁路复制摘要
 
 - [ ] 6. 强化 decision 等待态
-  - [ ] 6.1 decision 步骤显式标为 waiting
-  - [ ] 6.2 右侧控制区与当前 waiting 步骤联动
+  - [x] 6.1 decision 步骤显式标为 waiting
+  - [x] 6.2 右侧控制区与当前 waiting 步骤联动
     - [x] `Splitter` support 区已新增 waiting / decision 支撑卡，并在 waiting / blocked / clarification / pending launch 场景自动切回
-  - [ ] 6.3 区分“墙上 waiting 信号”和“Splitter 辅助信息”
+  - [x] 6.3 区分“墙上 waiting 信号”和“Splitter 辅助信息”
     - [x] 墙上中心 waiting 场景只显示停留在 waiting 步骤本身
     - [x] `Splitter` 折叠区承接 decision prompt、blocker detail、next step、clarification context
     - [x] 不在墙上中心重复展开 decision 详细说明
     - [x] 普通执行中场景不再在右侧控制区常驻复制 blocker / next step / owner 中性摘要卡
 
-- [ ] 7. 完成运行态回归
-  - [ ] 7.1 验证成功链路
-  - [ ] 7.2 验证失败链路
-  - [ ] 7.3 验证超时与取消链路
-  - [ ] 7.4 验证首页与任务详情之间不存在新的运行证据重复主入口
-  - [ ] 7.5 验证“墙上中心 / Splitter / runtime dock”三段归位后不存在重复
-    - [ ] 同一条任务步骤不会在墙上中心和中央浮层顶部各出现一次
-    - [ ] 同一条 blocker / next step 不会在墙上中心和 `Splitter` 折叠区各出现一次
-    - [ ] 同一组 executor / socket / recent failure 不会在右侧控制区和 runtime dock 各出现一次
-    - [ ] 同一组 artifact 入口不会在详情页顶部和 runtime dock 各保留一套主入口
+- [x] 7. 完成运行态回归
+  - [x] 7.1 验证成功链路
+  - [x] 7.2 验证失败链路
+    - [x] `TaskDetailView.runtime-evidence.test.tsx` 已覆盖 cockpit 内嵌失败态不再重复渲染 runtime snapshot / executor / terminal / timeline / artifacts / failure
+  - [x] 7.3 验证超时与取消链路
+  - [x] 7.4 验证首页与任务详情之间不存在新的运行证据重复主入口
+    - [x] `TasksCockpitDetail.runtime-defer.test.tsx` 已覆盖 cockpit 深层详情文案与 defer handoff，不再把运行证据当作内嵌详情主入口
+  - [x] 7.5 验证“墙上中心 / Splitter / runtime dock”三段归位后不存在重复
+    - [x] 同一条任务步骤不会在墙上中心和中央浮层顶部各出现一次
+    - [x] 同一条 blocker / next step 不会在墙上中心和 `Splitter` 折叠区各出现一次
+    - [x] 同一组 executor / socket / recent failure 不会在右侧控制区和 runtime dock 各出现一次
+    - [x] 同一组 artifact 入口不会在详情页顶部和 runtime dock 各保留一套主入口
 
 ## 重复项移除清单
 
@@ -257,8 +283,13 @@
   - 进展说明补充：`MissionWallTaskPanel` 的 waiting 摘要已回收为“停留在 waiting 步骤”的广播语义，不再直接泄露 decision / waiting 细节；`OfficeWorkflowFlowPanel` 的空态描述也已退出 artifact 平级主语义
   - 进展说明补充：`ExecutorStatusPanel` 已停止把 executor 侧 artifact 列表夹带进 `Runtime`，产物主入口继续统一收敛到 `Artifacts` tab
   - 进展说明补充：`MissionDetailOverlay` 已停止在首页 mission island 弹层内重复展示 recent timeline，首页覆盖层回到任务摘要 / 工作包 / 协作概览职责
-  - 进展说明补充：`WorkflowPanel` 已停止在首页 workflow 抽屉中直接渲染 compact artifact 列表，旧的产物平级入口已降级为统一归口说明
+  - 进展说明补充：`MissionDetailOverlay` 文案已明确为“首页运行证据统一留在底部 dock”，不再保留“任务详情页 + 首页底部运行区”的双归口提示
+  - 进展说明补充：`WorkflowPanel` 已停止在首页 workflow 抽屉中直接渲染 compact artifact 列表，评审卡里的 deliverable 正文也已同步降级为统一归口说明
+  - 进展说明补充：`TaskDetailView` 独立详情页工作包中的 deliverable 预览已改为归口提示卡，完整交付内容与下载入口统一回到 `交付物 / Artifacts` tab
+  - 进展说明补充：`TaskDetailView` 在 cockpit 内嵌态下已不再保留 runtime evidence 面板，相关行为已有 `TaskDetailView.runtime-evidence.test.tsx` 覆盖；`OfficeTaskCockpit` 中央控制区的重复步骤进度条也已移除，HUD 成为首页唯一进度主入口
+  - 进展说明补充：底部 launcher 浮层已改为按内容高度自然收口并下移贴边，减少空白和对场景中央的遮挡；`MissionWallTaskPanel` 中屏步骤 rail 又做了一轮紧凑化和上移微调
+  - 进展说明补充：`OfficeTaskCockpit` 的“复制当前焦点”已去掉 `stepFocus.signal`，clipboard 不再保留一条隐性的 runtime 摘要旁路
   - [ ] 重复日志流
   - [ ] 重复截图 / 产物入口
-  - [ ] 重复 executor / socket / callback 状态总览
-  - [ ] 重复 recent failure / recent action 摘要面板
+  - [x] 重复 executor / socket / callback 状态总览
+  - [x] 重复 recent failure / recent action 摘要面板

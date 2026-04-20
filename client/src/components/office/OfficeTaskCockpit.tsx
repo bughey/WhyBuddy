@@ -641,7 +641,13 @@ export function OfficeTaskCockpit({
           "右侧任务工作区可继续提交决策",
           "Continue the decision in the task workspace on the right"
         )
-      : null,
+      : showWaitingSupportCard
+        ? t(
+            locale,
+            "墙上中心只广播等待步骤，补充说明统一留在这里",
+            "The wall only broadcasts the waiting step. Supporting detail stays here."
+          )
+        : null,
   ]
     .filter(Boolean)
     .join(" / ");
@@ -686,7 +692,6 @@ export function OfficeTaskCockpit({
   async function handleCopyFocusSummary() {
     const summary = [
       stepFocus.title,
-      stepFocus.signal,
       `${stepFocus.stageLabel} / ${stepFocus.progress}%`,
     ]
       .filter(Boolean)
@@ -1308,7 +1313,11 @@ export function OfficeTaskCockpit({
                   label={t(locale, "Callback", "Callback")}
                   value={selectedDetail.runtimeChannels.callback.label}
                   tone={
-                    selectedDetail.runtimeChannels.callback.status === "active"
+                    selectedDetail.runtimeChannels.callback.status === "error"
+                      ? "danger"
+                      : selectedDetail.runtimeChannels.callback.status === "waiting"
+                        ? "warning"
+                        : selectedDetail.runtimeChannels.callback.status === "active"
                       ? "success"
                       : "neutral"
                   }
@@ -1343,6 +1352,11 @@ export function OfficeTaskCockpit({
                 </div>
                 <div className="rounded-[12px] border border-white/60 bg-white/74 px-3 py-2 text-[10px] leading-4 text-stone-600">
                   {selectedDetail.runtimeChannels.callback.detail}
+                  {selectedDetail.runtimeChannels.callback.eventSummary ? (
+                    <div className="mt-1 text-[9px] leading-4 text-stone-500">
+                      {selectedDetail.runtimeChannels.callback.eventSummary}
+                    </div>
+                  ) : null}
                 </div>
               </div>
               {selectedDetail.executor ? (
