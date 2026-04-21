@@ -140,16 +140,16 @@ function MissionWallTaskPanelInner({
           "当前任务正按步骤流推进，日志与运行细节统一留在 Logs / Runtime。",
           "The mission is progressing through its step flow. Logs and runtime details stay in Logs / Runtime."
         );
+  const compactWallView = !fullscreen;
   const signalLine = compactText(
     wallSummary,
-    96
+    compactWallView ? 72 : 96
   );
   const progress = stepFocus.progress;
   const needsAttention =
     mission?.status === "failed" ||
     mission?.status === "waiting" ||
     (detail?.failureReasons.length ?? 0) > 0;
-  const compactWallView = !fullscreen;
   const summaryLabels = [statusLabel, stageLabel];
 
   const rootStyle: React.CSSProperties = fullscreen
@@ -188,7 +188,7 @@ function MissionWallTaskPanelInner({
       : "inset 0 1px 0 rgba(255,255,255,0.03)",
   };
 
-  const shellPadding = fullscreen ? 28 : 10;
+  const shellPadding = fullscreen ? 28 : 8;
 
   return (
     <div
@@ -257,6 +257,8 @@ function MissionWallTaskPanelInner({
             flexDirection: "column",
             height: "100%",
             padding: shellPadding,
+            transform: compactWallView ? "scale(0.94)" : undefined,
+            transformOrigin: "top center",
           }}
         >
           <div
@@ -368,18 +370,18 @@ function MissionWallTaskPanelInner({
 
           <div
             style={{
-              marginTop: fullscreen ? 28 : 8,
-              fontSize: fullscreen ? 42 : 13,
-              lineHeight: fullscreen ? 1.2 : 1.22,
+              marginTop: fullscreen ? 28 : 6,
+              fontSize: fullscreen ? 42 : 12,
+              lineHeight: fullscreen ? 1.2 : 1.16,
               fontWeight: 700,
               color: "#f8fafc",
               textWrap: "balance",
             }}
           >
-            {compactText(title, fullscreen ? 96 : 36)}
+            {compactText(title, fullscreen ? 96 : 32)}
           </div>
 
-          <div style={{ marginTop: fullscreen ? 24 : 8 }}>
+          <div style={{ marginTop: fullscreen ? 24 : 6 }}>
             <div
               style={{
                 display: "flex",
@@ -530,11 +532,11 @@ function MissionWallTaskPanelInner({
 
           <div
             style={{
-              marginTop: fullscreen ? 24 : 12,
+              marginTop: fullscreen ? 24 : 6,
               borderRadius: 12,
               border: `1px solid ${tone.accentSoft}`,
               background: "rgba(22,30,44,0.72)",
-              padding: fullscreen ? "18px 20px" : "7px 10px",
+              padding: fullscreen ? "18px 20px" : "6px 8px",
               color: "rgba(203,213,225,0.92)",
             }}
           >
@@ -558,7 +560,7 @@ function MissionWallTaskPanelInner({
               <span
                 style={{
                   fontSize: fullscreen ? 20 : 10,
-                  lineHeight: compactWallView ? 1.35 : 1.45,
+                  lineHeight: compactWallView ? 1.22 : 1.45,
                 }}
               >
                 {signalLine}

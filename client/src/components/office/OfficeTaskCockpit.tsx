@@ -193,7 +193,6 @@ export function OfficeTaskCockpit({
 
   const [search, setSearch] = useState("");
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<OfficeCockpitTab>("task");
   const [launchingPresetId, setLaunchingPresetId] = useState<string | null>(
     null
   );
@@ -226,6 +225,9 @@ export function OfficeTaskCockpit({
   const currentDialog = useNLCommandStore(state => state.currentDialog);
   const currentCommand = useNLCommandStore(state => state.currentCommand);
   const hasActiveClarification = currentDialog?.status === "active";
+  const [activeTab, setActiveTab] = useState<OfficeCockpitTab>(() =>
+    hasActiveClarification ? "launch" : "task"
+  );
 
   useEffect(() => {
     setClarificationExpanded(true);
@@ -1018,6 +1020,37 @@ export function OfficeTaskCockpit({
           </span>
         </div>
 
+        <div className="overflow-hidden px-1 pb-1 pt-1">
+          <UnifiedLaunchComposer
+            createMission={createMission}
+            activeTaskTitle={selectedTaskSummary?.title}
+            activeTaskDetail={selectedDetail}
+            operatorActionLoading={
+              activeTaskId
+                ? (operatorActionLoadingByMissionId[activeTaskId] ?? {})
+                : {}
+            }
+            onSubmitOperatorAction={handleSubmitOperatorAction}
+            onTaskResolved={handleTaskHubResolved}
+            compact
+            bare
+            dense
+            hideHeader
+            hideInputLabel
+            hideClarificationPanel
+            className="w-full"
+            onWorkflowResolved={resolution => {
+              setPendingLaunch({
+                workflowId: resolution.workflowId,
+                directive: resolution.directive,
+                attachmentCount: resolution.attachmentCount,
+                requestedAt: resolution.requestedAt,
+                missionId: resolution.missionId,
+              });
+              setActiveTab("flow");
+            }}
+          />
+        </div>
       </div>
 
     </div>
@@ -1561,8 +1594,8 @@ export function OfficeTaskCockpit({
                   title={t(locale, "统一发起", "Unified launch")}
                   description={t(
                     locale,
-                    "把任务输入、附件编排与补问链路并回右侧控制区，底部只保留轻量运行控制与证据 dock。",
-                    "Pull task launch, attachment orchestration, and clarification back into the right control column while the bottom rail stays focused on lightweight controls and runtime evidence."
+                    "中央底部保持唯一发起输入，这里只承接补问、待解析态与当前发起说明，避免出现第二套主输入。",
+                    "The center-bottom dock keeps the single launch input. This tab only carries clarification, pending-launch state, and launch guidance so a second primary composer does not appear."
                   )}
                 >
                   <div className="h-full overflow-y-auto pr-1">
@@ -1622,35 +1655,38 @@ export function OfficeTaskCockpit({
                             </button>
                           </div>
                         </div>
-                      ) : null}
-
-                      <UnifiedLaunchComposer
-                        createMission={createMission}
-                        activeTaskTitle={selectedTaskSummary?.title}
-                        activeTaskDetail={selectedDetail}
-                        operatorActionLoading={
-                          activeTaskId
-                            ? (operatorActionLoadingByMissionId[activeTaskId] ??
-                              {})
-                            : {}
-                        }
-                        onSubmitOperatorAction={handleSubmitOperatorAction}
-                        onTaskResolved={handleTaskHubResolved}
-                        onWorkflowResolved={resolution => {
-                          setPendingLaunch({
-                            workflowId: resolution.workflowId,
-                            directive: resolution.directive,
-                            attachmentCount: resolution.attachmentCount,
-                            requestedAt: resolution.requestedAt,
-                            missionId: resolution.missionId,
-                          });
-                          setActiveTab("flow");
-                        }}
-                        compact
-                        dense
-                        hideClarificationPanel
-                        className="w-full"
-                      />
+                      ) : (
+                        <div className="rounded-[18px] border border-stone-200/75 bg-white/76 p-3 shadow-[0_10px_24px_rgba(98,73,48,0.06)]">
+                          <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-stone-500">
+                            {t(locale, "发起说明", "Launch guidance")}
+                          </div>
+                          <div className="mt-2 space-y-2 text-[11px] leading-5 text-stone-600">
+                            {pendingLaunch ? (
+                              <div className="rounded-[14px] border border-amber-200/80 bg-amber-50/78 px-3 py-2 text-stone-700">
+                                {t(
+                                  locale,
+                                  "已进入团队准备阶段。中央控制台会继续保留输入，任务建立后会自动回到任务视角。",
+                                  "The request is in team-prep mode. The center console stays available, and focus will jump back to the mission once it is created."
+                                )}
+                              </div>
+                            ) : null}
+                            <p>
+                              {t(
+                                locale,
+                                "主输入框已经回到底部中央控制台，可直接继续发起任务、追加附件或执行请求。",
+                                "The main composer is back in the center-bottom console, where you can launch tasks, add attachments, or submit execution requests."
+                              )}
+                            </p>
+                            <p>
+                              {t(
+                                locale,
+                                "右侧保留为补问与状态说明区，避免同一个页面出现两套发起草稿和附件状态。",
+                                "The right column stays focused on clarification and status guidance so the page does not split into two draft or attachment states."
+                              )}
+                            </p>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </CockpitContextShell>
