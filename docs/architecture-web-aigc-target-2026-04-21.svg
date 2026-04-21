@@ -1,0 +1,395 @@
+<svg
+  width="1440"
+  height="1220"
+  viewBox="0 0 1440 1220"
+  xmlns="http://www.w3.org/2000/svg"
+  role="img"
+  aria-labelledby="title desc"
+>
+  <title id="title">Cube Pets Office Web-AIGC 目标态架构图</title>
+  <desc id="desc">
+    这是基于 2026-04-21 版本 Cube Pets Office 与 web-aigc 58 个迁移 spec
+    全部执行完成后的目标态架构推演图。图中展示统一入口与工作台、图设计控制面、
+    图运行控制面、52 节点能力层、Cube 原有智能与治理底座，以及执行与外部互联层
+    之间的协作关系。
+  </desc>
+
+  <style>
+    .ts {
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+      font-size: 12px;
+      fill: #0f172a;
+    }
+    .th {
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      fill: #0f172a;
+    }
+    .sm {
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+      font-size: 10px;
+      fill: #475569;
+    }
+    .xs {
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+      font-size: 9px;
+      fill: #64748b;
+    }
+    .fl {
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+      font-size: 8.5px;
+      letter-spacing: 0.02em;
+      fill: #475569;
+    }
+    .ttl {
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+      font-size: 24px;
+      font-weight: 700;
+      fill: #0f172a;
+    }
+    .subttl {
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+      font-size: 12px;
+      fill: #64748b;
+    }
+  </style>
+
+  <defs>
+    <marker
+      id="a"
+      viewBox="0 0 10 10"
+      refX="8"
+      refY="5"
+      markerWidth="6"
+      markerHeight="6"
+      orient="auto-start-reverse"
+    >
+      <path
+        d="M2 1L8 5L2 9"
+        fill="none"
+        stroke="context-stroke"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+    </marker>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f8fafc" />
+      <stop offset="100%" stop-color="#eef2ff" />
+    </linearGradient>
+  </defs>
+
+  <rect x="0" y="0" width="1440" height="1220" fill="url(#bg)" />
+
+  <text class="ttl" x="720" y="40" text-anchor="middle">Cube Pets Office x Web-AIGC 目标态架构图</text>
+  <text class="subttl" x="720" y="62" text-anchor="middle">
+    推演日期：2026-04-21 · 假设 58 个迁移 spec 已全部完成并进入稳定运行阶段
+  </text>
+
+  <!-- 顶部说明 -->
+  <rect x="40" y="84" width="1360" height="58" rx="14" fill="#ffffff" stroke="#cbd5e1" stroke-width="0.8" />
+  <text class="ts" x="64" y="108" fill="#334155">
+    目标态判断：Cube Pets Office 不再只是 mission-first 办公壳，而是升级为“可设计、可发布、可观测、可回放、可治理”的 AI Agent 图编排平台。
+  </text>
+  <text class="sm" x="64" y="128" fill="#64748b">
+    58 个 spec 的最终产物被收敛为 6 个平台层级：统一入口与工作台、图设计控制面、图运行控制面、52 节点能力层、智能与治理底座、执行与外部互联层。
+  </text>
+
+  <!-- Row 0 统一入口 -->
+  <rect x="40" y="170" width="1360" height="124" rx="16" fill="#e6f1fb" stroke="#85b7eb" stroke-width="0.9" />
+  <text class="th" x="720" y="194" text-anchor="middle" fill="#0c447c">
+    统一入口与工作台层
+  </text>
+
+  <rect x="58" y="212" width="126" height="50" rx="10" fill="#ffffff" stroke="#85b7eb" stroke-width="0.6" />
+  <text class="ts" x="121" y="232" text-anchor="middle" fill="#0c447c">Office Shell</text>
+  <text class="sm" x="121" y="248" text-anchor="middle" fill="#185fa5">桌面默认入口</text>
+
+  <rect x="196" y="212" width="126" height="50" rx="10" fill="#ffffff" stroke="#85b7eb" stroke-width="0.6" />
+  <text class="ts" x="259" y="232" text-anchor="middle" fill="#0c447c">任务驾驶舱</text>
+  <text class="sm" x="259" y="248" text-anchor="middle" fill="#185fa5">任务队列 + 实例态</text>
+
+  <rect x="334" y="212" width="126" height="50" rx="10" fill="#ffffff" stroke="#85b7eb" stroke-width="0.6" />
+  <text class="ts" x="397" y="232" text-anchor="middle" fill="#0c447c">图工作台入口</text>
+  <text class="sm" x="397" y="248" text-anchor="middle" fill="#185fa5">Graph Studio</text>
+
+  <rect x="472" y="212" width="126" height="50" rx="10" fill="#ffffff" stroke="#85b7eb" stroke-width="0.6" />
+  <text class="ts" x="535" y="232" text-anchor="middle" fill="#0c447c">统一发起器</text>
+  <text class="sm" x="535" y="248" text-anchor="middle" fill="#185fa5">命令 / 表单 / 会话</text>
+
+  <rect x="610" y="212" width="126" height="50" rx="10" fill="#ffffff" stroke="#85b7eb" stroke-width="0.6" />
+  <text class="ts" x="673" y="232" text-anchor="middle" fill="#0c447c">监控画布</text>
+  <text class="sm" x="673" y="248" text-anchor="middle" fill="#185fa5">实例流转 + 节点状态</text>
+
+  <rect x="748" y="212" width="126" height="50" rx="10" fill="#ffffff" stroke="#85b7eb" stroke-width="0.6" />
+  <text class="ts" x="811" y="232" text-anchor="middle" fill="#0c447c">会话检查台</text>
+  <text class="sm" x="811" y="248" text-anchor="middle" fill="#185fa5">session / message / HITL</text>
+
+  <rect x="886" y="212" width="126" height="50" rx="10" fill="#ffffff" stroke="#85b7eb" stroke-width="0.6" />
+  <text class="ts" x="949" y="232" text-anchor="middle" fill="#0c447c">回放审计台</text>
+  <text class="sm" x="949" y="248" text-anchor="middle" fill="#185fa5">replay / audit / lineage</text>
+
+  <rect x="1024" y="212" width="126" height="50" rx="10" fill="#ffffff" stroke="#85b7eb" stroke-width="0.6" />
+  <text class="ts" x="1087" y="232" text-anchor="middle" fill="#0c447c">发布与版本台</text>
+  <text class="sm" x="1087" y="248" text-anchor="middle" fill="#185fa5">版本 / 发布 / 回滚</text>
+
+  <rect x="1162" y="212" width="110" height="50" rx="10" fill="#ffffff" stroke="#85b7eb" stroke-width="0.6" />
+  <text class="ts" x="1217" y="232" text-anchor="middle" fill="#0c447c">Scene3D</text>
+  <text class="sm" x="1217" y="248" text-anchor="middle" fill="#185fa5">墙面态势屏</text>
+
+  <rect x="1284" y="212" width="98" height="50" rx="10" fill="#ffffff" stroke="#85b7eb" stroke-width="0.6" />
+  <text class="ts" x="1333" y="232" text-anchor="middle" fill="#0c447c">Feishu Relay</text>
+  <text class="sm" x="1333" y="248" text-anchor="middle" fill="#185fa5">外部触发</text>
+
+  <!-- Row 1 设计控制面 -->
+  <rect x="40" y="324" width="650" height="250" rx="18" fill="#eaf3de" stroke="#97c459" stroke-width="0.9" />
+  <text class="th" x="365" y="350" text-anchor="middle" fill="#27500a">
+    图设计控制面
+  </text>
+
+  <rect x="58" y="372" width="186" height="56" rx="10" fill="#ffffff" stroke="#97c459" stroke-width="0.6" />
+  <text class="ts" x="151" y="394" text-anchor="middle" fill="#27500a">图定义与草稿仓库</text>
+  <text class="sm" x="151" y="411" text-anchor="middle" fill="#3b6d11">graph / draft / metadata</text>
+
+  <rect x="256" y="372" width="186" height="56" rx="10" fill="#ffffff" stroke="#97c459" stroke-width="0.6" />
+  <text class="ts" x="349" y="394" text-anchor="middle" fill="#27500a">节点 Schema 注册中心</text>
+  <text class="sm" x="349" y="411" text-anchor="middle" fill="#3b6d11">52 节点协议 / 表单 / I/O</text>
+
+  <rect x="454" y="372" width="218" height="56" rx="10" fill="#ffffff" stroke="#97c459" stroke-width="0.6" />
+  <text class="ts" x="563" y="394" text-anchor="middle" fill="#27500a">版本 / 发布 / 恢复中心</text>
+  <text class="sm" x="563" y="411" text-anchor="middle" fill="#3b6d11">draft → version → publish → restore</text>
+
+  <rect x="58" y="442" width="186" height="56" rx="10" fill="#ffffff" stroke="#97c459" stroke-width="0.6" />
+  <text class="ts" x="151" y="464" text-anchor="middle" fill="#27500a">图校验器</text>
+  <text class="sm" x="151" y="481" text-anchor="middle" fill="#3b6d11">必填 / 边校验 / 类型约束</text>
+
+  <rect x="256" y="442" width="186" height="56" rx="10" fill="#ffffff" stroke="#97c459" stroke-width="0.6" />
+  <text class="ts" x="349" y="464" text-anchor="middle" fill="#27500a">图编译器</text>
+  <text class="sm" x="349" y="481" text-anchor="middle" fill="#3b6d11">graph spec → runtime plan</text>
+
+  <rect x="454" y="442" width="218" height="56" rx="10" fill="#ffffff" stroke="#97c459" stroke-width="0.6" />
+  <text class="ts" x="563" y="464" text-anchor="middle" fill="#27500a">安全与治理门禁</text>
+  <text class="sm" x="563" y="481" text-anchor="middle" fill="#3b6d11">权限、风控、审计前置规则</text>
+
+  <rect x="58" y="512" width="286" height="42" rx="8" fill="#f7fee7" stroke="#97c459" stroke-width="0.6" />
+  <text class="ts" x="201" y="529" text-anchor="middle" fill="#27500a">平台 spec 映射：domain-model / security-governance</text>
+  <text class="xs" x="201" y="544" text-anchor="middle" fill="#3b6d11">是所有节点 spec 的统一上位约束</text>
+
+  <rect x="356" y="512" width="316" height="42" rx="8" fill="#f7fee7" stroke="#97c459" stroke-width="0.6" />
+  <text class="ts" x="514" y="529" text-anchor="middle" fill="#27500a">图设计器不再只是前端页面，而是正式的控制面产品</text>
+  <text class="xs" x="514" y="544" text-anchor="middle" fill="#3b6d11">支撑多版本、可回滚、可审核、可追责</text>
+
+  <!-- Row 1b 运行控制面 -->
+  <rect x="720" y="324" width="680" height="250" rx="18" fill="#faeeda" stroke="#fac775" stroke-width="0.9" />
+  <text class="th" x="1060" y="350" text-anchor="middle" fill="#633806">
+    图运行控制面
+  </text>
+
+  <rect x="738" y="372" width="194" height="56" rx="10" fill="#ffffff" stroke="#fac775" stroke-width="0.6" />
+  <text class="ts" x="835" y="394" text-anchor="middle" fill="#633806">图运行时引擎</text>
+  <text class="sm" x="835" y="411" text-anchor="middle" fill="#854f0b">instance / scheduler / state</text>
+
+  <rect x="944" y="372" width="194" height="56" rx="10" fill="#ffffff" stroke="#fac775" stroke-width="0.6" />
+  <text class="ts" x="1041" y="394" text-anchor="middle" fill="#633806">节点适配器注册中心</text>
+  <text class="sm" x="1041" y="411" text-anchor="middle" fill="#854f0b">node executor / adapter binding</text>
+
+  <rect x="1150" y="372" width="232" height="56" rx="10" fill="#ffffff" stroke="#fac775" stroke-width="0.6" />
+  <text class="ts" x="1266" y="394" text-anchor="middle" fill="#633806">边跳转与条件解析器</text>
+  <text class="sm" x="1266" y="411" text-anchor="middle" fill="#854f0b">condition / loop / jump / branch</text>
+
+  <rect x="738" y="442" width="194" height="56" rx="10" fill="#ffffff" stroke="#fac775" stroke-width="0.6" />
+  <text class="ts" x="835" y="464" text-anchor="middle" fill="#633806">会话与实例管理</text>
+  <text class="sm" x="835" y="481" text-anchor="middle" fill="#854f0b">session / graph-instance / resume</text>
+
+  <rect x="944" y="442" width="194" height="56" rx="10" fill="#ffffff" stroke="#fac775" stroke-width="0.6" />
+  <text class="ts" x="1041" y="464" text-anchor="middle" fill="#633806">等待态与人工介入恢复</text>
+  <text class="sm" x="1041" y="481" text-anchor="middle" fill="#854f0b">HITL / user_input / confirm / selection</text>
+
+  <rect x="1150" y="442" width="232" height="56" rx="10" fill="#ffffff" stroke="#fac775" stroke-width="0.6" />
+  <text class="ts" x="1266" y="464" text-anchor="middle" fill="#633806">任务投影桥</text>
+  <text class="sm" x="1266" y="481" text-anchor="middle" fill="#854f0b">graph instance → mission / task / timeline</text>
+
+  <rect x="738" y="512" width="298" height="42" rx="8" fill="#fff7ed" stroke="#fac775" stroke-width="0.6" />
+  <text class="ts" x="887" y="529" text-anchor="middle" fill="#633806">平台 spec 映射：runtime-engine / session-instance / mission-projection</text>
+  <text class="xs" x="887" y="544" text-anchor="middle" fill="#854f0b">把图运行时变成 Cube 任务系统的一等公民</text>
+
+  <rect x="1048" y="512" width="334" height="42" rx="8" fill="#fff7ed" stroke="#fac775" stroke-width="0.6" />
+  <text class="ts" x="1215" y="529" text-anchor="middle" fill="#633806">最终态不是“另起一套运行时”，而是图运行时与 Mission Runtime 双向投影</text>
+  <text class="xs" x="1215" y="544" text-anchor="middle" fill="#854f0b">对用户显示任务，对平台内部显示 graph instance</text>
+
+  <!-- 箭头 顶部到控制面 -->
+  <path d="M397 262 L397 306 L365 306 L365 324" fill="none" stroke="#185fa5" stroke-width="1" marker-end="url(#a)" />
+  <rect x="312" y="298" width="108" height="14" rx="4" fill="#e6f1fb" />
+  <text class="fl" x="366" y="308" text-anchor="middle" fill="#185fa5">设计 / 配置 / 发布</text>
+
+  <path d="M673 262 L673 306 L835 306 L835 324" fill="none" stroke="#185fa5" stroke-width="1" marker-end="url(#a)" />
+  <rect x="692" y="298" width="116" height="14" rx="4" fill="#e6f1fb" />
+  <text class="fl" x="750" y="308" text-anchor="middle" fill="#185fa5">监控 / 运行 / 恢复</text>
+
+  <path d="M1087 262 L1087 306 L563 306 L563 324" fill="none" stroke="#185fa5" stroke-width="0.9" stroke-dasharray="4 3" marker-end="url(#a)" />
+  <rect x="896" y="298" width="120" height="14" rx="4" fill="#e6f1fb" />
+  <text class="fl" x="956" y="308" text-anchor="middle" fill="#185fa5">版本与发布回流控制面</text>
+
+  <path d="M949 262 L949 306 L1266 306 L1266 324" fill="none" stroke="#185fa5" stroke-width="0.9" stroke-dasharray="4 3" marker-end="url(#a)" />
+  <rect x="1022" y="298" width="120" height="14" rx="4" fill="#e6f1fb" />
+  <text class="fl" x="1082" y="308" text-anchor="middle" fill="#185fa5">回放 / 审计流入运行面</text>
+
+  <!-- Row 2 节点能力层 -->
+  <rect x="40" y="608" width="1360" height="230" rx="18" fill="#eeedfe" stroke="#afa9ec" stroke-width="0.9" />
+  <text class="th" x="720" y="634" text-anchor="middle" fill="#3c3489">
+    52 节点能力层（按 8 个能力簇收敛）
+  </text>
+  <text class="sm" x="720" y="652" text-anchor="middle" fill="#534ab7">
+    迁移完成后，52 个节点不应该在架构图里散成 52 个方块，而应该沉降为可组合的能力簇，由统一图运行时调度
+  </text>
+
+  <rect x="58" y="674" width="154" height="70" rx="12" fill="#ffffff" stroke="#afa9ec" stroke-width="0.6" />
+  <text class="ts" x="135" y="696" text-anchor="middle" fill="#3c3489">A. 流程控制簇</text>
+  <text class="sm" x="135" y="713" text-anchor="middle" fill="#534ab7">start / end / condition</text>
+  <text class="sm" x="135" y="728" text-anchor="middle" fill="#534ab7">loop / jump / variable</text>
+
+  <rect x="224" y="674" width="154" height="70" rx="12" fill="#ffffff" stroke="#afa9ec" stroke-width="0.6" />
+  <text class="ts" x="301" y="696" text-anchor="middle" fill="#3c3489">B. 人工输入簇</text>
+  <text class="sm" x="301" y="713" text-anchor="middle" fill="#534ab7">user_input / selection</text>
+  <text class="sm" x="301" y="728" text-anchor="middle" fill="#534ab7">confirm / param_collection</text>
+
+  <rect x="390" y="674" width="154" height="70" rx="12" fill="#ffffff" stroke="#afa9ec" stroke-width="0.6" />
+  <text class="ts" x="467" y="696" text-anchor="middle" fill="#3c3489">C. 对话问答簇</text>
+  <text class="sm" x="467" y="713" text-anchor="middle" fill="#534ab7">dialogue / robot_reply</text>
+  <text class="sm" x="467" y="728" text-anchor="middle" fill="#534ab7">knowledge_qa / web_qa / llm</text>
+
+  <rect x="556" y="674" width="154" height="70" rx="12" fill="#ffffff" stroke="#afa9ec" stroke-width="0.6" />
+  <text class="ts" x="633" y="696" text-anchor="middle" fill="#3c3489">D. 内容处理簇</text>
+  <text class="sm" x="633" y="713" text-anchor="middle" fill="#534ab7">长文抽取 / 分片 / 搜索</text>
+  <text class="sm" x="633" y="728" text-anchor="middle" fill="#534ab7">翻译 / Excel / 网页读取</text>
+
+  <rect x="722" y="674" width="154" height="70" rx="12" fill="#ffffff" stroke="#afa9ec" stroke-width="0.6" />
+  <text class="ts" x="799" y="696" text-anchor="middle" fill="#3c3489">E. 多模态簇</text>
+  <text class="sm" x="799" y="713" text-anchor="middle" fill="#534ab7">OCR / ASR / 图片搜索</text>
+  <text class="sm" x="799" y="728" text-anchor="middle" fill="#534ab7">AI PPT / 动态图表</text>
+
+  <rect x="888" y="674" width="154" height="70" rx="12" fill="#ffffff" stroke="#afa9ec" stroke-width="0.6" />
+  <text class="ts" x="965" y="696" text-anchor="middle" fill="#3c3489">F. 工具集成簇</text>
+  <text class="sm" x="965" y="713" text-anchor="middle" fill="#534ab7">mcp / auto_agent</text>
+  <text class="sm" x="965" y="728" text-anchor="middle" fill="#534ab7">internal_api / passthrough_api</text>
+
+  <rect x="1054" y="674" width="154" height="70" rx="12" fill="#ffffff" stroke="#afa9ec" stroke-width="0.6" />
+  <text class="ts" x="1131" y="696" text-anchor="middle" fill="#3c3489">G. 记忆向量簇</text>
+  <text class="sm" x="1131" y="713" text-anchor="middle" fill="#534ab7">vector_query / insert</text>
+  <text class="sm" x="1131" y="728" text-anchor="middle" fill="#534ab7">update / delete / similarity</text>
+
+  <rect x="1220" y="674" width="162" height="70" rx="12" fill="#ffffff" stroke="#afa9ec" stroke-width="0.6" />
+  <text class="ts" x="1301" y="696" text-anchor="middle" fill="#3c3489">H. 业务动作簇</text>
+  <text class="sm" x="1301" y="713" text-anchor="middle" fill="#534ab7">事务流 / 通知 / 页面跳转</text>
+  <text class="sm" x="1301" y="728" text-anchor="middle" fill="#534ab7">open_page / dashboard / report</text>
+
+  <rect x="88" y="764" width="1264" height="54" rx="12" fill="#f5f3ff" stroke="#afa9ec" stroke-width="0.6" />
+  <text class="ts" x="720" y="786" text-anchor="middle" fill="#3c3489">
+    节点执行统一规则：节点 Schema 校验 → 参数装配 → 运行态上下文注入 → 执行器适配 → 结果标准化 → 状态 / 审计 / 回放事件落库
+  </text>
+  <text class="xs" x="720" y="804" text-anchor="middle" fill="#534ab7">
+    这意味着“节点很多”并不等于“平台很散”，真正的可扩展性来自统一协议、统一执行链、统一治理面，而不是把 52 个节点做成 52 套孤立实现
+  </text>
+
+  <!-- 上下连接 -->
+  <path d="M349 498 L349 590 L301 590 L301 674" fill="none" stroke="#6c63d3" stroke-width="1" marker-end="url(#a)" />
+  <rect x="270" y="582" width="110" height="14" rx="4" fill="#eeedfe" />
+  <text class="fl" x="325" y="592" text-anchor="middle" fill="#534ab7">Schema / 编译产物</text>
+
+  <path d="M1041 498 L1041 590 L965 590 L965 674" fill="none" stroke="#6c63d3" stroke-width="1" marker-end="url(#a)" />
+  <rect x="984" y="582" width="116" height="14" rx="4" fill="#eeedfe" />
+  <text class="fl" x="1042" y="592" text-anchor="middle" fill="#534ab7">运行调度 / 节点执行</text>
+
+  <!-- Row 3 底座 -->
+  <rect x="40" y="868" width="910" height="220" rx="18" fill="#faece7" stroke="#f0997b" stroke-width="0.9" />
+  <text class="th" x="495" y="894" text-anchor="middle" fill="#4a1b0c">
+    Cube 原有智能、任务与治理底座
+  </text>
+
+  <rect x="58" y="914" width="198" height="56" rx="10" fill="#ffffff" stroke="#f0997b" stroke-width="0.6" />
+  <text class="ts" x="157" y="936" text-anchor="middle" fill="#712b13">Mission Runtime</text>
+  <text class="sm" x="157" y="953" text-anchor="middle" fill="#993c1d">任务状态机 / 控制流 / Step</text>
+
+  <rect x="268" y="914" width="198" height="56" rx="10" fill="#ffffff" stroke="#f0997b" stroke-width="0.6" />
+  <text class="ts" x="367" y="936" text-anchor="middle" fill="#712b13">Cube Brain</text>
+  <text class="sm" x="367" y="953" text-anchor="middle" fill="#993c1d">组织编排 / 动态角色 / Skill 系统</text>
+
+  <rect x="478" y="914" width="198" height="56" rx="10" fill="#ffffff" stroke="#f0997b" stroke-width="0.6" />
+  <text class="ts" x="577" y="936" text-anchor="middle" fill="#712b13">记忆与知识底座</text>
+  <text class="sm" x="577" y="953" text-anchor="middle" fill="#993c1d">3-tier memory / KG / RAG / 向量库</text>
+
+  <rect x="688" y="914" width="244" height="56" rx="10" fill="#ffffff" stroke="#f0997b" stroke-width="0.6" />
+  <text class="ts" x="810" y="936" text-anchor="middle" fill="#712b13">治理与信任底座</text>
+  <text class="sm" x="810" y="953" text-anchor="middle" fill="#993c1d">RBAC / 成本治理 / Audit Chain / Lineage</text>
+
+  <rect x="58" y="986" width="272" height="78" rx="10" fill="#fff7ed" stroke="#f0997b" stroke-width="0.6" />
+  <text class="ts" x="194" y="1008" text-anchor="middle" fill="#712b13">最终融合关系</text>
+  <text class="sm" x="194" y="1027" text-anchor="middle" fill="#993c1d">Graph Runtime 并不替换 Mission Runtime</text>
+  <text class="sm" x="194" y="1043" text-anchor="middle" fill="#993c1d">而是把图实例投影成任务实例，把任务证据反向挂回图实例</text>
+
+  <rect x="346" y="986" width="272" height="78" rx="10" fill="#fff7ed" stroke="#f0997b" stroke-width="0.6" />
+  <text class="ts" x="482" y="1008" text-anchor="middle" fill="#712b13">对用户的感知</text>
+  <text class="sm" x="482" y="1027" text-anchor="middle" fill="#993c1d">看到的是任务、会话、结果、回放、审计</text>
+  <text class="sm" x="482" y="1043" text-anchor="middle" fill="#993c1d">而不是纯技术视角的 graph instance 内部结构</text>
+
+  <rect x="634" y="986" width="298" height="78" rx="10" fill="#fff7ed" stroke="#f0997b" stroke-width="0.6" />
+  <text class="ts" x="783" y="1008" text-anchor="middle" fill="#712b13">对平台的感知</text>
+  <text class="sm" x="783" y="1027" text-anchor="middle" fill="#993c1d">看到的是图、节点、实例、边跳转、等待态、恢复点</text>
+  <text class="sm" x="783" y="1043" text-anchor="middle" fill="#993c1d">从而具备真正的平台化扩展能力</text>
+
+  <!-- Row 3b 执行与外部互联 -->
+  <rect x="980" y="868" width="420" height="220" rx="18" fill="#e6fffa" stroke="#38b2ac" stroke-width="0.9" />
+  <text class="th" x="1190" y="894" text-anchor="middle" fill="#234e52">
+    执行与外部互联层
+  </text>
+
+  <rect x="998" y="914" width="122" height="56" rx="10" fill="#ffffff" stroke="#38b2ac" stroke-width="0.6" />
+  <text class="ts" x="1059" y="936" text-anchor="middle" fill="#234e52">Lobster Exec</text>
+  <text class="sm" x="1059" y="953" text-anchor="middle" fill="#2c7a7b">real / native / mock</text>
+
+  <rect x="1132" y="914" width="122" height="56" rx="10" fill="#ffffff" stroke="#38b2ac" stroke-width="0.6" />
+  <text class="ts" x="1193" y="936" text-anchor="middle" fill="#234e52">A2A / Agent Bridge</text>
+  <text class="sm" x="1193" y="953" text-anchor="middle" fill="#2c7a7b">guest agent / swarm</text>
+
+  <rect x="1266" y="914" width="116" height="56" rx="10" fill="#ffffff" stroke="#38b2ac" stroke-width="0.6" />
+  <text class="ts" x="1324" y="936" text-anchor="middle" fill="#234e52">外部工具与 API</text>
+  <text class="sm" x="1324" y="953" text-anchor="middle" fill="#2c7a7b">MCP / 内外部系统</text>
+
+  <rect x="998" y="986" width="384" height="78" rx="10" fill="#f0fdfa" stroke="#38b2ac" stroke-width="0.6" />
+  <text class="ts" x="1190" y="1008" text-anchor="middle" fill="#234e52">外部世界不再直接侵入业务页面，而是统一被节点适配层与执行层接住</text>
+  <text class="sm" x="1190" y="1027" text-anchor="middle" fill="#2c7a7b">这样多工具、多 Agent、多 API、多模态能力都能以节点方式沉淀进平台，而不是每次临时写死一条业务链路</text>
+  <text class="sm" x="1190" y="1043" text-anchor="middle" fill="#2c7a7b">这是 58 份 spec 全部落地后最核心的架构跃迁</text>
+
+  <!-- vertical arrows -->
+  <path d="M720 818 L720 852 L495 852 L495 868" fill="none" stroke="#d85a30" stroke-width="1" marker-end="url(#a)" />
+  <rect x="608" y="844" width="112" height="14" rx="4" fill="#faece7" />
+  <text class="fl" x="664" y="854" text-anchor="middle" fill="#993c1d">任务 / 证据 / 记忆</text>
+
+  <path d="M965 744 L965 792 L1059 792 L1059 914" fill="none" stroke="#2c7a7b" stroke-width="1" marker-end="url(#a)" />
+  <rect x="972" y="784" width="104" height="14" rx="4" fill="#e6fffa" />
+  <text class="fl" x="1024" y="794" text-anchor="middle" fill="#2c7a7b">执行器适配输出</text>
+
+  <path d="M1131 744 L1131 792 L1193 792 L1193 914" fill="none" stroke="#2c7a7b" stroke-width="0.9" stroke-dasharray="4 3" marker-end="url(#a)" />
+  <rect x="1114" y="784" width="108" height="14" rx="4" fill="#e6fffa" />
+  <text class="fl" x="1168" y="794" text-anchor="middle" fill="#2c7a7b">外部 Agent 协作</text>
+
+  <!-- 侧边注解 -->
+  <rect x="40" y="1114" width="1360" height="74" rx="14" fill="#ffffff" stroke="#cbd5e1" stroke-width="0.7" />
+  <text class="th" x="120" y="1140" fill="#0f172a">推演结论</text>
+  <text class="ts" x="160" y="1140" fill="#334155">
+    如果这 58 个 spec 都执行完，`cube-pets-office` 的架构图会从“任务型 AI 办公产品”进化为“任务产品壳 + 图编排平台内核 + 节点能力市场 + 可观测治理体系”。
+  </text>
+  <text class="sm" x="64" y="1162" fill="#64748b">
+    真正的扩展性不来自文档数量本身，而来自：统一领域模型、统一节点协议、统一运行时、统一回放审计、统一治理门禁，以及 Mission / Graph 双视角共存。
+  </text>
+
+  <!-- Legend -->
+  <rect x="1130" y="30" width="270" height="38" rx="10" fill="#ffffff" stroke="#cbd5e1" stroke-width="0.6" />
+  <circle cx="1152" cy="49" r="5" fill="#e6f1fb" stroke="#85b7eb" stroke-width="0.6" />
+  <text class="sm" x="1164" y="53">工作台入口</text>
+  <circle cx="1236" cy="49" r="5" fill="#eaf3de" stroke="#97c459" stroke-width="0.6" />
+  <text class="sm" x="1248" y="53">设计控制面</text>
+  <circle cx="1328" cy="49" r="5" fill="#faeeda" stroke="#fac775" stroke-width="0.6" />
+  <text class="sm" x="1340" y="53">运行控制面</text>
+</svg>
