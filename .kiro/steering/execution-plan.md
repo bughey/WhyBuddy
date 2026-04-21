@@ -2,7 +2,7 @@
  * @Author: wangchunji
  * @Date: 2026-04-01 09:20:21
  * @Description:
- * @LastEditTime: 2026-04-15 02:20:00
+* @LastEditTime: 2026-04-21 14:10:00
  * @LastEditors: wangchunji
 -->
 
@@ -14,7 +14,7 @@
 
 ## 总览
 
-截至 2026-04-15，`.kiro/specs` 共 66 个目录。前三层主线与补充 spec `holographic-ui` 已基本落地，`workflow-artifacts-display` 已完成功能开发、待最终检查点；任务控制台补完主线与信息架构收口主线已完成，办公室主壳与统一智能发起入口已进入收口阶段，`launch-operator-surface-convergence` 已完成开发与自动化验证、仅剩桌面手测，当前新增规划重点继续转向桌面端首屏体验收束与后墙场景化监控设备推进，平台层能力（L31-L38）仍待环境就绪。
+截至 2026-04-21，`.kiro/specs` 共 77 个目录。前三层主线与补充 spec `holographic-ui` 已基本落地，`workflow-artifacts-display` 已完成功能开发、待最终检查点；任务控制台补完主线与信息架构收口主线已完成，办公室主壳与统一智能发起入口已进入收口阶段，`launch-operator-surface-convergence` 已完成开发与自动化验证、仅剩桌面手测，最新一轮已补中央底部统一发起框回归、右侧 `Launch` 说明位收束与墙面 `Mission Control` HUD 遮挡修复，当前新增规划重点继续转向桌面端首屏体验收束与后墙场景化监控设备推进，平台层能力（L31-L38）仍待环境就绪。
 
 > **维护说明**：本文件保留原始执行顺序与依赖分析，供追溯和继续排期使用；若与旧段落的历史口径冲突，以本节快照为准。
 
@@ -37,11 +37,11 @@
 - 历史尾项：`mission-runtime`、`multi-modal-vision`、`nl-command-center`、`state-persistence-recovery` 仍有少量未勾选任务，属于补测或收尾项。
 - 新增近端主线：`mission-cancel-control`、`mission-operator-actions`、`task-detail-operations-first`、`execution-language-refresh`、`mission-ui-polish` 已完成。
 - 新增下一波规划：`navigation-convergence`、`task-hub-convergence`、`api-fallback-empty-states`、`workflow-panel-decomposition`、`scene-agent-interaction`、`workspace-visual-unification` 已完成并合并到 `main`。
-- `office-task-cockpit` 已进入收口阶段，桌面端办公室主壳、三栏驾驶舱、右侧上下文 tab 与统一智能发起入口已落地，剩余桌面兼容回归与手测。
+- `office-task-cockpit` 已进入收口阶段，桌面端办公室主壳、三栏驾驶舱、右侧上下文 tab 与统一智能发起入口已落地；2026-04-21 已恢复中央底部统一发起框为单一主入口，并将右侧 `Launch` 收束为说明区，剩余桌面兼容回归与手测。
 - `task-os-home-redesign-v1` 已补一处桌面断点稳定性修正：为 `office-cockpit-splitter` 的 panel 增加 `min-width:0` / `min-height:0`，避免 1280+ 下横向溢出导致布局抖动（2026-04-20）。
-- `launch-operator-surface-convergence` 已完成第一阶段实现：`UnifiedLaunchComposer` 接入底部任务操作 rail，`OfficeTaskCockpit.tsx` / `TasksPage.tsx` 已完成接线，`TasksCockpitDetail` 首屏独立任务操作卡已降级为建议与依据区；`tasks.md` 当前仅剩 `7.4` 桌面端与窄宽度手动验证未勾选。
+- `launch-operator-surface-convergence` 已完成第一阶段实现：`UnifiedLaunchComposer` 已恢复为中央底部任务操作 rail 的唯一主发起入口，`OfficeTaskCockpit.tsx` / `TasksPage.tsx` 已完成接线，`TasksCockpitDetail` 首屏独立任务操作卡与右侧 `Launch` 已收束为建议与依据区；自动化回归已补 `OfficeTaskCockpit.test.tsx`，`tasks.md` 当前仅剩 `7.4` 桌面端与窄宽度手动验证未勾选。
 - `office-cockpit-first-screen-refresh` 已进入近端规划，作为 `office-task-cockpit` 的后续桌面首屏体验收口项，聚焦“克制驾驶舱 + 主次分层”。
-- `office-wall-display-redesign` 已进入近端规划，作为 `scene-mission-fusion`、`sandbox-live-preview` 与 `office-task-cockpit` 的后续墙面监控屏改造项，聚焦把后墙升级为“终端 / 任务 / 浏览器”三分区显示器。
+- `office-wall-display-redesign` 已进入近端规划，作为 `scene-mission-fusion`、`sandbox-live-preview` 与 `office-task-cockpit` 的后续墙面监控屏改造项，聚焦把后墙升级为“终端 / 任务 / 浏览器”三分区显示器；其中 2026-04-21 已先修复 `MissionWallTaskPanel` 紧凑 HUD 底部内容被遮挡的问题。
 - 待启动：`i18n-cleanup`、第四层 L31-L38，以及尚未补 `tasks.md` 的 `frontend-demo-mode`。
 - 工程健康：`npm run check` 当前存在 30 个 TypeScript 错误，属于需要单独收敛的基线欠账。
 
@@ -233,7 +233,7 @@ L12 → L29 → L30
 
 - [ ] P0 `office-task-cockpit` — 开发中：办公室成为桌面端默认执行壳，内嵌任务驾驶舱、统一发起入口与右侧上下文 tab。
 - 依赖已完成的 `navigation-convergence`、`task-hub-convergence`、`workflow-panel-decomposition`、`scene-agent-interaction`、`workspace-visual-unification`。
-- 当前进展：桌面端办公室壳层、左侧任务队列、中间 `Scene3D`、右侧任务/上下文 tab 与统一智能发起入口已接入；`launch-operator-surface-convergence` 第一阶段已完成，底部共享操作区已支持任务操作并入；剩余兼容回归、桌面 / 窄宽手测与最终验收。
+- 当前进展：桌面端办公室壳层、左侧任务队列、中间 `Scene3D`、右侧任务/上下文 tab 与统一智能发起入口已接入；`launch-operator-surface-convergence` 第一阶段已完成，中央底部共享操作区已恢复为唯一任务发起入口，右侧 `Launch` 已降级为说明区；已补 `OfficeTaskCockpit` 回归测试，剩余兼容回归、桌面 / 窄宽手测与最终验收。
 
 ### 文件 ownership 边界
 
@@ -401,10 +401,10 @@ office-task-cockpit:
   已接入右侧任务 / 团队流 / Agent / 记忆报告 / 历史 tab
   已落地统一智能发起入口
   已完成 launch-operator-surface-convergence 第一阶段：
-    UnifiedLaunchComposer 已接入底部任务操作 rail
+    UnifiedLaunchComposer 已恢复为中央底部任务操作 rail 的单一主入口
     OfficeTaskCockpit / TasksPage 已接线
-    TasksCockpitDetail 首屏任务操作卡已降级为建议区
-    自动化测试已完成，当前仅剩桌面 / 窄宽手测
+    TasksCockpitDetail 首屏任务操作卡与右侧 Launch 已降级为建议 / 依据区
+    已补 OfficeTaskCockpit 回归测试，当前仅剩桌面 / 窄宽手测
   剩余兼容回归与桌面手测
 
 执行顺序:
@@ -436,6 +436,7 @@ office-wall-display-redesign:
   目标是在不改变 mission / sandbox 数据主线的前提下，把后墙升级为统一的三分区监控屏
   左侧承接终端执行流，中间承接 Mission Control，右侧承接 Browser Live
   继续由 Scene3D 持有后墙位置与装配权，不引入新的后端契约或第二套任务状态源
+  已先完成一轮墙面 HUD 收口：修复 MissionWallTaskPanel 紧凑态底部摘要卡被遮挡的问题
 执行顺序:
   先重做后墙显示器壳体与三区框架
   再实现中间任务主控区与默认镜头可读性
@@ -511,7 +512,7 @@ C01-C08 契约冻结 (已完成)
   - 不并行
 - [ ] `task-runtime-visibility-v1`
   - 当前状态：进行中，约 98%；主线收口已基本完成，剩余主要是边界声明与人工验收
-  - 已落地：`MissionStepFlow`、`Logs / Artifacts / Runtime` 归口、详情页与 cockpit 的运行证据 defer、workflow / review handoff 直连首页 `Artifacts`、`socket / callback` 可读摘要与连接态即时同步，以及共享 `office-runtime-evidence` 事件 helper / 回归测试
+  - 已落地：`MissionStepFlow`、`Logs / Artifacts / Runtime` 归口、详情页与 cockpit 的运行证据 defer、workflow / review handoff 直连首页 `Artifacts`、`socket / callback` 可读摘要与连接态即时同步，以及共享 `office-runtime-evidence` 事件 helper / 回归测试；2026-04-21 进一步补齐中央底部统一发起框回归与 `MissionWallTaskPanel` HUD 紧凑态遮挡修复
   - 剩余：`socket / callback` 仍保持前端轻量派生而不扩成第二套真相源；若继续整理墙面浏览器回传与截图放大路径一致性，应转入 `office-wall-display-redesign-v2`
   - 依赖 `task-os-home-redesign-v1`
   - 基于现有 mission / workflow / task detail / socket 数据，把步骤流、Logs、Artifacts、Runtime 收敛到首页

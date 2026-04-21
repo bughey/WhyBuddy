@@ -1,0 +1,220 @@
+<svg
+  width="1280"
+  height="980"
+  viewBox="0 0 1280 980"
+  xmlns="http://www.w3.org/2000/svg"
+  role="img"
+  aria-labelledby="title desc"
+>
+  <title id="title">Cube Pets Office Runtime Architecture</title>
+  <desc id="desc">
+    Runtime architecture addendum updated on 2026-04-21. It highlights the
+    office cockpit as the primary launch shell, the bottom UnifiedLaunchComposer
+    as the single primary input, the right-side Launch guidance surface, the
+    wall monitor visibility fix, and the boundary between local advanced runtime
+    and GitHub Pages preview runtime.
+  </desc>
+
+  <style>
+    .title {
+      font: 700 28px "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      fill: #111827;
+    }
+    .subtitle {
+      font: 12px "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      fill: #64748b;
+    }
+    .section {
+      font: 700 16px "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      fill: #111827;
+    }
+    .label {
+      font: 600 13px "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      fill: #0f172a;
+    }
+    .text {
+      font: 12px "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      fill: #334155;
+    }
+    .small {
+      font: 11px "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      fill: #475569;
+    }
+    .tiny {
+      font: 10px "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      fill: #64748b;
+      letter-spacing: 0.02em;
+    }
+  </style>
+
+  <defs>
+    <marker
+      id="arrow"
+      viewBox="0 0 10 10"
+      refX="9"
+      refY="5"
+      markerWidth="7"
+      markerHeight="7"
+      orient="auto-start-reverse"
+    >
+      <path d="M0 0L10 5L0 10Z" fill="context-stroke" />
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1280" height="980" fill="#f8fafc" />
+
+  <text x="640" y="44" text-anchor="middle" class="title">
+    Cube Pets Office Runtime Architecture
+  </text>
+  <text x="640" y="66" text-anchor="middle" class="subtitle">
+    Addendum: 2026-04-21
+  </text>
+
+  <rect x="40" y="96" width="1200" height="140" rx="22" fill="#eef2ff" stroke="#a5b4fc" />
+  <text x="72" y="126" class="section">Primary entry surfaces</text>
+
+  <rect x="60" y="146" width="150" height="52" rx="12" fill="#ffffff" stroke="#c7d2fe" />
+  <text x="135" y="167" text-anchor="middle" class="label">Office shell / Home</text>
+  <text x="135" y="184" text-anchor="middle" class="tiny">desktop default cockpit</text>
+
+  <rect x="225" y="146" width="150" height="52" rx="12" fill="#ffffff" stroke="#c7d2fe" />
+  <text x="300" y="167" text-anchor="middle" class="label">/tasks</text>
+  <text x="300" y="184" text-anchor="middle" class="tiny">full workbench surface</text>
+
+  <rect x="390" y="146" width="150" height="52" rx="12" fill="#ffffff" stroke="#c7d2fe" />
+  <text x="465" y="167" text-anchor="middle" class="label">/tasks/:taskId</text>
+  <text x="465" y="184" text-anchor="middle" class="tiny">deep-linked detail page</text>
+
+  <rect x="555" y="146" width="150" height="52" rx="12" fill="#ffffff" stroke="#c7d2fe" />
+  <text x="630" y="167" text-anchor="middle" class="label">UnifiedLaunchComposer</text>
+  <text x="630" y="184" text-anchor="middle" class="tiny">single primary bottom dock</text>
+
+  <rect x="720" y="146" width="150" height="52" rx="12" fill="#ffffff" stroke="#c7d2fe" />
+  <text x="795" y="167" text-anchor="middle" class="label">Right context tabs</text>
+  <text x="795" y="184" text-anchor="middle" class="tiny">Launch =&gt; guidance / evidence</text>
+
+  <rect x="885" y="146" width="150" height="52" rx="12" fill="#ffffff" stroke="#c7d2fe" />
+  <text x="960" y="167" text-anchor="middle" class="label">Scene3D + wall display</text>
+  <text x="960" y="184" text-anchor="middle" class="tiny">mission wall stays readable</text>
+
+  <rect x="1050" y="146" width="150" height="52" rx="12" fill="#ffffff" stroke="#c7d2fe" />
+  <text x="1125" y="167" text-anchor="middle" class="label">Feishu relay</text>
+  <text x="1125" y="184" text-anchor="middle" class="tiny">external task trigger path</text>
+
+  <line x1="520" y1="198" x2="520" y2="278" stroke="#0891b2" stroke-width="2" marker-end="url(#arrow)" />
+  <line x1="1000" y1="198" x2="1000" y2="278" stroke="#7c3aed" stroke-width="2" marker-end="url(#arrow)" />
+
+  <rect x="40" y="278" width="780" height="530" rx="22" fill="#ecfeff" stroke="#67e8f9" />
+  <text x="72" y="308" class="section">Advanced Runtime (local)</text>
+
+  <rect x="70" y="328" width="220" height="102" rx="14" fill="#ffffff" stroke="#a5f3fc" />
+  <text x="180" y="354" text-anchor="middle" class="label">OfficeTaskCockpit shell</text>
+  <text x="180" y="376" text-anchor="middle" class="text">mission queue + runtime dock</text>
+  <text x="180" y="394" text-anchor="middle" class="text">bottom launch dock is primary</text>
+  <text x="180" y="412" text-anchor="middle" class="text">right side stays contextual</text>
+
+  <rect x="310" y="328" width="220" height="102" rx="14" fill="#ffffff" stroke="#a5f3fc" />
+  <text x="420" y="354" text-anchor="middle" class="label">Wall monitor surfaces</text>
+  <text x="420" y="376" text-anchor="middle" class="text">Scene3D + SandboxMonitor</text>
+  <text x="420" y="394" text-anchor="middle" class="text">MissionWallTaskPanel compact HUD</text>
+  <text x="420" y="412" text-anchor="middle" class="text">lower summary card remains visible</text>
+
+  <rect x="550" y="328" width="220" height="102" rx="14" fill="#ffffff" stroke="#a5f3fc" />
+  <text x="660" y="354" text-anchor="middle" class="label">Express + Socket.IO</text>
+  <text x="660" y="376" text-anchor="middle" class="text">REST API + websocket sync</text>
+  <text x="660" y="394" text-anchor="middle" class="text">tasks, replay, debug, config</text>
+  <text x="660" y="412" text-anchor="middle" class="text">runtime events + evidence handoff</text>
+
+  <line x1="290" y1="380" x2="550" y2="380" stroke="#0891b2" stroke-width="2" marker-end="url(#arrow)" />
+  <line x1="420" y1="430" x2="420" y2="446" stroke="#0891b2" stroke-width="2" marker-end="url(#arrow)" />
+  <line x1="660" y1="430" x2="660" y2="446" stroke="#0891b2" stroke-width="2" marker-end="url(#arrow)" />
+
+  <rect x="70" y="466" width="330" height="164" rx="14" fill="#ffffff" stroke="#a5f3fc" />
+  <text x="235" y="492" text-anchor="middle" class="label">Cube brain</text>
+  <text x="235" y="514" text-anchor="middle" class="text">workflow engine + mission runtime</text>
+  <text x="235" y="534" text-anchor="middle" class="text">mission-native store + step flow</text>
+  <text x="235" y="554" text-anchor="middle" class="text">dynamic organization</text>
+  <text x="235" y="574" text-anchor="middle" class="text">executor client + event fanout</text>
+  <text x="235" y="594" text-anchor="middle" class="text">artifacts / runtime evidence routing</text>
+
+  <rect x="420" y="466" width="350" height="164" rx="14" fill="#ffffff" stroke="#a5f3fc" />
+  <text x="595" y="492" text-anchor="middle" class="label">Intelligence + governance</text>
+  <text x="595" y="514" text-anchor="middle" class="text">3-tier memory + RAG + knowledge graph</text>
+  <text x="595" y="534" text-anchor="middle" class="text">permissions + review + cost governance</text>
+  <text x="595" y="554" text-anchor="middle" class="text">audit chain + lineage + reports</text>
+  <text x="595" y="574" text-anchor="middle" class="text">context retrieval for mission execution</text>
+  <text x="595" y="594" text-anchor="middle" class="text">no second runtime truth source</text>
+
+  <line x1="400" y1="548" x2="420" y2="548" stroke="#0891b2" stroke-width="2" marker-end="url(#arrow)" />
+
+  <rect x="70" y="656" width="700" height="122" rx="14" fill="#ffffff" stroke="#a5f3fc" />
+  <text x="420" y="684" text-anchor="middle" class="label">Lobster Executor</text>
+
+  <rect x="94" y="710" width="190" height="48" rx="12" fill="#ecfccb" stroke="#84cc16" />
+  <text x="189" y="732" text-anchor="middle" class="label">DockerRunner</text>
+  <text x="189" y="748" text-anchor="middle" class="small">mode = real</text>
+
+  <rect x="325" y="710" width="190" height="48" rx="12" fill="#dbeafe" stroke="#60a5fa" />
+  <text x="420" y="732" text-anchor="middle" class="label">NativeRunner</text>
+  <text x="420" y="748" text-anchor="middle" class="small">mode = native</text>
+
+  <rect x="556" y="710" width="190" height="48" rx="12" fill="#fef3c7" stroke="#f59e0b" />
+  <text x="651" y="732" text-anchor="middle" class="label">MockRunner</text>
+  <text x="651" y="748" text-anchor="middle" class="small">mode = mock</text>
+
+  <text x="420" y="772" text-anchor="middle" class="tiny">
+    dev:all prefers real; if Docker is unavailable, local runtime falls back to native
+  </text>
+
+  <line x1="235" y1="630" x2="235" y2="656" stroke="#0891b2" stroke-width="2" marker-end="url(#arrow)" />
+  <line x1="595" y1="630" x2="595" y2="656" stroke="#0891b2" stroke-width="2" marker-end="url(#arrow)" />
+
+  <rect x="860" y="278" width="380" height="530" rx="22" fill="#f5f3ff" stroke="#c4b5fd" />
+  <text x="892" y="308" class="section">Frontend Runtime (GitHub Pages / preview)</text>
+
+  <rect x="890" y="328" width="320" height="104" rx="14" fill="#ffffff" stroke="#d8b4fe" />
+  <text x="1050" y="354" text-anchor="middle" class="label">Browser runtime</text>
+  <text x="1050" y="376" text-anchor="middle" class="text">BrowserWorkflowRepository</text>
+  <text x="1050" y="394" text-anchor="middle" class="text">local stores + IndexedDB</text>
+  <text x="1050" y="412" text-anchor="middle" class="text">runtime mode forced to frontend</text>
+
+  <rect x="890" y="468" width="320" height="104" rx="14" fill="#ffffff" stroke="#d8b4fe" />
+  <text x="1050" y="494" text-anchor="middle" class="label">Preview-safe UI</text>
+  <text x="1050" y="516" text-anchor="middle" class="text">office shell remains browsable</text>
+  <text x="1050" y="534" text-anchor="middle" class="text">demo data keeps the surface usable</text>
+  <text x="1050" y="552" text-anchor="middle" class="text">no socket-backed advanced runtime</text>
+
+  <rect x="890" y="608" width="320" height="140" rx="14" fill="#ffffff" stroke="#d8b4fe" />
+  <text x="1050" y="634" text-anchor="middle" class="label">Pages boundary</text>
+  <text x="1050" y="656" text-anchor="middle" class="text">no Node server process</text>
+  <text x="1050" y="676" text-anchor="middle" class="text">no Lobster Executor process</text>
+  <text x="1050" y="696" text-anchor="middle" class="text">not the same as native execution</text>
+  <text x="1050" y="716" text-anchor="middle" class="text">preview does not validate Docker paths</text>
+
+  <line x1="1050" y1="432" x2="1050" y2="468" stroke="#7c3aed" stroke-width="2" marker-end="url(#arrow)" />
+  <line x1="1050" y1="572" x2="1050" y2="608" stroke="#7c3aed" stroke-width="2" marker-end="url(#arrow)" />
+
+  <rect x="40" y="836" width="220" height="104" rx="18" fill="#ffffff" stroke="#cbd5e1" />
+  <text x="150" y="864" text-anchor="middle" class="section">Legend</text>
+  <text x="62" y="888" class="text">Cyan: local advanced runtime</text>
+  <text x="62" y="908" class="text">Purple: preview/browser runtime</text>
+  <text x="62" y="928" class="text">Green / blue / amber: real / native / mock</text>
+
+  <rect x="280" y="836" width="620" height="104" rx="18" fill="#fff7ed" stroke="#fdba74" />
+  <text x="590" y="864" text-anchor="middle" class="section">2026-04-21 refresh</text>
+  <text x="590" y="888" text-anchor="middle" class="text">
+    UnifiedLaunchComposer is restored as the single primary launch dock in the office cockpit
+  </text>
+  <text x="590" y="908" text-anchor="middle" class="text">
+    Right-side Launch is guidance / evidence only, so launch state is no longer duplicated
+  </text>
+  <text x="590" y="928" text-anchor="middle" class="text">
+    MissionWallTaskPanel compact HUD keeps the lower content visible on the wall monitor
+  </text>
+
+  <rect x="920" y="836" width="320" height="104" rx="18" fill="#ffffff" stroke="#cbd5e1" />
+  <text x="1080" y="864" text-anchor="middle" class="section">Key boundaries</text>
+  <text x="942" y="888" class="text">GitHub Pages = browser preview only</text>
+  <text x="942" y="908" class="text">Pages != native executor</text>
+  <text x="942" y="928" class="text">/tasks and /tasks/:taskId stay as deep work surfaces</text>
+</svg>
