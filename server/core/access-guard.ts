@@ -7,26 +7,48 @@ import {
   type AgentWorkspaceScope,
 } from '../memory/workspace.js';
 
+function isAbsoluteWorkspacePath(candidatePath: string): boolean {
+  return (
+    path.isAbsolute(candidatePath) ||
+    path.win32.isAbsolute(candidatePath) ||
+    /^[a-zA-Z]:/.test(candidatePath)
+  );
+}
+
 function normalizeWorkspaceRelativePath(relativePath: string): string {
   const normalizedInput = relativePath.trim();
   if (!normalizedInput) {
     throw new Error('Workspace path is required');
   }
 
-  if (path.isAbsolute(normalizedInput)) {
+  if (isAbsoluteWorkspacePath(normalizedInput)) {
     throw new Error(`Absolute workspace paths are not allowed: ${relativePath}`);
   }
 
-  const normalized = path.normalize(normalizedInput);
-  if (normalized === '.' || normalized === '..') {
+  const safeSegments: string[] = [];
+
+  for (const segment of normalizedInput.split(/[\\/]+/)) {
+    if (!segment || segment === '.') {
+      continue;
+    }
+
+    if (segment === '..') {
+      if (safeSegments.length === 0) {
+        throw new Error(`Workspace path escapes the agent workspace: ${relativePath}`);
+      }
+
+      safeSegments.pop();
+      continue;
+    }
+
+    safeSegments.push(segment);
+  }
+
+  if (safeSegments.length === 0) {
     throw new Error(`Workspace path must reference a file: ${relativePath}`);
   }
 
-  if (normalized.startsWith('..') || normalized.includes(`..${path.sep}`)) {
-    throw new Error(`Workspace path escapes the agent workspace: ${relativePath}`);
-  }
-
-  return normalized;
+  return path.join(...safeSegments);
 }
 
 function assertInsideBaseDir(baseDir: string, candidatePath: string): void {
