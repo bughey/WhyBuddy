@@ -1,6 +1,24 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 
+const { useNLCommandStoreMock } = vi.hoisted(() => {
+  const state = {
+    currentDialog: null as any,
+    currentCommand: null as any,
+  };
+
+  const hook = ((selector: (value: typeof state) => unknown) =>
+    selector(state)) as any;
+  hook.setState = (partial: Partial<typeof state>) => {
+    Object.assign(state, partial);
+  };
+  hook.getState = () => state;
+
+  return {
+    useNLCommandStoreMock: hook,
+  };
+});
+
 import { OfficeTaskCockpit } from "./OfficeTaskCockpit";
 import { useAppStore } from "@/lib/store";
 import { useNLCommandStore } from "@/lib/nl-command-store";
@@ -28,6 +46,10 @@ vi.mock("antd", () => {
   return { Splitter };
 });
 
+vi.mock("@/lib/nl-command-store", () => ({
+  useNLCommandStore: useNLCommandStoreMock,
+}));
+
 vi.mock("@/components/launch/UnifiedLaunchComposer", () => ({
   UnifiedLaunchComposer: ({
     bare,
@@ -50,7 +72,9 @@ vi.mock("@/components/launch/UnifiedLaunchComposer", () => ({
 }));
 
 vi.mock("@/components/nl-command/ClarificationPanel", () => ({
-  ClarificationPanel: () => <div>mocked clarification</div>,
+  ClarificationPanel: () => (
+    <div data-testid="office-clarification-panel">mocked clarification</div>
+  ),
 }));
 
 vi.mock("@/components/ui/tabs", () => ({
@@ -163,12 +187,49 @@ describe("OfficeTaskCockpit", () => {
   it("renders a single central launch composer and keeps the launch tab informational", () => {
     const markup = renderToStaticMarkup(<OfficeTaskCockpit />);
 
-    expect(markup).toContain("data-testid=\"unified-launch-composer\"");
+    expect(markup).toContain('data-testid="unified-launch-composer"');
     expect(
-      markup.match(/data-testid=\"unified-launch-composer\"/g)?.length
+      markup.match(/data-testid="unified-launch-composer"/g)?.length
     ).toBe(1);
-    expect(markup).toContain("data-bare=\"true\"");
-    expect(markup).toContain("data-hide-header=\"true\"");
-    expect(markup).toContain("主输入框已经回到底部中央控制台");
+    expect(markup).toContain('data-bare="true"');
+    expect(markup).toContain('data-hide-header="true"');
+    expect(markup).toContain("补问与辅助判断统一放在中央执行区上方折叠区");
+  });
+
+  it("renders clarification as a lighter central support block", () => {
+    useNLCommandStore.setState({
+      currentDialog: {
+        dialogId: "dialog-1",
+        commandId: "cmd-1",
+        questions: [
+          {
+            questionId: "outcome:1",
+            text: "补充目标",
+            type: "free_text",
+          },
+        ],
+        answers: [],
+        clarificationRounds: 1,
+        status: "active",
+      },
+      currentCommand: {
+        commandId: "cmd-1",
+        commandText: "Need more delivery detail",
+        userId: "user-1",
+        timestamp: Date.now(),
+        status: "clarifying",
+        parsedIntent: "Need more delivery detail",
+        constraints: [],
+        objectives: [],
+        priority: "medium",
+      },
+    });
+
+    const markup = renderToStaticMarkup(<OfficeTaskCockpit />);
+
+    expect(markup).toContain('data-testid="office-clarification-panel"');
+    expect(markup).toContain("补问进行中");
+    expect(markup).toContain("中央执行区待你补充");
+    expect(markup).toContain("补问已上移");
   });
 });

@@ -191,6 +191,9 @@ export function OfficeTaskCockpit({
     state => state.setCurrentWorkflow
   );
 
+  const currentDialog = useNLCommandStore(state => state.currentDialog);
+  const currentCommand = useNLCommandStore(state => state.currentCommand);
+  const hasActiveClarification = currentDialog?.status === "active";
   const [search, setSearch] = useState("");
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [launchingPresetId, setLaunchingPresetId] = useState<string | null>(
@@ -201,8 +204,12 @@ export function OfficeTaskCockpit({
   );
   const [pendingLaunch, setPendingLaunch] =
     useState<OfficeLaunchResolution | null>(null);
-  const [clarificationExpanded, setClarificationExpanded] = useState(true);
-  const [launcherContextExpanded, setLauncherContextExpanded] = useState(false);
+  const [clarificationExpanded, setClarificationExpanded] = useState(
+    () => hasActiveClarification
+  );
+  const [launcherContextExpanded, setLauncherContextExpanded] = useState(
+    () => hasActiveClarification
+  );
   const [runtimeDockTab, setRuntimeDockTab] = useState<
     "support" | "logs" | "artifacts" | "runtime"
   >("support");
@@ -222,9 +229,6 @@ export function OfficeTaskCockpit({
   } | null>(null);
   const previousSelectedPetRef = useRef<string | null>(selectedPet);
   const deferredSearch = useDeferredValue(search.trim().toLowerCase());
-  const currentDialog = useNLCommandStore(state => state.currentDialog);
-  const currentCommand = useNLCommandStore(state => state.currentCommand);
-  const hasActiveClarification = currentDialog?.status === "active";
   const [activeTab, setActiveTab] = useState<OfficeCockpitTab>(() =>
     hasActiveClarification ? "launch" : "task"
   );
@@ -621,7 +625,7 @@ export function OfficeTaskCockpit({
       ? currentOwnerInsight
       : null;
   const showClarificationSupportCard = Boolean(
-    hasActiveClarification && currentCommand
+    hasActiveClarification && currentDialog
   );
   const showPendingLaunchSupportCard = Boolean(pendingLaunch);
   const supportTabHasContext =
@@ -672,11 +676,11 @@ export function OfficeTaskCockpit({
     selectedDetail?.status === "cancelled" ||
     selectedDetail?.operatorState === "blocked" ||
     selectedDetail?.operatorState === "paused";
-  const showLauncherContextDock = !hasActiveClarification;
+  const showLauncherContextDock = true;
   const launcherContextDockMaxHeight = "clamp(240px, 32vh, 420px)";
   useEffect(() => {
     if (hasActiveClarification) {
-      setLauncherContextExpanded(false);
+      setLauncherContextExpanded(true);
       return;
     }
     if (shouldAutoExpandLauncherContext) {
@@ -1071,13 +1075,17 @@ export function OfficeTaskCockpit({
           <div className="flex items-center justify-between gap-3">
             <div>
               <div className="text-[8px] font-semibold uppercase tracking-[0.16em] text-stone-500">
-                {t(locale, "辅助判断 / 运行证据", "Support / Runtime Evidence")}
+                {t(
+                  locale,
+                  "补问 / 辅助判断 / 运行证据",
+                  "Clarification / Support / Runtime Evidence"
+                )}
               </div>
               <div className="mt-0.5 text-[10px] leading-4 text-stone-600">
                 {t(
                   locale,
-                  "辅助 tab 只保留按需判断信息，Logs / Artifacts / Runtime 作为独立运行证据 tab 统一归口。",
-                  "The Support tab keeps only decision aids, while Logs / Artifacts / Runtime stay grouped as dedicated runtime evidence tabs."
+                  "补问与辅助判断统一收拢到中央执行区上方折叠区，Logs / Artifacts / Runtime 继续作为独立运行证据 tab 归口。",
+                  "Clarification and decision support now live in the fold above the center execution dock, while Logs / Artifacts / Runtime remain the dedicated evidence tabs."
                 )}
               </div>
             </div>
@@ -1136,6 +1144,96 @@ export function OfficeTaskCockpit({
         >
           {supportTabHasContext ? (
             <div className="grid gap-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+              {showClarificationSupportCard && currentDialog ? (
+                <div className="rounded-[24px] border border-[#f0dfcb] bg-[linear-gradient(180deg,rgba(255,251,246,0.98),rgba(248,243,237,0.96))] px-3 py-3 shadow-[0_18px_40px_rgba(184,111,69,0.08)] lg:col-span-2">
+                  {(() => {
+                    const pendingClarificationCount = currentDialog.questions.filter(
+                      question =>
+                        !currentDialog.answers.some(
+                          answer => answer.questionId === question.questionId,
+                        ),
+                    ).length;
+
+                    const pendingClarificationLabel =
+                      pendingClarificationCount > 1
+                        ? t(
+                            locale,
+                            `当前还有 ${pendingClarificationCount} 个待确认问题`,
+                            `${pendingClarificationCount} clarification questions pending`,
+                          )
+                        : pendingClarificationCount === 1
+                          ? t(
+                              locale,
+                              "当前还有 1 个待确认问题",
+                              "1 clarification question pending",
+                            )
+                          : null;
+
+                    return (
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-nowrap items-center gap-2 overflow-x-auto whitespace-nowrap text-[11px] leading-5 text-stone-600">
+                        <span className="inline-flex shrink-0 items-center rounded-full bg-[#f6e4cf] px-2.5 py-1 text-[10px] font-semibold text-[#b16f44]">
+                          {t(locale, "补问进行中", "Clarification active")}
+                        </span>
+                        <span className="workspace-status workspace-tone-neutral !shrink-0 !px-2 !py-0.5 !text-[9px] font-semibold">
+                          {t(locale, "中央执行区待你补充", "Waiting for your input")}
+                        </span>
+                        {pendingClarificationLabel ? (
+                          <span className="inline-flex shrink-0 items-center rounded-full bg-[#f7e6d2] px-2 py-0.5 text-[10px] font-semibold text-[#b67447]">
+                            {pendingClarificationLabel}
+                          </span>
+                        ) : null}
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      className="workspace-control inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-3 text-[11px] font-medium text-stone-600"
+                      aria-label={
+                        clarificationExpanded
+                          ? t(
+                              locale,
+                              "收起补充信息",
+                              "Collapse clarification"
+                            )
+                          : t(
+                              locale,
+                              "展开补充信息",
+                              "Expand clarification"
+                            )
+                      }
+                      onClick={() =>
+                        setClarificationExpanded(current => !current)
+                      }
+                    >
+                      {clarificationExpanded
+                        ? t(locale, "收起", "Collapse")
+                        : t(locale, "展开", "Expand")}
+                      <ChevronDown
+                        className={cn(
+                          "size-4 transition-transform",
+                          clarificationExpanded && "rotate-180"
+                        )}
+                      />
+                    </button>
+                  </div>
+                    );
+                  })()}
+
+                  {clarificationExpanded ? (
+                    <div className="mt-3">
+                      <ClarificationPanel
+                        dialog={currentDialog}
+                        onAnswer={handleClarificationAnswer}
+                        hideHeader
+                        chrome="minimal"
+                      />
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+
               {showWaitingSupportCard ? (
                 <div className="rounded-[12px] border border-sky-200/70 bg-sky-50/78 px-3 py-2 text-[9px] leading-4 text-stone-700 lg:col-span-2">
                   <div className="text-[8px] font-semibold uppercase tracking-[0.14em] text-sky-700">
@@ -1594,65 +1692,25 @@ export function OfficeTaskCockpit({
                   title={t(locale, "统一发起", "Unified launch")}
                   description={t(
                     locale,
-                    "中央底部保持唯一发起输入，这里只承接补问、待解析态与当前发起说明，避免出现第二套主输入。",
-                    "The center-bottom dock keeps the single launch input. This tab only carries clarification, pending-launch state, and launch guidance so a second primary composer does not appear."
+                    "中央底部保持唯一发起输入；补问已经移到中央执行区上方折叠区，这里只保留发起说明与待解析状态提示。",
+                    "The center-bottom dock keeps the single launch input. Clarification has moved into the fold above the center execution area, so this tab only keeps launch guidance and pending-launch status."
                   )}
                 >
                   <div className="h-full overflow-y-auto pr-1">
                     <div className="space-y-3">
                       {hasActiveClarification && currentDialog ? (
-                        <div className="rounded-[18px] border border-amber-200/80 bg-amber-50/78 p-3 shadow-[0_10px_24px_rgba(184,111,69,0.08)]">
+                        <div className="rounded-[16px] bg-white/72 px-3 py-2.5 text-[11px] leading-5 text-stone-600 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)]">
                           <div className="flex flex-wrap items-center gap-2">
-                            <span className="workspace-status workspace-tone-warning !px-2 !py-1 !text-[10px] font-semibold">
-                              {t(locale, "需要补充信息", "Clarification needed")}
+                            <span className="inline-flex items-center rounded-full bg-[#f5e6d5] px-2 py-0.5 text-[10px] font-semibold text-[#af7048]">
+                              {t(locale, "补问已上移", "Clarification moved above")}
                             </span>
-                            <span className="text-[11px] text-stone-600">
+                            <span>
                               {t(
                                 locale,
-                                "先补齐上下文，系统再继续创建任务。",
-                                "Fill in the missing context and the system will continue creating the task."
+                                "中央上方折叠区正在承接补问，这里不再重复显示表单。",
+                                "The fold above the center execution area now handles clarification, so this tab no longer repeats the form."
                               )}
                             </span>
-                          </div>
-
-                          {clarificationExpanded ? (
-                            <div className="mt-3">
-                              <ClarificationPanel
-                                dialog={currentDialog}
-                                onAnswer={handleClarificationAnswer}
-                                className="border-amber-200/80 bg-amber-50/70 shadow-none"
-                              />
-                            </div>
-                          ) : null}
-
-                          <div className="mt-3 flex justify-center">
-                            <button
-                              type="button"
-                              className="inline-flex h-7 w-12 items-center justify-center rounded-full border border-stone-200/80 bg-white/94 text-[#9c6b47] shadow-[0_10px_24px_rgba(88,61,39,0.14)] backdrop-blur-md transition hover:bg-[#fff8f1] hover:text-[#5e8b72]"
-                              aria-label={
-                                clarificationExpanded
-                                  ? t(
-                                      locale,
-                                      "收起补充信息",
-                                      "Collapse clarification"
-                                    )
-                                  : t(
-                                      locale,
-                                      "展开补充信息",
-                                      "Expand clarification"
-                                    )
-                              }
-                              onClick={() =>
-                                setClarificationExpanded(current => !current)
-                              }
-                            >
-                              <ChevronDown
-                                className={cn(
-                                  "size-4 transition-transform",
-                                  clarificationExpanded && "rotate-180"
-                                )}
-                              />
-                            </button>
                           </div>
                         </div>
                       ) : (
@@ -1680,8 +1738,8 @@ export function OfficeTaskCockpit({
                             <p>
                               {t(
                                 locale,
-                                "右侧保留为补问与状态说明区，避免同一个页面出现两套发起草稿和附件状态。",
-                                "The right column stays focused on clarification and status guidance so the page does not split into two draft or attachment states."
+                                "补问与辅助判断统一放在中央执行区上方折叠区，右侧只保留发起说明，避免同一个页面出现两套发起草稿和附件状态。",
+                                "Clarification and decision support now live in the fold above the center execution area, while the right column stays informational so the page does not split into two draft or attachment states."
                               )}
                             </p>
                           </div>

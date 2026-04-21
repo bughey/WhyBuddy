@@ -217,6 +217,12 @@ function malformedResponseError(bodyPreview: string): Error {
   return new Error(`LLM service returned a malformed response.${preview}`);
 }
 
+function isModelEndpointMismatchMessage(message: string): boolean {
+  return /model\/endpoint mismatch|model not enabled|not enabled for \/codex|unsupported model|model .* not supported|does not support .*model|not available for (?:this )?endpoint|unknown model/i.test(
+    message
+  );
+}
+
 function normalizeLLMError(
   provider: ProviderConfig,
   status: number,
@@ -245,6 +251,11 @@ function normalizeLLMError(
   if (status >= 500) {
     return new Error(
       `LLM service error from ${providerName}: HTTP ${status}.${trimmed ? ` Details: ${trimmed.substring(0, 160)}` : ""}`
+    );
+  }
+  if (status === 400 && isModelEndpointMismatchMessage(lower)) {
+    return new Error(
+      `LLM model/endpoint mismatch on ${providerName}.${trimmed ? ` Details: ${trimmed.substring(0, 200)}` : ""}`
     );
   }
 
@@ -278,13 +289,13 @@ function normalizeNetworkError(
 }
 
 function shouldTryNextProvider(error: Error): boolean {
-  return /no available clients|temporarily unavailable|timed out|Cannot reach LLM service|rate limited|out of quota|malformed response|empty response/i.test(
+  return isModelEndpointMismatchMessage(error.message) || /no available clients|temporarily unavailable|timed out|Cannot reach LLM service|rate limited|out of quota|malformed response|empty response/i.test(
     error.message
   );
 }
 
 function shouldStopRetryingProvider(error: Error): boolean {
-  return /no available clients|authentication failed|invalid_request_error|timed out/i.test(
+  return isModelEndpointMismatchMessage(error.message) || /no available clients|authentication failed|invalid_request_error|timed out/i.test(
     error.message
   );
 }
