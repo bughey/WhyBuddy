@@ -3,7 +3,11 @@ import { Terminal } from "lucide-react";
 
 import { EmptyHintBlock } from "@/components/tasks/EmptyHintBlock";
 import { useI18n } from "@/i18n";
-import { useSandboxStore, type LogLine } from "@/lib/sandbox-store";
+import {
+  formatTimestamp,
+  useSandboxStore,
+  type LogLine,
+} from "@/lib/sandbox-store";
 import { cn } from "@/lib/utils";
 
 export interface ExecutorTerminalPanelProps {
@@ -14,10 +18,15 @@ export interface ExecutorTerminalPanelProps {
 
 const MAX_VISIBLE_LINES = 200;
 
-function formatLine(line: LogLine): { text: string; isError: boolean } {
+function formatLine(line: LogLine): {
+  text: string;
+  isError: boolean;
+  timestamp: string;
+} {
   return {
     text: line.data,
     isError: line.stream === "stderr",
+    timestamp: formatTimestamp(line.timestamp),
   };
 }
 
@@ -42,7 +51,7 @@ export function ExecutorTerminalPanel({
   const isStreaming = useSandboxStore(s => s.isStreaming);
   const setActiveMission = useSandboxStore(s => s.setActiveMission);
   const requestLogHistory = useSandboxStore(s => s.requestLogHistory);
-  const scrollRef = useRef<HTMLPreElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const [autoScrollEnabled, setAutoScrollEnabled] = useState(true);
 
   useEffect(() => {
@@ -85,26 +94,26 @@ export function ExecutorTerminalPanel({
 
   return (
     <div
-      className="overflow-hidden rounded-[20px] border border-stone-200/80 bg-[#1a1a2e]"
+      className="flex min-h-[220px] min-h-0 flex-1 flex-col overflow-hidden rounded-[18px] border border-stone-200/75 bg-[linear-gradient(180deg,rgba(255,255,255,0.82),rgba(249,244,238,0.82))] shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]"
       data-testid="executor-terminal-panel"
     >
-      <div className="flex items-center justify-between border-b border-stone-700/40 px-3 py-2">
+      <div className="flex items-center justify-between gap-3 border-b border-stone-200/70 px-3 py-2">
         <div className="flex items-center gap-2">
-          <Terminal className="size-3.5 text-stone-400" />
-          <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-stone-400">
+          <Terminal className="size-3.5 text-[#b16f44]" />
+          <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-stone-600">
             {copy.tasks.executor.terminalTitle}
           </span>
         </div>
         <div className="flex items-center gap-2">
           {isStreaming ? (
-            <span className="flex items-center gap-1.5 text-[10px] text-emerald-400">
-              <span className="size-1.5 animate-pulse rounded-full bg-emerald-400" />
+            <span className="flex items-center gap-1.5 text-[10px] font-medium text-emerald-600">
+              <span className="size-1.5 animate-pulse rounded-full bg-emerald-500" />
               {copy.tasks.executor.terminalLive}
             </span>
           ) : null}
           <button
             type="button"
-            className="rounded-full border border-stone-600/60 px-2 py-0.5 text-[10px] text-stone-300 transition hover:border-stone-500 hover:text-white"
+            className="rounded-full border border-stone-200/80 bg-white/82 px-2 py-0.5 text-[10px] font-medium text-stone-600 transition hover:border-stone-300 hover:bg-white hover:text-stone-900"
             onClick={() => setAutoScrollEnabled(current => !current)}
           >
             {autoScrollEnabled
@@ -114,7 +123,7 @@ export function ExecutorTerminalPanel({
         </div>
       </div>
 
-      <pre
+      <div
         ref={scrollRef}
         onScroll={event => {
           const element = event.currentTarget;
@@ -127,26 +136,52 @@ export function ExecutorTerminalPanel({
           }
         }}
         className={cn(
-          "h-[200px] overflow-auto px-3 py-2 font-mono text-xs leading-5",
+          "min-h-0 flex-1 overflow-y-auto bg-[#fcfaf7] px-2 py-2",
           !hasLines && "flex items-center"
         )}
         data-testid="executor-terminal-output"
       >
         {hasLines ? (
-          visibleLines.map((line, idx) => {
-            const { text, isError } = formatLine(line);
-            return (
-              <div
-                key={idx}
-                className={cn(
-                  "whitespace-pre-wrap break-all",
-                  isError ? "text-rose-400" : "text-stone-300"
-                )}
-              >
-                {text}
-              </div>
-            );
-          })
+          <div className="overflow-hidden rounded-[14px] bg-white/78 shadow-[inset_0_1px_0_rgba(255,255,255,0.4)]">
+            <div className="divide-y divide-stone-200/70">
+              {visibleLines.map((line, idx) => {
+                const { text, isError, timestamp } = formatLine(line);
+                return (
+                  <div
+                    key={`${line.timestamp}-${idx}`}
+                    className={cn(
+                      "grid grid-cols-[72px_minmax(0,1fr)] gap-3 px-3 py-2",
+                      isError && "bg-rose-50/78"
+                    )}
+                  >
+                    <div className="pt-0.5">
+                      <div
+                        className={cn(
+                          "text-[10px] font-medium leading-4",
+                          isError ? "text-rose-600" : "text-stone-500"
+                        )}
+                      >
+                        {timestamp}
+                      </div>
+                      {isError ? (
+                        <div className="mt-1 inline-flex items-center rounded-full bg-rose-100 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-rose-700">
+                          stderr
+                        </div>
+                      ) : null}
+                    </div>
+                    <div
+                      className={cn(
+                        "min-w-0 whitespace-pre-wrap break-all font-mono text-[12px] leading-5",
+                        isError ? "text-rose-900" : "text-stone-800"
+                      )}
+                    >
+                      {text}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         ) : (
           <EmptyHintBlock
             icon={<Terminal className="size-4" />}
@@ -155,10 +190,10 @@ export function ExecutorTerminalPanel({
             actionLabel={copy.tasks.executor.retryLogs}
             onAction={() => requestLogHistory(missionId)}
             tone={emptyTone}
-            className="w-full border-stone-700/60 bg-stone-950/25 text-left"
+            className="w-full border-stone-200/70 bg-white/82 text-left shadow-none"
           />
         )}
-      </pre>
+      </div>
     </div>
   );
 }

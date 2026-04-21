@@ -398,7 +398,7 @@ export function UnifiedLaunchComposer({
   }
 
   const composerInputShell = (
-    <div className="rounded-[18px] border border-stone-200/80 bg-white/82 p-3">
+    <div className="rounded-[16px] bg-white/82 p-2.5">
       <CommandInput
         onSubmit={handleSubmit}
         loading={submitting}
@@ -435,7 +435,7 @@ export function UnifiedLaunchComposer({
                 <GlowButton
                   type="button"
                   disabled={!draftText.trim() || submitting}
-                  className="h-8 shrink-0 rounded-full px-3 text-xs font-semibold shadow-[0_10px_24px_rgba(94,139,114,0.18)]"
+                  className="h-7.5 shrink-0 rounded-full px-2.5 text-[11px] font-semibold shadow-[0_10px_24px_rgba(94,139,114,0.18)]"
                   onClick={() => void handleSubmit(draftText)}
                 >
                   <Send className="size-3.5" />
@@ -551,7 +551,7 @@ export function UnifiedLaunchComposer({
                 <ClarificationPanel
                   dialog={currentDialog}
                   onAnswer={handleClarificationAnswer}
-                  className="border-amber-200/80 bg-amber-50/70"
+                  className="bg-transparent"
                 />
               </div>
             </Splitter.Panel>

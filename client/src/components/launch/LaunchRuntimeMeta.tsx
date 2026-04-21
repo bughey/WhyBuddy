@@ -55,7 +55,7 @@ export function LaunchRuntimeMeta({
   return (
     <div
       className={cn(
-        "mt-2 flex gap-2 text-xs text-stone-500",
+        "mt-1.5 flex gap-1.5 text-xs text-stone-500",
         hasSharedActionRail
           ? "flex-wrap items-end"
           : "overflow-x-auto whitespace-nowrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
@@ -71,7 +71,7 @@ export function LaunchRuntimeMeta({
           <Button
             type="button"
             variant="outline"
-            className="h-8 rounded-full px-3 text-xs whitespace-nowrap"
+            className="h-7 rounded-full px-2.5 text-[11px] whitespace-nowrap"
             disabled={
               isPreparingFiles ||
               (typeof maxAttachments === "number" &&
@@ -88,7 +88,7 @@ export function LaunchRuntimeMeta({
           </Button>
         ) : null}
 
-        <span className="inline-flex items-center gap-1 rounded-full border border-stone-200/80 bg-stone-50 px-2 py-1 whitespace-nowrap">
+        <span className="inline-flex items-center gap-1 rounded-full border border-stone-200/80 bg-stone-50 px-2 py-0.75 whitespace-nowrap">
           {runtimeMode === "advanced" ? (
             <Server className="size-3.5" />
           ) : (
@@ -98,7 +98,7 @@ export function LaunchRuntimeMeta({
         </span>
 
         {attachmentCount > 0 ? (
-          <span className="inline-flex items-center gap-1 rounded-full border border-stone-200/80 bg-stone-50 px-2 py-1 whitespace-nowrap">
+          <span className="inline-flex items-center gap-1 rounded-full border border-stone-200/80 bg-stone-50 px-2 py-0.75 whitespace-nowrap">
             {getLaunchAttachmentCountLabel(locale, attachmentCount)}
           </span>
         ) : null}
@@ -118,7 +118,7 @@ export function LaunchRuntimeMeta({
           <GlowButton
             type="button"
             disabled={submitDisabled}
-            className="h-8 shrink-0 rounded-full px-3 text-xs font-semibold shadow-[0_10px_24px_rgba(94,139,114,0.18)]"
+            className="h-7 shrink-0 rounded-full px-2.5 text-[11px] font-semibold shadow-[0_10px_24px_rgba(94,139,114,0.18)]"
             onClick={onSubmit}
           >
             <Send className="size-3.5" />

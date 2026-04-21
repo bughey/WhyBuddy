@@ -204,12 +204,7 @@ export function OfficeTaskCockpit({
   );
   const [pendingLaunch, setPendingLaunch] =
     useState<OfficeLaunchResolution | null>(null);
-  const [clarificationExpanded, setClarificationExpanded] = useState(
-    () => hasActiveClarification
-  );
-  const [launcherContextExpanded, setLauncherContextExpanded] = useState(
-    () => hasActiveClarification
-  );
+  const [launcherContextExpanded, setLauncherContextExpanded] = useState(false);
   const [runtimeDockTab, setRuntimeDockTab] = useState<
     "support" | "logs" | "artifacts" | "runtime"
   >("support");
@@ -232,10 +227,6 @@ export function OfficeTaskCockpit({
   const [activeTab, setActiveTab] = useState<OfficeCockpitTab>(() =>
     hasActiveClarification ? "launch" : "task"
   );
-
-  useEffect(() => {
-    setClarificationExpanded(true);
-  }, [hasActiveClarification, currentCommand?.commandId]);
 
   useEffect(() => {
     if (!highlightedTaskId || typeof window === "undefined") return;
@@ -633,8 +624,7 @@ export function OfficeTaskCockpit({
     showSupportBlockerCard ||
     showSupportNextStepCard ||
     Boolean(supportOwnerInsight) ||
-    showPendingLaunchSupportCard ||
-    showClarificationSupportCard;
+    showPendingLaunchSupportCard;
   const waitingSupportTitle = hasPendingDecision
     ? t(locale, "待处理决策", "Pending decision")
     : t(locale, "等待上下文", "Waiting context");
@@ -667,34 +657,9 @@ export function OfficeTaskCockpit({
   ]
     .filter(Boolean)
     .join(" / ");
-  const shouldAutoExpandLauncherContext =
-    hasActiveClarification ||
-    Boolean(pendingLaunch) ||
-    hasPendingDecision ||
-    selectedDetail?.status === "waiting" ||
-    selectedDetail?.status === "failed" ||
-    selectedDetail?.status === "cancelled" ||
-    selectedDetail?.operatorState === "blocked" ||
-    selectedDetail?.operatorState === "paused";
   const showLauncherContextDock = true;
+  const showClarificationDock = Boolean(hasActiveClarification && currentDialog);
   const launcherContextDockMaxHeight = "clamp(240px, 32vh, 420px)";
-  useEffect(() => {
-    if (hasActiveClarification) {
-      setLauncherContextExpanded(true);
-      return;
-    }
-    if (shouldAutoExpandLauncherContext) {
-      setLauncherContextExpanded(true);
-    }
-  }, [
-    hasActiveClarification,
-    currentCommand?.commandId,
-    pendingLaunch?.workflowId,
-    selectedDetail?.id,
-    selectedDetail?.operatorState,
-    selectedDetail?.status,
-    shouldAutoExpandLauncherContext,
-  ]);
 
   useEffect(() => {
     if (supportTabHasContext) {
@@ -838,11 +803,11 @@ export function OfficeTaskCockpit({
   const launcherDock = (
     <div
       className={cn(
-        "pointer-events-auto mx-auto flex w-full max-w-[700px] flex-col overflow-hidden rounded-[14px] border",
+        "pointer-events-auto mx-auto flex w-full max-w-[700px] flex-col overflow-hidden rounded-[13px] border",
         floatingGlassClass
       )}
     >
-      <div className="shrink-0 border-b border-stone-200/50 px-1.5 py-1">
+      <div className="shrink-0 border-b border-stone-200/50 px-1 py-0.5">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex flex-wrap items-center gap-1.5">
             <div className="flex rounded-[10px] border border-white/65 bg-white/78 p-0.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]">
@@ -1024,7 +989,7 @@ export function OfficeTaskCockpit({
           </span>
         </div>
 
-        <div className="overflow-hidden px-1 pb-1 pt-1">
+        <div className="overflow-hidden px-0.5 pb-0.5 pt-0.5">
           <UnifiedLaunchComposer
             createMission={createMission}
             activeTaskTitle={selectedTaskSummary?.title}
@@ -1060,6 +1025,47 @@ export function OfficeTaskCockpit({
     </div>
   );
 
+  const clarificationDock = currentDialog ? (
+    <div className="pointer-events-auto mx-auto w-full max-w-[700px] overflow-hidden rounded-[18px] border border-[#f0dfcb] bg-[linear-gradient(180deg,rgba(255,251,246,0.98),rgba(248,243,237,0.96))] shadow-[0_18px_40px_rgba(184,111,69,0.08)] backdrop-blur-md">
+      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-[#ead8c3] px-3 py-2.5">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-nowrap items-center gap-2 overflow-x-auto whitespace-nowrap text-[11px] leading-5 text-stone-600">
+            <span className="inline-flex shrink-0 items-center rounded-full bg-[#f6e4cf] px-2.5 py-1 text-[10px] font-semibold text-[#b16f44]">
+              {t(locale, "补问进行中", "Clarification active")}
+            </span>
+            <span className="workspace-status workspace-tone-neutral !shrink-0 !px-2 !py-0.5 !text-[9px] font-semibold">
+              {t(locale, "先完成澄清，再继续主执行流", "Finish clarification before continuing the main flow")}
+            </span>
+            <span className="inline-flex shrink-0 items-center rounded-full bg-[#f7e6d2] px-2 py-0.5 text-[10px] font-semibold text-[#b67447]">
+              {t(
+                locale,
+                `待补充 ${currentDialog.questions.filter(question =>
+                  !currentDialog.answers.some(
+                    answer => answer.questionId === question.questionId,
+                  ),
+                ).length} 项`,
+                `${currentDialog.questions.filter(question =>
+                  !currentDialog.answers.some(
+                    answer => answer.questionId === question.questionId,
+                  ),
+                ).length} pending`,
+              )}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div className="px-3 py-3">
+        <ClarificationPanel
+          dialog={currentDialog}
+          onAnswer={handleClarificationAnswer}
+          hideHeader
+          chrome="minimal"
+        />
+      </div>
+    </div>
+  ) : null;
+
   const launcherContextDock = (
     <div className="pointer-events-auto mx-auto w-full max-w-[700px] overflow-hidden rounded-[16px] border border-white/34 bg-[linear-gradient(180deg,rgba(255,252,248,0.62),rgba(246,238,229,0.5))] shadow-[0_16px_36px_rgba(98,73,48,0.12)] backdrop-blur-md">
       <Tabs
@@ -1077,15 +1083,15 @@ export function OfficeTaskCockpit({
               <div className="text-[8px] font-semibold uppercase tracking-[0.16em] text-stone-500">
                 {t(
                   locale,
-                  "补问 / 辅助判断 / 运行证据",
-                  "Clarification / Support / Runtime Evidence"
+                  "辅助判断 / 运行证据",
+                  "Support / Runtime Evidence"
                 )}
               </div>
               <div className="mt-0.5 text-[10px] leading-4 text-stone-600">
                 {t(
                   locale,
-                  "补问与辅助判断统一收拢到中央执行区上方折叠区，Logs / Artifacts / Runtime 继续作为独立运行证据 tab 归口。",
-                  "Clarification and decision support now live in the fold above the center execution dock, while Logs / Artifacts / Runtime remain the dedicated evidence tabs."
+                  "这里保留辅助判断与运行证据；澄清问题改为单独弹层承接，答完后自动退出。",
+                  "This surface keeps support and runtime evidence. Clarification now uses a separate panel that exits after answers are completed."
                 )}
               </div>
             </div>
@@ -1094,11 +1100,6 @@ export function OfficeTaskCockpit({
                 {pendingLaunch ? (
                   <span className="workspace-status workspace-tone-warning !px-1.5 !py-0.5 !text-[8px] font-semibold">
                     {t(locale, "团队准备中", "Team preparing")}
-                  </span>
-                ) : null}
-                {hasActiveClarification ? (
-                  <span className="workspace-status workspace-tone-warning !px-1.5 !py-0.5 !text-[8px] font-semibold">
-                    {t(locale, "补问进行中", "Clarification active")}
                   </span>
                 ) : null}
               </div>
@@ -1144,96 +1145,6 @@ export function OfficeTaskCockpit({
         >
           {supportTabHasContext ? (
             <div className="grid gap-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-              {showClarificationSupportCard && currentDialog ? (
-                <div className="rounded-[24px] border border-[#f0dfcb] bg-[linear-gradient(180deg,rgba(255,251,246,0.98),rgba(248,243,237,0.96))] px-3 py-3 shadow-[0_18px_40px_rgba(184,111,69,0.08)] lg:col-span-2">
-                  {(() => {
-                    const pendingClarificationCount = currentDialog.questions.filter(
-                      question =>
-                        !currentDialog.answers.some(
-                          answer => answer.questionId === question.questionId,
-                        ),
-                    ).length;
-
-                    const pendingClarificationLabel =
-                      pendingClarificationCount > 1
-                        ? t(
-                            locale,
-                            `当前还有 ${pendingClarificationCount} 个待确认问题`,
-                            `${pendingClarificationCount} clarification questions pending`,
-                          )
-                        : pendingClarificationCount === 1
-                          ? t(
-                              locale,
-                              "当前还有 1 个待确认问题",
-                              "1 clarification question pending",
-                            )
-                          : null;
-
-                    return (
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-nowrap items-center gap-2 overflow-x-auto whitespace-nowrap text-[11px] leading-5 text-stone-600">
-                        <span className="inline-flex shrink-0 items-center rounded-full bg-[#f6e4cf] px-2.5 py-1 text-[10px] font-semibold text-[#b16f44]">
-                          {t(locale, "补问进行中", "Clarification active")}
-                        </span>
-                        <span className="workspace-status workspace-tone-neutral !shrink-0 !px-2 !py-0.5 !text-[9px] font-semibold">
-                          {t(locale, "中央执行区待你补充", "Waiting for your input")}
-                        </span>
-                        {pendingClarificationLabel ? (
-                          <span className="inline-flex shrink-0 items-center rounded-full bg-[#f7e6d2] px-2 py-0.5 text-[10px] font-semibold text-[#b67447]">
-                            {pendingClarificationLabel}
-                          </span>
-                        ) : null}
-                      </div>
-                    </div>
-
-                    <button
-                      type="button"
-                      className="workspace-control inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-3 text-[11px] font-medium text-stone-600"
-                      aria-label={
-                        clarificationExpanded
-                          ? t(
-                              locale,
-                              "收起补充信息",
-                              "Collapse clarification"
-                            )
-                          : t(
-                              locale,
-                              "展开补充信息",
-                              "Expand clarification"
-                            )
-                      }
-                      onClick={() =>
-                        setClarificationExpanded(current => !current)
-                      }
-                    >
-                      {clarificationExpanded
-                        ? t(locale, "收起", "Collapse")
-                        : t(locale, "展开", "Expand")}
-                      <ChevronDown
-                        className={cn(
-                          "size-4 transition-transform",
-                          clarificationExpanded && "rotate-180"
-                        )}
-                      />
-                    </button>
-                  </div>
-                    );
-                  })()}
-
-                  {clarificationExpanded ? (
-                    <div className="mt-3">
-                      <ClarificationPanel
-                        dialog={currentDialog}
-                        onAnswer={handleClarificationAnswer}
-                        hideHeader
-                        chrome="minimal"
-                      />
-                    </div>
-                  ) : null}
-                </div>
-              ) : null}
-
               {showWaitingSupportCard ? (
                 <div className="rounded-[12px] border border-sky-200/70 bg-sky-50/78 px-3 py-2 text-[9px] leading-4 text-stone-700 lg:col-span-2">
                   <div className="text-[8px] font-semibold uppercase tracking-[0.14em] text-sky-700">
@@ -1386,11 +1297,16 @@ export function OfficeTaskCockpit({
           className="mt-0 min-h-0 flex-1 overflow-hidden p-3 data-[state=active]:flex data-[state=active]:flex-col"
         >
           {selectedDetail ? (
-            <ExecutorTerminalPanel
-              missionId={selectedDetail.id}
-              missionStatus={selectedDetail.status}
-              executorStatus={selectedDetail.executor?.status}
-            />
+            <div
+              className="min-h-0 flex-1 overflow-hidden rounded-[16px] bg-[rgba(255,255,255,0.38)] p-1.5"
+              style={{ maxHeight: "clamp(170px, 22vh, 220px)" }}
+            >
+              <ExecutorTerminalPanel
+                missionId={selectedDetail.id}
+                missionStatus={selectedDetail.status}
+                executorStatus={selectedDetail.executor?.status}
+              />
+            </div>
           ) : null}
         </TabsContent>
 
@@ -1400,7 +1316,7 @@ export function OfficeTaskCockpit({
         >
           {selectedDetail ? (
             <div
-              className="min-h-0 overflow-y-auto rounded-[16px] border border-white/50 bg-[rgba(255,255,255,0.48)] p-2"
+              className="min-h-0 overflow-y-auto rounded-[16px] bg-[rgba(255,255,255,0.38)] p-1.5"
               style={{ maxHeight: "clamp(170px, 22vh, 220px)" }}
             >
               {artifactError ? (
@@ -1529,6 +1445,21 @@ export function OfficeTaskCockpit({
       <div
         className="pointer-events-none relative z-10 w-full pt-2"
       >
+        {showClarificationDock ? (
+          <div
+            className="pointer-events-none absolute left-0 right-0 z-30"
+            style={{
+              bottom: showLauncherContextDock && launcherContextExpanded
+                ? "calc(100% + 18px + 14px + 420px)"
+                : "calc(100% + 18px)",
+            }}
+          >
+            <div className="pointer-events-auto overflow-visible">
+              {clarificationDock}
+            </div>
+          </div>
+        ) : null}
+
         {showLauncherContextDock && launcherContextExpanded ? (
           <div
             className="pointer-events-none absolute left-0 right-0 z-20"
@@ -1692,26 +1623,19 @@ export function OfficeTaskCockpit({
                   title={t(locale, "统一发起", "Unified launch")}
                   description={t(
                     locale,
-                    "中央底部保持唯一发起输入；补问已经移到中央执行区上方折叠区，这里只保留发起说明与待解析状态提示。",
-                    "The center-bottom dock keeps the single launch input. Clarification has moved into the fold above the center execution area, so this tab only keeps launch guidance and pending-launch status."
+                    "中央底部保持唯一发起输入；补问改为独立弹层承接，这里只保留发起说明与待解析状态提示。",
+                    "The center-bottom dock keeps the single launch input. Clarification now uses a separate panel, so this tab only keeps launch guidance and pending-launch status."
                   )}
                 >
                   <div className="h-full overflow-y-auto pr-1">
                     <div className="space-y-3">
                       {hasActiveClarification && currentDialog ? (
-                        <div className="rounded-[16px] bg-white/72 px-3 py-2.5 text-[11px] leading-5 text-stone-600 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)]">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="inline-flex items-center rounded-full bg-[#f5e6d5] px-2 py-0.5 text-[10px] font-semibold text-[#af7048]">
-                              {t(locale, "补问已上移", "Clarification moved above")}
-                            </span>
-                            <span>
-                              {t(
-                                locale,
-                                "中央上方折叠区正在承接补问，这里不再重复显示表单。",
-                                "The fold above the center execution area now handles clarification, so this tab no longer repeats the form."
-                              )}
-                            </span>
-                          </div>
+                        <div className="rounded-[16px] border border-stone-200/70 bg-white/76 px-3 py-2.5 text-[11px] leading-5 text-stone-600 shadow-[0_10px_24px_rgba(98,73,48,0.05)]">
+                          {t(
+                            locale,
+                            "当前有补问信息待处理，中央上方会弹出独立澄清面板。",
+                            "There is an active clarification waiting. A dedicated clarification panel appears above the center workspace."
+                          )}
                         </div>
                       ) : (
                         <div className="rounded-[18px] border border-stone-200/75 bg-white/76 p-3 shadow-[0_10px_24px_rgba(98,73,48,0.06)]">
@@ -1738,8 +1662,8 @@ export function OfficeTaskCockpit({
                             <p>
                               {t(
                                 locale,
-                                "补问与辅助判断统一放在中央执行区上方折叠区，右侧只保留发起说明，避免同一个页面出现两套发起草稿和附件状态。",
-                                "Clarification and decision support now live in the fold above the center execution area, while the right column stays informational so the page does not split into two draft or attachment states."
+                                "澄清问题会以独立弹层出现在中央工作台上方；右侧只保留发起说明，避免同一个页面出现两套发起草稿和附件状态。",
+                                "Clarification now appears as its own panel above the center workspace, while the right column stays informational so the page does not split into two draft or attachment states."
                               )}
                             </p>
                           </div>

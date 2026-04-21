@@ -196,7 +196,7 @@ export function LaunchOperatorActionRail({
     const label = missionOperatorActionLabel(action, locale);
     const title = missionOperatorActionDescription(action, detail, locale);
     const baseClassName =
-      "h-8 rounded-full px-2.5 text-xs whitespace-nowrap shadow-none";
+      "h-7 rounded-full px-2 text-[11px] whitespace-nowrap shadow-none";
     const className =
       emphasis === "primary"
         ? cn(

@@ -112,6 +112,7 @@ export function ArtifactListBlock({
   const isCompact = variant === "compact";
   const isRunning = isArtifactListRunningStatus(missionStatus);
   const isCompleted = isArtifactListCompletedStatus(missionStatus);
+  const rootClass = isCompact ? "p-0" : "rounded-2xl glass-panel p-3";
 
   const handleDownload = useCallback(
     (artifact: TaskArtifact, index: number) => {
@@ -162,13 +163,21 @@ export function ArtifactListBlock({
 
   return (
     <div
-      className="rounded-2xl glass-panel p-3"
+      className={rootClass}
       data-mission-id={missionId}
       data-variant={variant}
     >
       <div className="mb-2 flex items-center gap-2">
-        <FileText className="h-4 w-4 text-white/40" />
-        <span className="text-[11px] font-semibold text-white/50">
+        <FileText
+          className={isCompact ? "h-4 w-4 text-stone-500" : "h-4 w-4 text-white/40"}
+        />
+        <span
+          className={
+            isCompact
+              ? "text-[11px] font-semibold text-stone-700"
+              : "text-[11px] font-semibold text-white/50"
+          }
+        >
           {t(locale, "产物", "Artifacts")} · {artifacts.length}
         </span>
         {isRunning ? (
@@ -180,14 +189,18 @@ export function ArtifactListBlock({
       </div>
 
       {isRunning ? (
-        <p className="mb-2 text-[10px] text-white/30">
+        <p
+          className={
+            isCompact
+              ? "mb-2 text-[10px] text-stone-500"
+              : "mb-2 text-[10px] text-white/30"
+          }
+        >
           {copy.tasks.artifacts.runningHint}
         </p>
       ) : null}
 
-      <div
-        className={`space-y-2 ${isCompact ? "max-h-48 overflow-y-auto" : ""}`}
-      >
+      <div className="space-y-2">
         <AnimatePresence initial={false}>
           {artifacts.map((artifact, index) => {
             const Icon = KIND_ICON[artifact.kind] ?? FileText;
@@ -217,25 +230,59 @@ export function ArtifactListBlock({
                 exit="exit"
                 className={`flex items-start gap-3 rounded-xl p-2 ${
                   highlight
-                    ? "glass-panel border-amber-400/20 bg-amber-500/10"
-                    : "bg-white/5"
+                    ? isCompact
+                      ? "bg-amber-50"
+                      : "glass-panel border-amber-400/20 bg-amber-500/10"
+                    : isCompact
+                      ? "bg-[#f7f3ee]"
+                      : "bg-white/5"
                 }`}
               >
                 <div className="flex shrink-0 flex-col items-center gap-1 pt-0.5">
-                  <Icon className="h-4 w-4 text-white/50" />
+                  <Icon
+                    className={
+                      isCompact ? "h-4 w-4 text-stone-500" : "h-4 w-4 text-white/50"
+                    }
+                  />
                   <span
-                    className={`rounded px-1.5 py-0.5 text-[9px] font-semibold ${colorCls}`}
+                    className={`rounded px-1.5 py-0.5 text-[9px] font-semibold ${
+                      isCompact
+                        ? artifact.kind === "attachment"
+                          ? "bg-stone-200 text-stone-700"
+                          : artifact.kind === "department_report"
+                            ? "bg-emerald-100 text-emerald-700"
+                            : artifact.kind === "file"
+                              ? "bg-sky-100 text-sky-700"
+                              : artifact.kind === "log"
+                                ? "bg-stone-100 text-stone-600"
+                                : artifact.kind === "report"
+                                  ? "bg-amber-100 text-amber-700"
+                                  : "bg-indigo-100 text-indigo-700"
+                        : colorCls
+                    }`}
                   >
                     {kindLabel(artifact.kind, locale)}
                   </span>
                 </div>
 
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-[11px] font-semibold text-white">
+                  <p
+                    className={
+                      isCompact
+                        ? "truncate text-[11px] font-semibold text-stone-800"
+                        : "truncate text-[11px] font-semibold text-white"
+                    }
+                  >
                     {artifact.title}
                   </p>
                   {artifact.description ? (
-                    <p className="mt-0.5 line-clamp-2 text-[10px] leading-4 text-white/40">
+                    <p
+                      className={
+                        isCompact
+                          ? "mt-0.5 line-clamp-2 text-[10px] leading-4 text-stone-500"
+                          : "mt-0.5 line-clamp-2 text-[10px] leading-4 text-white/40"
+                      }
+                    >
                       {artifact.description}
                     </p>
                   ) : null}
@@ -245,8 +292,12 @@ export function ArtifactListBlock({
                   {previewEnabled ? (
                     <GlowButton
                       type="button"
-                      variant="ghost"
-                      className="!px-2 !py-1 !text-[10px]"
+                      variant={isCompact ? "primary" : "ghost"}
+                      className={
+                        isCompact
+                          ? "!rounded-full !px-2 !py-1 !text-[10px] shadow-[0_8px_18px_rgba(94,139,114,0.16)]"
+                          : "!px-2 !py-1 !text-[10px]"
+                      }
                       onClick={() => handlePreview(artifact, index)}
                     >
                       <Eye className="mr-1 h-3 w-3" />
@@ -258,7 +309,11 @@ export function ArtifactListBlock({
                     <GlowButton
                       type="button"
                       variant="primary"
-                      className="!px-2 !py-1 !text-[10px]"
+                      className={
+                        isCompact
+                          ? "!rounded-full !px-2 !py-1 !text-[10px] shadow-[0_8px_18px_rgba(94,139,114,0.16)]"
+                          : "!px-2 !py-1 !text-[10px]"
+                      }
                       onClick={() => handleDownload(artifact, index)}
                       disabled={downloadDisabled}
                     >
@@ -276,7 +331,11 @@ export function ArtifactListBlock({
                       href={artifact.href}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 rounded-lg border border-white/20 px-2 py-1 text-[10px] font-semibold text-white/70 transition-colors hover:bg-white/10"
+                      className={
+                        isCompact
+                          ? "inline-flex items-center gap-1 rounded-full border border-stone-200 bg-white px-2 py-1 text-[10px] font-semibold text-stone-700 transition-colors hover:bg-stone-50"
+                          : "inline-flex items-center gap-1 rounded-lg border border-white/20 px-2 py-1 text-[10px] font-semibold text-white/70 transition-colors hover:bg-white/10"
+                      }
                     >
                       <ExternalLink className="h-3 w-3" />
                       {!isCompact ? t(locale, "打开链接", "Open Link") : null}

@@ -184,7 +184,7 @@ beforeEach(() => {
 });
 
 describe("OfficeTaskCockpit", () => {
-  it("renders a single central launch composer and keeps the launch tab informational", () => {
+  it("renders a single central launch composer and keeps launch guidance informational", () => {
     const markup = renderToStaticMarkup(<OfficeTaskCockpit />);
 
     expect(markup).toContain('data-testid="unified-launch-composer"');
@@ -193,10 +193,11 @@ describe("OfficeTaskCockpit", () => {
     ).toBe(1);
     expect(markup).toContain('data-bare="true"');
     expect(markup).toContain('data-hide-header="true"');
-    expect(markup).toContain("补问与辅助判断统一放在中央执行区上方折叠区");
+    expect(markup).not.toContain('data-testid="office-clarification-panel"');
+    expect(markup).toContain("独立弹层");
   });
 
-  it("renders clarification as a lighter central support block", () => {
+  it("renders clarification as a separate panel above the launcher", () => {
     useNLCommandStore.setState({
       currentDialog: {
         dialogId: "dialog-1",
@@ -229,7 +230,9 @@ describe("OfficeTaskCockpit", () => {
 
     expect(markup).toContain('data-testid="office-clarification-panel"');
     expect(markup).toContain("补问进行中");
-    expect(markup).toContain("中央执行区待你补充");
-    expect(markup).toContain("补问已上移");
+    expect(markup).toContain("先完成澄清，再继续主执行流");
+    expect(markup).toContain("待补充 1 项");
+    expect(markup).toContain("当前有补问信息待处理");
+    expect(markup).toContain("展开辅助信息");
   });
 });

@@ -146,25 +146,6 @@ function QuestionCard({
     Array.isArray(resolvedQuestion.options) &&
     resolvedQuestion.options.length > 0;
 
-  const toggleOption = useCallback(
-    (option: string) => {
-      setSelected(previous => {
-        if (isSingleChoice) {
-          return new Set([option]);
-        }
-
-        const next = new Set(previous);
-        if (next.has(option)) {
-          next.delete(option);
-        } else {
-          next.add(option);
-        }
-        return next;
-      });
-    },
-    [isSingleChoice],
-  );
-
   const handleSubmit = useCallback(async () => {
     setSubmitting(true);
     try {
@@ -180,40 +161,56 @@ function QuestionCard({
     }
   }, [freeText, hasOptions, onAnswer, question.questionId, selected]);
 
+  const handleOptionPress = useCallback(
+    async (option: string) => {
+      if (submitting) return;
+
+      if (isSingleChoice) {
+        setSelected(new Set([option]));
+        setSubmitting(true);
+        try {
+          await onAnswer(question.questionId, option, [option]);
+        } finally {
+          setSubmitting(false);
+        }
+        return;
+      }
+
+      setSelected(previous => {
+        const next = new Set(previous);
+        if (next.has(option)) {
+          next.delete(option);
+        } else {
+          next.add(option);
+        }
+        return next;
+      });
+    },
+    [isSingleChoice, onAnswer, question.questionId, submitting],
+  );
+
   const canSubmit = hasOptions ? selected.size > 0 : freeText.trim().length > 0;
   const keyboardHint = t(
     locale,
     "Enter 发送 · Shift + Enter 换行",
     "Enter to send · Shift + Enter for a new line",
   );
-  const selectionHint = hasOptions
-    ? selected.size > 0
-      ? isSingleChoice
+  const selectionHint =
+    hasOptions && !isSingleChoice
+      ? selected.size > 0
         ? t(
-            locale,
-            "已选择答案，确认后即可发送。",
-            "One answer selected. Send to continue.",
-          )
-        : t(
             locale,
             `已选择 ${selected.size} 项，确认后即可发送。`,
             `${selected.size} options selected. Send to continue.`,
-          )
-      : isSingleChoice
-        ? t(
-            locale,
-            "请选择一个答案后发送。",
-            "Choose one answer before sending.",
           )
         : t(
             locale,
             "请选择一个或多个答案后发送。",
             "Choose one or more options before sending.",
           )
-    : null;
-
+      : null;
   const minimalSubmitClass = cn(
-    "inline-flex items-center justify-center gap-2 rounded-[24px] px-3 py-3 text-sm font-semibold transition-all",
+    "inline-flex items-center justify-center gap-1.5 rounded-[22px] px-2.5 py-2 text-sm font-semibold transition-all",
     canSubmit && !submitting
       ? "bg-[linear-gradient(180deg,#db893c,#c76d1d)] text-white shadow-[0_16px_32px_rgba(199,109,29,0.26)] hover:-translate-y-[1px] hover:brightness-105"
       : "cursor-not-allowed bg-[#f2e6da] text-[#c0a58c] shadow-none",
@@ -223,7 +220,7 @@ function QuestionCard({
     <div
       className={cn(
         "overflow-hidden",
-        isMinimal ? "px-0.5 py-0.5" : "rounded-lg border border-amber-100 bg-white/80 p-3",
+        isMinimal ? "px-0 py-0" : "rounded-lg bg-white/80 p-3",
       )}
     >
       <p
@@ -245,6 +242,7 @@ function QuestionCard({
                 <button
                   key={option}
                   type="button"
+                  disabled={submitting}
                   className={cn(
                     "font-medium transition-colors",
                     isMinimal
@@ -258,7 +256,7 @@ function QuestionCard({
                         ? "border-[#eadfd2] bg-white/96 text-stone-600 hover:border-[#d9b89b] hover:bg-white"
                         : "border-stone-200 bg-stone-50 text-stone-600 hover:border-stone-300",
                   )}
-                  onClick={() => toggleOption(option)}
+                  onClick={() => void handleOptionPress(option)}
                 >
                   {option}
                 </button>
@@ -266,32 +264,34 @@ function QuestionCard({
             </div>
 
             {isMinimal ? (
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="text-[11px] leading-5 text-stone-400">
-                  {selectionHint}
+              isSingleChoice ? null : (
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="text-[11px] leading-5 text-stone-400">
+                    {selectionHint}
+                  </div>
+                  <button
+                    type="button"
+                    disabled={!canSubmit || submitting}
+                    className={cn("min-h-[48px] min-w-[112px]", minimalSubmitClass)}
+                    onClick={() => void handleSubmit()}
+                  >
+                    <Send className="size-4" />
+                    {submitting ? answeringLabel : answerLabel}
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  disabled={!canSubmit || submitting}
-                  className={cn("min-h-[56px] min-w-[128px]", minimalSubmitClass)}
-                  onClick={() => void handleSubmit()}
-                >
-                  <Send className="size-4" />
-                  {submitting ? answeringLabel : answerLabel}
-                </button>
-              </div>
+              )
             ) : null}
           </div>
         ) : isMinimal ? (
           <div className="space-y-2.5">
             <div className="flex flex-col gap-2.5 lg:flex-row lg:items-stretch">
-              <div className="flex min-h-[68px] flex-1 items-end gap-2 rounded-[22px] border border-[#eadfd2] bg-white/96 px-4 py-3 shadow-[0_14px_30px_rgba(112,84,51,0.05),inset_0_1px_0_rgba(255,255,255,0.72)] transition focus-within:border-[#d89a6a]/48 focus-within:ring-4 focus-within:ring-[#f5e2d0]/70">
+              <div className="flex min-h-[58px] flex-1 items-end gap-2 rounded-[20px] border border-[#eadfd2] bg-white/96 px-3 py-2.5 shadow-[0_14px_30px_rgba(112,84,51,0.05),inset_0_1px_0_rgba(255,255,255,0.72)] transition focus-within:border-[#d89a6a]/48 focus-within:ring-4 focus-within:ring-[#f5e2d0]/70">
                 <textarea
                   value={freeText}
                   onChange={event => setFreeText(event.target.value)}
                   placeholder={answerPlaceholder}
                   rows={1}
-                  className="max-h-[140px] min-h-[32px] flex-1 resize-none bg-transparent text-[14px] leading-6 text-stone-900 placeholder:text-stone-400 focus:outline-none"
+                  className="max-h-[140px] min-h-[28px] flex-1 resize-none bg-transparent text-[14px] leading-6 text-stone-900 placeholder:text-stone-400 focus:outline-none"
                   aria-label={
                     locale === "zh-CN"
                       ? `回答：${resolvedQuestion.text}`
@@ -310,7 +310,7 @@ function QuestionCard({
               <button
                 type="button"
                 disabled={!canSubmit || submitting}
-                className={cn("min-h-[68px] min-w-[132px]", minimalSubmitClass)}
+                className={cn("min-h-[58px] min-w-[116px]", minimalSubmitClass)}
                 onClick={() => void handleSubmit()}
               >
                 <Send className="size-4" />
@@ -344,7 +344,7 @@ function QuestionCard({
         )}
       </div>
 
-      {isMinimal ? null : (
+      {isMinimal || hasOptions && isSingleChoice ? null : (
         <div className="mt-3 flex justify-end">
           <GlowButton
             type="button"
