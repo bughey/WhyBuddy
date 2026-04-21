@@ -4,6 +4,14 @@ import type {
   WorkflowOrganizationSnapshot,
 } from "@shared/organization-schema";
 export type { WorkflowInputAttachment } from "@shared/workflow-input";
+export type {
+  GraphEdgeTransitionSnapshot,
+  GraphInstanceSnapshot,
+  GraphInstanceTelemetry,
+  GraphNodeRunSnapshot,
+  GraphProjectionLinks,
+  GraphRuntimeStatus,
+} from "@shared/workflow-graph";
 
 export interface AgentInfo {
   id: string;

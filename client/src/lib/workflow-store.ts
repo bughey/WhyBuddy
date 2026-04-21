@@ -32,6 +32,7 @@ import type {
   AgentInfo,
   AgentMemoryEntry,
   AgentMemorySummary,
+  GraphInstanceSnapshot,
   HeartbeatReportInfo,
   HeartbeatStatusInfo,
   MessageInfo,
@@ -81,6 +82,10 @@ interface WorkflowDetailResponse {
   tasks?: TaskInfo[];
   messages?: MessageInfo[];
   report?: unknown | null;
+}
+
+interface WorkflowGraphInstanceResponse {
+  instance?: GraphInstanceSnapshot | null;
 }
 
 interface WorkflowRecentMemoryResponse {
@@ -251,6 +256,7 @@ interface WorkflowState {
   workflows: WorkflowInfo[];
   workflowsError: ApiRequestError | null;
   currentWorkflow: WorkflowInfo | null;
+  currentWorkflowGraphInstance: GraphInstanceSnapshot | null;
   workflowDetailError: ApiRequestError | null;
   tasks: TaskInfo[];
   messages: MessageInfo[];
@@ -279,6 +285,7 @@ interface WorkflowState {
   fetchStages: () => Promise<void>;
   fetchWorkflows: () => Promise<void>;
   fetchWorkflowDetail: (id: string) => Promise<void>;
+  fetchWorkflowGraphInstance: (id: string) => Promise<void>;
   fetchAgentRecentMemory: (
     agentId: string,
     workflowId?: string | null,
@@ -375,6 +382,9 @@ function handleRuntimeEvent(
       }));
       if (state.currentWorkflowId === event.workflowId) {
         void get().fetchWorkflowDetail(event.workflowId);
+        if (isAdvancedMode()) {
+          void get().fetchWorkflowGraphInstance(event.workflowId);
+        }
       }
       break;
     }
@@ -417,6 +427,9 @@ function handleRuntimeEvent(
     case "task_update": {
       if (state.currentWorkflowId === event.workflowId) {
         void get().fetchWorkflowDetail(event.workflowId);
+        if (isAdvancedMode()) {
+          void get().fetchWorkflowGraphInstance(event.workflowId);
+        }
       }
       break;
     }
@@ -434,6 +447,9 @@ function handleRuntimeEvent(
       }));
       if (state.currentWorkflowId === event.workflowId) {
         void get().fetchWorkflowDetail(event.workflowId);
+        if (isAdvancedMode()) {
+          void get().fetchWorkflowGraphInstance(event.workflowId);
+        }
       }
       void get().fetchWorkflows();
       break;
@@ -466,6 +482,9 @@ function handleRuntimeEvent(
       }));
       if (state.currentWorkflowId === event.workflowId) {
         void get().fetchWorkflowDetail(event.workflowId);
+        if (isAdvancedMode()) {
+          void get().fetchWorkflowGraphInstance(event.workflowId);
+        }
       }
       break;
     }
@@ -482,6 +501,7 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
   workflows: [],
   workflowsError: null,
   currentWorkflow: null,
+  currentWorkflowGraphInstance: null,
   workflowDetailError: null,
   tasks: [],
   messages: [],
@@ -721,6 +741,11 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
         currentWorkflowId: id,
         workflowDetailError: null,
       });
+      if (isAdvancedMode()) {
+        await get().fetchWorkflowGraphInstance(id);
+      } else {
+        set({ currentWorkflowGraphInstance: null });
+      }
     } catch (err) {
       console.error("[Store] Failed to fetch workflow detail:", err);
       const workflowDetailError = isApiRequestError(err) ? err : null;
@@ -736,10 +761,39 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
             messages: snapshot.messages || [],
             currentWorkflowId: id,
             workflowDetailError,
+            currentWorkflowGraphInstance: null,
           });
         }
       } catch (storageError) {
         console.warn("[Store] Failed to load workflow detail snapshot:", storageError);
+      }
+    }
+  },
+
+  fetchWorkflowGraphInstance: async (id: string) => {
+    if (!isAdvancedMode()) {
+      set({ currentWorkflowGraphInstance: null });
+      return;
+    }
+
+    try {
+      const data =
+        await fetchAdvancedJsonOrThrow<WorkflowGraphInstanceResponse>(
+          `/api/workflows/${id}/graph-instance`
+        );
+      if (get().currentWorkflowId !== id) {
+        return;
+      }
+
+      set({
+        currentWorkflowGraphInstance: data.instance || null,
+      });
+    } catch (err) {
+      console.error("[Store] Failed to fetch workflow graph instance:", err);
+      if (get().currentWorkflowId === id) {
+        set({
+          currentWorkflowGraphInstance: null,
+        });
       }
     }
   },
@@ -1142,6 +1196,7 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
       set({
         currentWorkflowId: null,
         currentWorkflow: null,
+        currentWorkflowGraphInstance: null,
         tasks: [],
         messages: [],
       });

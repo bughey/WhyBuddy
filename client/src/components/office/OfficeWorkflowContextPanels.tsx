@@ -3,6 +3,7 @@ import {
   ArrowRight,
   Bot,
   BriefcaseBusiness,
+  CircleAlert,
   Download,
   FileClock,
   HeartPulse,
@@ -27,6 +28,7 @@ import {
 } from "@/lib/workflow-selectors";
 import { cn } from "@/lib/utils";
 import { useWorkflowStore, type WorkflowInfo } from "@/lib/workflow-store";
+import type { GraphInstanceSnapshot, GraphNodeRunSnapshot } from "@/lib/runtime/types";
 
 function t(locale: string, zh: string, en: string) {
   return locale === "zh-CN" ? zh : en;
@@ -101,6 +103,71 @@ function workflowStatusLabel(locale: string, status: WorkflowInfo["status"]) {
     default:
       return t(locale, "准备中", "Pending");
   }
+}
+
+function graphRuntimeTone(status: GraphNodeRunSnapshot["status"]) {
+  switch (status) {
+    case "EXECUTING":
+      return "border-sky-200 bg-sky-50 text-sky-700";
+    case "EXECUTED":
+      return "border-emerald-200 bg-emerald-50 text-emerald-700";
+    case "WAITING_INPUT":
+      return "border-amber-200 bg-amber-50 text-amber-700";
+    case "EXCEPTION":
+    case "FORCE_TERMINATED":
+      return "border-rose-200 bg-rose-50 text-rose-700";
+    default:
+      return "border-stone-200 bg-stone-50 text-stone-600";
+  }
+}
+
+function graphRuntimeLabel(locale: string, status: GraphNodeRunSnapshot["status"]) {
+  switch (status) {
+    case "EXECUTING":
+      return t(locale, "执行中", "Executing");
+    case "EXECUTED":
+      return t(locale, "已执行", "Executed");
+    case "WAITING_INPUT":
+      return t(locale, "等待输入", "Waiting input");
+    case "EXCEPTION":
+      return t(locale, "异常", "Exception");
+    case "FORCE_TERMINATED":
+      return t(locale, "已终止", "Terminated");
+    default:
+      return t(locale, "待执行", "Pending");
+  }
+}
+
+function summarizeGraphInstance(instance: GraphInstanceSnapshot | null) {
+  if (!instance) {
+    return {
+      total: 0,
+      executing: 0,
+      executed: 0,
+      waiting: 0,
+      exception: 0,
+    };
+  }
+
+  return instance.nodeRuns.reduce(
+    (summary, node) => {
+      summary.total += 1;
+      if (node.status === "EXECUTING") summary.executing += 1;
+      if (node.status === "EXECUTED") summary.executed += 1;
+      if (node.status === "WAITING_INPUT") summary.waiting += 1;
+      if (node.status === "EXCEPTION" || node.status === "FORCE_TERMINATED") {
+        summary.exception += 1;
+      }
+      return summary;
+    },
+    {
+      total: 0,
+      executing: 0,
+      executed: 0,
+      waiting: 0,
+      exception: 0,
+    }
+  );
 }
 
 function OfficeTabEmptyState({
@@ -204,6 +271,9 @@ export function OfficeWorkflowFlowPanel({
 }) {
   const { locale } = useI18n();
   const workflowTasks = useWorkflowStore(state => state.tasks);
+  const graphInstance = useWorkflowStore(
+    state => state.currentWorkflowGraphInstance
+  );
   const downloadWorkflowReport = useWorkflowStore(
     state => state.downloadWorkflowReport
   );
@@ -240,6 +310,10 @@ export function OfficeWorkflowFlowPanel({
       }, {})
     );
   }, [organization]);
+  const graphSummary = useMemo(
+    () => summarizeGraphInstance(graphInstance),
+    [graphInstance]
+  );
 
   if (!workflow) {
     return (
@@ -436,6 +510,152 @@ export function OfficeWorkflowFlowPanel({
                 locale,
                 "当前 workflow 还没有组织摘要，后续生成后会在这里展示。",
                 "This workflow does not have an organization summary yet."
+              )}
+            </div>
+          )}
+        </ContextCard>
+
+        <ContextCard
+          title={t(locale, "运行图实例", "Graph instance runtime")}
+          icon={<Bot className="size-4" />}
+        >
+          {graphInstance ? (
+            <div className="space-y-3">
+              <div className="grid gap-2 lg:grid-cols-4">
+                <div className="rounded-[18px] border border-stone-200/80 bg-stone-50/80 px-3 py-3">
+                  <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-stone-500">
+                    {t(locale, "节点总数", "Total nodes")}
+                  </div>
+                  <div className="mt-1 text-sm font-semibold text-stone-900">
+                    {graphSummary.total}
+                  </div>
+                </div>
+                <div className="rounded-[18px] border border-sky-200/80 bg-sky-50/80 px-3 py-3">
+                  <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-sky-700">
+                    {t(locale, "执行中", "Executing")}
+                  </div>
+                  <div className="mt-1 text-sm font-semibold text-sky-900">
+                    {graphSummary.executing}
+                  </div>
+                </div>
+                <div className="rounded-[18px] border border-emerald-200/80 bg-emerald-50/80 px-3 py-3">
+                  <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-700">
+                    {t(locale, "已执行", "Executed")}
+                  </div>
+                  <div className="mt-1 text-sm font-semibold text-emerald-900">
+                    {graphSummary.executed}
+                  </div>
+                </div>
+                <div className="rounded-[18px] border border-rose-200/80 bg-rose-50/80 px-3 py-3">
+                  <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-rose-700">
+                    {t(locale, "异常节点", "Exceptions")}
+                  </div>
+                  <div className="mt-1 text-sm font-semibold text-rose-900">
+                    {graphSummary.exception}
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid gap-2 lg:grid-cols-3">
+                <div className="rounded-[18px] border border-stone-200/80 bg-stone-50/80 px-3 py-3">
+                  <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-stone-500">
+                    {t(locale, "运行状态", "Runtime status")}
+                  </div>
+                  <div className="mt-1">
+                    <span
+                      className={cn(
+                        "inline-flex rounded-full border px-2.5 py-1 text-[10px] font-semibold",
+                        graphRuntimeTone(graphInstance.status)
+                      )}
+                    >
+                      {graphRuntimeLabel(locale, graphInstance.status)}
+                    </span>
+                  </div>
+                </div>
+                <div className="rounded-[18px] border border-stone-200/80 bg-stone-50/80 px-3 py-3">
+                  <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-stone-500">
+                    {t(locale, "消息数量", "Messages")}
+                  </div>
+                  <div className="mt-1 text-sm font-semibold text-stone-900">
+                    {graphInstance.telemetry.messageCount}
+                  </div>
+                </div>
+                <div className="rounded-[18px] border border-stone-200/80 bg-stone-50/80 px-3 py-3">
+                  <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-stone-500">
+                    {t(locale, "边转移", "Edge transitions")}
+                  </div>
+                  <div className="mt-1 text-sm font-semibold text-stone-900">
+                    {graphInstance.edgeTransitions.length}
+                  </div>
+                </div>
+              </div>
+
+              {graphInstance.telemetry.waitingFor ? (
+                <div className="rounded-[18px] border border-amber-200/80 bg-amber-50/80 px-3 py-3 text-sm leading-6 text-amber-800">
+                  <div className="flex items-start gap-2">
+                    <CircleAlert className="mt-0.5 size-4 shrink-0" />
+                    <div>
+                      <div className="font-semibold">
+                        {t(locale, "当前等待", "Currently waiting")}
+                      </div>
+                      <div>{graphInstance.telemetry.waitingFor}</div>
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+
+              <div className="space-y-2">
+                {graphInstance.nodeRuns.map(node => (
+                  <div
+                    key={node.nodeId}
+                    className="rounded-[18px] border border-stone-200/80 bg-stone-50/80 px-3 py-3"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="text-sm font-semibold text-stone-900">
+                          {node.title}
+                        </div>
+                        <div className="mt-1 text-xs leading-6 text-stone-500">
+                          {[node.departmentLabel, node.role, node.stageKey]
+                            .filter(Boolean)
+                            .join(" / ") || t(locale, "未标注", "Unlabeled")}
+                        </div>
+                      </div>
+                      <span
+                        className={cn(
+                          "inline-flex shrink-0 rounded-full border px-2.5 py-1 text-[10px] font-semibold",
+                          graphRuntimeTone(node.status)
+                        )}
+                      >
+                        {graphRuntimeLabel(locale, node.status)}
+                      </span>
+                    </div>
+
+                    {node.outputPreview ? (
+                      <div className="mt-2 text-xs leading-6 text-stone-600">
+                        {summarizeText(
+                          node.outputPreview,
+                          t(locale, "暂无输出摘要", "No output summary"),
+                          160
+                        )}
+                      </div>
+                    ) : null}
+
+                    {node.error ? (
+                      <div className="mt-2 rounded-[14px] border border-rose-200/80 bg-rose-50 px-3 py-2 text-xs leading-5 text-rose-700">
+                        {node.error}
+                      </div>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="text-sm leading-6 text-stone-500">
+              {t(
+                locale,
+                "当前还没有可展示的运行图实例。在高级运行时下打开 workflow 后，这里会同步节点执行状态、等待原因和边转移情况。",
+                "No graph instance snapshot is available yet. In advanced runtime, this panel will sync node execution state, waiting reasons, and edge transitions."
               )}
             </div>
           )}

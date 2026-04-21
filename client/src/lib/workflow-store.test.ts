@@ -94,6 +94,7 @@ describe("workflow-store advanced fallback handling", () => {
       workflows: [],
       workflowsError: null,
       currentWorkflow: null,
+      currentWorkflowGraphInstance: null,
       workflowDetailError: null,
       tasks: [],
       messages: [],
@@ -233,5 +234,93 @@ describe("workflow-store advanced fallback handling", () => {
       missionId: "mission-123",
       deduped: false,
     });
+  });
+
+  it("fetches graph-instance together with advanced workflow detail", async () => {
+    vi.spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            workflow: {
+              id: "wf-graph",
+              missionId: "mission-graph",
+              directive: "Graph instance detail",
+              status: "running",
+              current_stage: "execution",
+              departments_involved: [],
+              started_at: null,
+              completed_at: null,
+              results: {},
+              created_at: "2026-04-15T00:00:00.000Z",
+            },
+            tasks: [],
+            messages: [],
+            report: null,
+          }),
+          {
+            status: 200,
+            headers: {
+              "content-type": "application/json",
+            },
+          }
+        )
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            instance: {
+              kind: "graph_instance_snapshot",
+              version: 1,
+              instanceId: "graph-wf-graph",
+              workflowId: "wf-graph",
+              missionId: "mission-graph",
+              sessionId: "session-graph",
+              directive: "Graph instance detail",
+              status: "EXECUTING",
+              workflowStatus: "running",
+              missionStatus: "running",
+              currentStage: "execution",
+              createdAt: "2026-04-15T00:00:00.000Z",
+              startedAt: "2026-04-15T00:00:01.000Z",
+              completedAt: null,
+              links: {
+                workflowId: "wf-graph",
+                missionId: "mission-graph",
+                sessionId: "session-graph",
+              },
+              nodeRuns: [
+                {
+                  nodeId: "node-1",
+                  title: "CEO",
+                  status: "EXECUTING",
+                },
+              ],
+              edgeTransitions: [],
+              telemetry: {
+                messageCount: 2,
+                taskCount: 1,
+                errorCount: 0,
+                waitingFor: "等待市场部回传",
+              },
+            },
+          }),
+          {
+            status: 200,
+            headers: {
+              "content-type": "application/json",
+            },
+          }
+        )
+      );
+
+    const { useWorkflowStore } = await import("./workflow-store");
+    await useWorkflowStore.getState().fetchWorkflowDetail("wf-graph");
+
+    const state = useWorkflowStore.getState();
+    expect(state.currentWorkflow?.id).toBe("wf-graph");
+    expect(state.currentWorkflowGraphInstance?.workflowId).toBe("wf-graph");
+    expect(state.currentWorkflowGraphInstance?.telemetry.waitingFor).toBe(
+      "等待市场部回传"
+    );
   });
 });
