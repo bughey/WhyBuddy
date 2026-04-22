@@ -70,6 +70,64 @@
 4. `controlflow + platform-a` 的 runtime 热区归并
 5. `hitl-session` 前端 UI 差异回收
 
+## 下一阶段执行批次
+
+为避免再次进入“开很多 worktree 但主仓迟迟不收口”的状态，下一阶段改为 `main` 主线批次推进，按下面 4 个批次执行：
+
+### 批次 A：治理与门禁补齐
+
+目标是先把高风险能力需要依赖的审计、权限、回放门禁补完整，再放开后续热区接入。
+
+- 补齐 `platform-c` 中 `audit / permissions / lineage / replay` 的主仓实现与测试
+- 对齐 `server/routes/*` 中和治理能力相关的挂载入口
+- 统一高风险动作的事件命名、审计字段和拒绝原因结构
+- 完成标准：高风险节点接入前，已有统一 permission check 和 audit trail
+
+### 批次 B：工具与外部调用主干
+
+目标是把 `tools-and-agents` 这条主干先收拢成可控接口，而不是继续分散在不同适配层中。
+
+- 对账 `a2a / auto_agent / internal_api / guest-agents / skills`
+- 明确工具调用的输入输出契约、错误结构和宿主能力边界
+- 统一消息通知、内部 API、外部代理调用的治理钩子
+- 完成标准：工具调用链路全部能挂到统一 runtime 和治理链路下
+
+### 批次 C：运行时与控制流归并
+
+目标是把 `platform-a` 与 `controlflow` 热区收回到统一 runtime 语义中，减少后续节点接入时反复改内核。
+
+- 统一 `workflow-runtime-engine / workflow-graph-projection / workflow-domain`
+- 补齐 `checkpoint / resume / transition / branch / loop` 的主仓回归
+- 对齐控制流节点在 graph execution record 中的状态表达
+- 完成标准：至少一条带条件分支和恢复能力的图链路可稳定回放
+
+### 批次 D：HITL 与 Office 面板闭环
+
+目标是把前端交互层和主仓 runtime 投影打通，形成可演示闭环，而不是只有服务端接口到位。
+
+- 回收 `DecisionPanel / DecisionHistory / tasks-store / mission-client` 差异
+- 统一 Office 面板、监控面板、任务面板的 session / projection 来源
+- 校验人工确认、恢复执行、状态刷新在前端链路中的一致性
+- 完成标准：HITL 决策链路可从 UI 发起、回写、恢复并在监控面板中看到
+
+## 批次执行顺序
+
+建议按 `A -> B -> C -> D` 推进，其中：
+
+- `A` 是 `B` 和高风险节点继续推进的前置条件
+- `B` 和 `C` 可以局部交错推进，但最终都要落回统一 runtime 契约
+- `D` 放在后面，不是因为不重要，而是为了避免前端先固化一套和主仓不一致的语义
+
+## 主仓推进规则
+
+从这一阶段开始，默认采用以下规则：
+
+- 不再为单个 spec 长时间保留独立 worktree
+- 新改动优先直接在 `main` 上按小批次收口
+- 每个批次先补测试，再改热文件
+- 每个批次结束都要留下可复核的通过项：测试、文档、主仓提交
+- 进度统计不再看“还有多少 worktree”，而看 `main` 上已经通过验证的提交与闭环能力
+
 ## 备注
 
 - 本轮清理前，所有 `web-aigc` worktree 的脏内容都已单独备份到本地目录，便于后续追溯。
