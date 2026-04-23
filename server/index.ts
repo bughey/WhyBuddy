@@ -467,9 +467,11 @@ async function startServer() {
   }
 
   const agentRoutes = (await import("./routes/agents.js")).default;
-  const chatRoutes = (await import("./routes/chat.js")).default;
+  const { createChatRouter } = await import("./routes/chat.js");
+  const { createRobotReplyRouter } = await import("./routes/robot-reply.js");
   const reportRoutes = (await import("./routes/reports.js")).default;
   const workflowRoutes = (await import("./routes/workflows.js")).default;
+  const { createOpenPageRouter } = await import("./routes/open-page.js");
   const aigcMonitoringRoutes =
     (await import("./routes/aigc-monitoring.js")).default;
   const configRoutes = (await import("./routes/config.js")).default;
@@ -538,11 +540,40 @@ async function startServer() {
   // ── RAG Pipeline ──
   const { getRAGConfig } = await import("./rag/config.js");
   const ragConfig = getRAGConfig();
+  let ragDeps:
+    | (Awaited<ReturnType<(typeof import("./rag/index.js"))["initRAG"]>>)
+    | undefined;
+  let chatDocumentSearch:
+    | ((
+        request: import("../shared/rag/web-aigc-search.js").WebAigcSearchRequest,
+      ) => Promise<import("../shared/rag/web-aigc-search.js").WebAigcDocumentSearchResponse>)
+    | undefined;
   if (ragConfig.enabled) {
     const { initRAG } = await import("./rag/index.js");
-    const ragDeps = initRAG();
+    const initializedRagDeps = initRAG();
+    ragDeps = initializedRagDeps;
     const { createRAGRouter } = await import("./routes/rag.js");
-    app.use("/api/rag", createRAGRouter(ragDeps));
+    const {
+      normalizeWebAigcSearchRequest,
+      projectDocumentSearchResponse,
+    } = await import("./rag/web-aigc-search-adapter.js");
+
+    chatDocumentSearch = async (request) => {
+      const options = normalizeWebAigcSearchRequest(request);
+      const startedAt = Date.now();
+      const results = await initializedRagDeps.retriever.search(request.query, options);
+      const latencyMs = Math.max(0, Date.now() - startedAt);
+
+      return projectDocumentSearchResponse({
+        query: request.query,
+        results,
+        documentIds: request.scope.documentIds,
+        latencyMs,
+        mode: request.options?.mode ?? "hybrid",
+      });
+    };
+
+    app.use("/api/rag", createRAGRouter(initializedRagDeps));
   }
 
   // Audit chain / observability wiring
@@ -567,8 +598,13 @@ async function startServer() {
     auditCollector,
   });
 
+  const chatRoutes = createChatRouter({
+    documentSearch: chatDocumentSearch,
+  });
+
   app.use("/api/agents", agentRoutes);
   app.use("/api/chat", chatRoutes);
+  app.use("/api/robot-reply", createRobotReplyRouter());
   app.use("/api/reports", reportRoutes);
   app.use("/api/workflows", workflowRoutes);
   app.use("/api/v1/:tenantId/aigc-monitoring", aigcMonitoringRoutes);
@@ -646,6 +682,7 @@ async function startServer() {
   const { PermissionCheckEngine } = await import("./permission/check-engine.js");
   const { FilesystemChecker } = await import("./permission/checkers/filesystem-checker.js");
   const { DatabaseChecker } = await import("./permission/checkers/database-checker.js");
+  const { McpChecker } = await import("./permission/checkers/mcp-checker.js");
 
   wfEngine.tokenService = permTokenService;
 
@@ -655,15 +692,177 @@ async function startServer() {
     new Map([
       ["filesystem", new FilesystemChecker()],
       ["database", new DatabaseChecker()],
+      ["mcp_tool", new McpChecker()],
     ]),
   );
   setPermissionCheckEngine(permCheckEngine);
 
-  if (ragConfig.enabled) {
+  app.use(
+    "/api/open-page",
+    createOpenPageRouter({
+      permissionEngine: permCheckEngine,
+    }),
+  );
+
+  const { createMcpRouter } = await import("./routes/mcp.js");
+  const { createAudioRecognitionRouter } = await import("./routes/audio-recognition.js");
+  const { createAiPptRouter } = await import("./routes/ai-ppt.js");
+  const { createDynamicChartRouter } = await import("./routes/dynamic-chart.js");
+  const { createExcelReadRouter } = await import("./routes/excel-read.js");
+  const { createFileGenerationRouter } = await import("./routes/file-generation.js");
+  const { createFileSlicingRouter } = await import("./routes/file-slicing.js");
+  const { createFileTranslationRouter } = await import("./routes/file-translation.js");
+  const { createFormatOutputRouter } = await import("./routes/format-output.js");
+  const { createGraphSearchRouter } = await import("./routes/graph-search.js");
+  const { createImageSearchRouter } = await import("./routes/image-search.js");
+  const { createOpenDashboardRouter } = await import("./routes/open-dashboard.js");
+  const {
+    createOrchestrationRecognitionJumpRouter,
+  } = await import("./routes/orchestration-recognition-jump.js");
+  const { createIntentRecognitionRouter } = await import("./routes/intent-recognition.js");
+  const { createLongTextExtractionRouter } = await import("./routes/long-text-extraction.js");
+  const { createOcrRecognitionRouter } = await import("./routes/ocr-recognition.js");
+  const { createSimilarityMatchRouter } = await import("./routes/similarity-match.js");
+  const { createStaticWebpageReadRouter } = await import("./routes/static-webpage-read.js");
+  const { createTransactionFlowRouter } = await import("./routes/transaction-flow.js");
+  const { createWebSearchRouter } = await import("./routes/web-search.js");
+  const { createWebQaRouter } = await import("./routes/web-qa.js");
+  const { createVectorDeleteRouter } = await import("./routes/vector-delete.js");
+  const { createVectorUpdateRouter } = await import("./routes/vector-update.js");
+  const { createGetLocationInfoRouter } = await import("./routes/get-location-info.js");
+  const { createGetDeviceInfoRouter } = await import("./routes/get-device-info.js");
+  const { McpToolAdapter } = await import("./tool/api/mcp-tool-adapter.js");
+  const {
+    InternalMcpToolInvoker,
+  } = await import("./tool/api/internal-mcp-tool-invoker.js");
+  const { VectorDeleteAdapter } = await import("./web-aigc/vector-delete-adapter.js");
+  const { VectorUpdateAdapter } = await import("./web-aigc/vector-update-adapter.js");
+  const {
+    registerWebAigcRuntimeExtraAdapters,
+  } = await import("./core/web-aigc-runtime-extra-adapters.js");
+  const mcpToolAdapter = new McpToolAdapter({
+    invoker: new InternalMcpToolInvoker(),
+    permissionEngine: permCheckEngine,
+    auditLogger: permAuditLogger,
+    escalationManager: permDynamicManager,
+  });
+  app.use(
+    "/api/mcp",
+    createMcpRouter({
+      executeMcp: (request) => mcpToolAdapter.execute(request),
+    }),
+  );
+  app.use("/api/ai-ppt", createAiPptRouter());
+  app.use("/api/audio-recognition", createAudioRecognitionRouter());
+  app.use("/api/dynamic-chart", createDynamicChartRouter());
+  app.use("/api/excel-read", createExcelReadRouter());
+  app.use("/api/file-generation", createFileGenerationRouter());
+  app.use("/api/file-slicing", createFileSlicingRouter());
+  app.use("/api/file-translation", createFileTranslationRouter());
+  app.use("/api/format-output", createFormatOutputRouter());
+  app.use(
+    "/api/graph-search",
+    createGraphSearchRouter({
+      queryService,
+      knowledgeService,
+    }),
+  );
+  app.use("/api/image-search", createImageSearchRouter());
+  app.use("/api/intent-recognition", createIntentRecognitionRouter());
+  app.use(
+    "/api/orchestration-recognition-jump",
+    createOrchestrationRecognitionJumpRouter({
+      permissionEngine: permCheckEngine,
+      auditLogger: permAuditLogger,
+    }),
+  );
+  app.use("/api/long-text-extraction", createLongTextExtractionRouter());
+  app.use("/api/ocr-recognition", createOcrRecognitionRouter());
+  app.use(
+    "/api/transaction-flow",
+    createTransactionFlowRouter({
+      permissionEngine: permCheckEngine,
+      auditLogger: permAuditLogger,
+    }),
+  );
+  app.use(
+    "/api/open-dashboard",
+    createOpenDashboardRouter({
+      permissionEngine: permCheckEngine,
+    }),
+  );
+  app.use("/api/similarity-match", createSimilarityMatchRouter());
+  app.use("/api/static-webpage-read", createStaticWebpageReadRouter());
+  if (ragDeps) {
+    app.use(
+      "/api/vector-update",
+      createVectorUpdateRouter({
+        vectorUpdateAdapter: new VectorUpdateAdapter({
+          metadataStore: ragDeps.metadataStore,
+          vectorStore: ragDeps.vectorStore,
+          permissionEngine: permCheckEngine,
+          auditLogger: permAuditLogger,
+        }),
+      }),
+    );
+    app.use(
+      "/api/vector-delete",
+      createVectorDeleteRouter({
+        vectorDeleteAdapter: new VectorDeleteAdapter({
+          metadataStore: ragDeps.metadataStore,
+          vectorStore: ragDeps.vectorStore,
+          permissionEngine: permCheckEngine,
+          auditLogger: permAuditLogger,
+        }),
+      }),
+    );
+  }
+  app.use("/api/web-search", createWebSearchRouter());
+  app.use(
+    "/api/web-qa",
+    createWebQaRouter({
+      documentSearch: chatDocumentSearch,
+      knowledgeService,
+      permissionEngine: permCheckEngine,
+    }),
+  );
+  app.use("/api/get-location-info", createGetLocationInfoRouter());
+  app.use(
+    "/api/get-device-info",
+    createGetDeviceInfoRouter({
+      processPlatform: process.platform,
+      processArch: process.arch,
+      processVersion: process.version,
+    }),
+  );
+  serverRuntime.documentSearch = chatDocumentSearch;
+  registerWebAigcRuntimeExtraAdapters({
+    documentSearch: chatDocumentSearch,
+    knowledgeService,
+    executeMcp: (request) => mcpToolAdapter.execute(request),
+    queryService,
+    permissionEngine: permCheckEngine,
+    orchestrationRecognitionJumpRuntime: {
+      permissionEngine: permCheckEngine,
+      auditLogger: permAuditLogger,
+    },
+    ocrRecognitionRuntime: {},
+    deviceRuntime: {
+      processPlatform: process.platform,
+      processArch: process.arch,
+      processVersion: process.version,
+    },
+    transactionFlowRuntime: {
+      permissionEngine: permCheckEngine,
+      auditLogger: permAuditLogger,
+    },
+  });
+
+  if (ragConfig.enabled && ragDeps) {
     try {
-      const { initRAG } = await import("./rag/index.js");
-      const ragDeps = initRAG();
       const { VectorInsertAdapter } = await import("./web-aigc/vector-insert-adapter.js");
+      const { VectorDeleteAdapter } = await import("./web-aigc/vector-delete-adapter.js");
+      const { VectorUpdateAdapter } = await import("./web-aigc/vector-update-adapter.js");
       const { createWebAigcRiskActionRouter } = await import("./routes/web-aigc-risk-actions.js");
 
       app.use(
@@ -671,9 +870,19 @@ async function startServer() {
         createWebAigcRiskActionRouter({
           vectorInsertAdapter: new VectorInsertAdapter({
             ingestionPipeline: ragDeps.ingestionPipeline,
-            metadataStore: (ragDeps as any).metadataStore ?? (() => {
-              throw new Error("RAG metadata store unavailable");
-            })(),
+            metadataStore: ragDeps.metadataStore,
+            permissionEngine: permCheckEngine,
+            auditLogger: permAuditLogger,
+          }),
+          vectorUpdateAdapter: new VectorUpdateAdapter({
+            metadataStore: ragDeps.metadataStore,
+            vectorStore: ragDeps.vectorStore,
+            permissionEngine: permCheckEngine,
+            auditLogger: permAuditLogger,
+          }),
+          vectorDeleteAdapter: new VectorDeleteAdapter({
+            metadataStore: ragDeps.metadataStore,
+            vectorStore: ragDeps.vectorStore,
             permissionEngine: permCheckEngine,
             auditLogger: permAuditLogger,
           }),

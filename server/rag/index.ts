@@ -20,6 +20,7 @@ import { createEmbeddingProviderFromConfig } from './embedding/embedding-provide
 import { EmbeddingGenerator } from './embedding/embedding-generator.js';
 import { createQdrantAdapter } from './store/qdrant-adapter.js';
 import { MetadataStore } from './store/metadata-store.js';
+import type { VectorStoreAdapter } from './store/vector-store-adapter.js';
 import { KeywordSearcher } from './retrieval/keyword-searcher.js';
 import { ContextExpander } from './retrieval/context-expander.js';
 import { RAGRetriever } from './retrieval/rag-retriever.js';
@@ -39,6 +40,7 @@ import type { RAGRouteDeps } from '../routes/rag.js';
 
 export interface InitializedRAGDeps extends RAGRouteDeps {
   metadataStore: MetadataStore;
+  vectorStore: VectorStoreAdapter;
 }
 
 export function initRAG(): InitializedRAGDeps {
@@ -126,6 +128,7 @@ export function initRAG(): InitializedRAGDeps {
     metrics: ragMetrics,
     augmentationLogger,
     metadataStore,
+    vectorStore,
   };
 }
 
