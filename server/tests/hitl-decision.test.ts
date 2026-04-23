@@ -207,6 +207,7 @@ describe('submitMissionDecision — decision history append', () => {
       decisionId: 'dec_hitl_selection_1',
       payload: {
         nodeType: 'selection',
+        nodeId: 'node-selection-1',
         sessionId: 'sess-1',
         interactionId: 'int-1',
         branchKey: 'branch-left',
@@ -219,6 +220,7 @@ describe('submitMissionDecision — decision history append', () => {
       optionId: 'left',
       metadata: {
         nodeType: 'selection',
+        nodeId: 'node-selection-1',
         sessionId: 'sess-1',
         interactionId: 'int-1',
         branchKey: 'branch-left',
@@ -228,12 +230,14 @@ describe('submitMissionDecision — decision history append', () => {
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.decision.metadata?.nodeType).toBe('selection');
+      expect(result.decision.metadata?.nodeId).toBe('node-selection-1');
       expect(result.decision.metadata?.sessionId).toBe('sess-1');
       expect(result.decision.metadata?.interactionId).toBe('int-1');
       expect(result.decision.metadata?.branchKey).toBe('branch-left');
 
       const history = result.task.decisionHistory ?? [];
       expect(history).toHaveLength(1);
+      expect(history[0].nodeId).toBe('node-selection-1');
       expect(history[0].nodeType).toBe('selection');
       expect(history[0].sessionId).toBe('sess-1');
       expect(history[0].interactionId).toBe('int-1');
@@ -264,6 +268,114 @@ describe('submitMissionDecision — decision history append', () => {
       const history = result.task.decisionHistory ?? [];
       expect(history).toHaveLength(1);
       expect(history[0].submittedBy).toBe('operator-alice');
+    }
+  });
+
+  it('normalizes param_collection attachment fields in resolved decision metadata', () => {
+    const decision: MissionDecision = {
+      prompt: 'Collect attachments',
+      options: [{ id: 'submit', label: 'Submit' }],
+      type: 'custom-action',
+      decisionId: 'dec_param_attachment_1',
+      payload: {
+        nodeType: 'param_collection',
+        fieldDefinitions: [
+          {
+            key: 'attachment',
+            label: '附件',
+            type: 'attachment',
+            required: true,
+          },
+          {
+            key: 'title',
+            label: '标题',
+            type: 'text',
+            required: true,
+          },
+        ],
+      },
+    };
+    const task = makeWaitingTask('task_param_attachment_1', decision);
+    const runtime = createMockRuntime([task]);
+
+    const result = submitMissionDecision(runtime, 'task_param_attachment_1', {
+      optionId: 'submit',
+      metadata: {
+        nodeType: 'param_collection',
+        formData: {
+          title: '附件收集',
+          attachment: {
+            kind: 'attachment',
+            ref: 'artifact-1',
+            name: 'spec.pdf',
+            source: 'manual',
+          },
+        },
+      },
+    });
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.decision.metadata?.formData).toEqual({
+        title: '附件收集',
+        attachment: {
+          kind: 'attachment',
+          ref: 'artifact-1',
+          name: 'spec.pdf',
+          source: 'manual',
+        },
+      });
+      expect(result.task.decisionHistory?.at(-1)?.resolved.metadata?.formData).toEqual({
+        title: '附件收集',
+        attachment: {
+          kind: 'attachment',
+          ref: 'artifact-1',
+          name: 'spec.pdf',
+          source: 'manual',
+        },
+      });
+    }
+  });
+
+  it('accepts attachment references in param_collection formData', () => {
+    const decision: MissionDecision = {
+      prompt: 'Collect attachments',
+      options: [{ id: 'submit', label: 'Submit' }],
+      type: 'custom-action',
+      decisionId: 'dec_param_attachment_ref_1',
+      payload: {
+        nodeType: 'param_collection',
+        fieldDefinitions: [
+          {
+            key: 'attachment',
+            label: '附件',
+            type: 'attachment',
+            required: true,
+          },
+        ],
+      },
+    };
+    const task = makeWaitingTask('task_param_attachment_ref_1', decision);
+    const runtime = createMockRuntime([task]);
+
+    const result = submitMissionDecision(runtime, 'task_param_attachment_ref_1', {
+      optionId: 'submit',
+      metadata: {
+        nodeType: 'param_collection',
+        formData: {
+          attachment: 'artifact-ref-9',
+        },
+      },
+    });
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.decision.metadata?.formData).toEqual({
+        attachment: {
+          kind: 'attachment',
+          ref: 'artifact-ref-9',
+        },
+      });
     }
   });
 });
@@ -451,6 +563,7 @@ describe('API endpoints', () => {
       decisionId: 'dec_api_hitl_1',
       payload: {
         nodeType: 'selection',
+        nodeId: 'node-selection-api-1',
         sessionId: 'session-api-1',
         interactionId: 'interaction-api-1',
       },
@@ -463,6 +576,7 @@ describe('API endpoints', () => {
         optionId: 'branch-a',
         metadata: {
           nodeType: 'selection',
+          nodeId: 'node-selection-api-1',
           sessionId: 'session-api-1',
           interactionId: 'interaction-api-1',
           branchKey: 'branch-a',
@@ -473,9 +587,11 @@ describe('API endpoints', () => {
 
     expect(response.status).toBe(200);
     expect(body.ok).toBe(true);
+    expect(body.decision.metadata.nodeId).toBe('node-selection-api-1');
     expect(body.decision.metadata.sessionId).toBe('session-api-1');
     expect(body.decision.metadata.interactionId).toBe('interaction-api-1');
     expect(body.task.decisionHistory).toBeInstanceOf(Array);
+    expect(body.task.decisionHistory.at(-1).nodeId).toBe('node-selection-api-1');
     expect(body.task.decisionHistory.at(-1).nodeType).toBe('selection');
     expect(body.task.decisionHistory.at(-1).sessionId).toBe('session-api-1');
     expect(body.task.decisionHistory.at(-1).interactionId).toBe('interaction-api-1');
@@ -672,6 +788,72 @@ describe('API endpoints', () => {
       fieldCount: 3,
       formFieldKeys: ['approved', 'priority', 'region'],
       hasInteractionId: true,
+    });
+    expect(body.decision.metadata.nodeId).toBe('node-param-1');
+    expect(body.task.decisionHistory.at(-1).nodeId).toBe('node-param-1');
+    expect(body.task.decisionHistory.at(-1).nodeType).toBe('param_collection');
+    expect(body.task.decisionHistory.at(-1).sessionId).toBe('session-param-1');
+    expect(body.task.decisionHistory.at(-1).interactionId).toBe('interaction-param-1');
+  });
+
+  it('POST /api/tasks/:id/decision accepts param_collection attachment metadata objects', async () => {
+    const task = runtime.createChatTask('Param attachment api test');
+    runtime.markMissionRunning(task.id, 'execute', 'Running', 50);
+    runtime.waitOnMission(task.id, 'collect params', 'Collect attachment params', 50, {
+      prompt: 'Collect attachment params',
+      options: [{ id: 'submit', label: 'Submit' }],
+      decisionId: 'dec_param_attachment_api_1',
+      type: 'custom-action',
+      payload: {
+        nodeType: 'param_collection',
+        fieldDefinitions: [
+          {
+            key: 'attachment',
+            label: '附件',
+            type: 'attachment',
+            required: true,
+          },
+          {
+            key: 'title',
+            label: '标题',
+            type: 'text',
+            required: true,
+          },
+        ],
+      },
+    });
+
+    const response = await fetch(`${baseUrl}/api/tasks/${task.id}/decision`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        optionId: 'submit',
+        metadata: {
+          nodeType: 'param_collection',
+          formData: {
+            title: '附件任务',
+            attachment: {
+              kind: 'attachment',
+              ref: 'artifact-api-1',
+              name: 'brief.docx',
+              source: 'manual',
+            },
+          },
+        },
+      }),
+    });
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.ok).toBe(true);
+    expect(body.decision.metadata.formData).toEqual({
+      title: '附件任务',
+      attachment: {
+        kind: 'attachment',
+        ref: 'artifact-api-1',
+        name: 'brief.docx',
+        source: 'manual',
+      },
     });
   });
 

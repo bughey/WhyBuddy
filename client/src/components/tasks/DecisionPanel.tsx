@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   AlertTriangle,
   CheckCircle2,
@@ -10,13 +10,19 @@ import {
   XCircle,
 } from "lucide-react";
 
-import type {
-  DecisionType,
-  MissionDecision,
-  MissionDecisionOption,
+import {
+  normalizeWebAigcHitlFormData,
+  readWebAigcHitlFieldDefinitions,
+  type DecisionType,
+  type MissionDecision,
+  type MissionDecisionOption,
+  type WebAigcHitlAttachmentValue,
+  type WebAigcHitlFieldDefinition,
+  type WebAigcHitlFieldValue,
 } from "@shared/mission/contracts";
 
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Card,
   CardContent,
@@ -24,6 +30,15 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import {
   workspaceCalloutClass,
@@ -38,6 +53,68 @@ interface DecisionPanelProps {
   missionId: string;
   decision: MissionDecision;
   onDecisionSubmitted?: () => void;
+}
+
+type ParamCollectionDraft = Record<string, WebAigcHitlFieldValue | undefined>;
+
+type ParamCollectionSubmissionMetadata = {
+  nodeType: "param_collection";
+  sessionId?: string;
+  nodeId?: string;
+  interactionId?: string;
+  branchKey?: string;
+  formData: Record<string, WebAigcHitlFieldValue>;
+};
+
+export function buildParamCollectionSubmission(
+  decision: MissionDecision,
+  draft: ParamCollectionDraft
+): {
+  metadata?: ParamCollectionSubmissionMetadata;
+  fieldErrors: Record<string, string>;
+  error?: string;
+} {
+  const fields = readWebAigcHitlFieldDefinitions(decision.payload);
+  if (
+    decision.payload?.nodeType !== "param_collection" ||
+    fields.length === 0
+  ) {
+    return {
+      fieldErrors: {},
+    };
+  }
+
+  const normalized = normalizeWebAigcHitlFormData(fields, draft);
+  if (normalized.errors.length > 0) {
+    return {
+      fieldErrors: normalized.fieldErrors,
+      error: normalized.errors[0],
+    };
+  }
+
+  return {
+    metadata: {
+      nodeType: "param_collection",
+      sessionId:
+        typeof decision.payload?.sessionId === "string"
+          ? decision.payload.sessionId
+          : undefined,
+      nodeId:
+        typeof decision.payload?.nodeId === "string"
+          ? decision.payload.nodeId
+          : undefined,
+      interactionId:
+        typeof decision.payload?.interactionId === "string"
+          ? decision.payload.interactionId
+          : undefined,
+      branchKey:
+        typeof decision.payload?.branchKey === "string"
+          ? decision.payload.branchKey
+          : undefined,
+      formData: normalized.value,
+    },
+    fieldErrors: {},
+  };
 }
 
 function t(locale: string, zh: string, en: string) {
@@ -94,6 +171,266 @@ function typeIcon(type: DecisionType) {
     default:
       return <Send className="size-4 text-stone-600" />;
   }
+}
+
+function buildInitialParamCollectionDraft(
+  fields: WebAigcHitlFieldDefinition[]
+): ParamCollectionDraft {
+  return Object.fromEntries(
+    fields.map(field => [field.key, field.defaultValue])
+  );
+}
+
+function normalizeParamCollectionTextInput(
+  field: WebAigcHitlFieldDefinition,
+  value: string
+): WebAigcHitlFieldValue | undefined {
+  if (field.type === "number") {
+    return value.trim() === "" ? undefined : value;
+  }
+  return value;
+}
+
+function buildAttachmentInputValue(
+  value: string,
+  previous?: WebAigcHitlAttachmentValue
+): WebAigcHitlAttachmentValue | undefined {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return undefined;
+  }
+
+  return {
+    kind: "attachment",
+    ref: trimmed,
+    name: previous?.name,
+    url: previous?.url,
+    mimeType: previous?.mimeType,
+    size: previous?.size,
+    source: previous?.source ?? "manual",
+  };
+}
+
+function normalizeAttachmentMetadataPatch(
+  field: "name" | "url" | "mimeType" | "size",
+  value: string
+): string | number | undefined {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return undefined;
+  }
+  if (field === "size") {
+    const parsed = Number(trimmed);
+    return Number.isFinite(parsed) && parsed >= 0 ? parsed : undefined;
+  }
+  return trimmed;
+}
+
+function ParamCollectionField({
+  field,
+  value,
+  error,
+  locale,
+  disabled,
+  onChange,
+}: {
+  field: WebAigcHitlFieldDefinition;
+  value: WebAigcHitlFieldValue | undefined;
+  error?: string;
+  locale: string;
+  disabled: boolean;
+  onChange: (value: WebAigcHitlFieldValue | undefined) => void;
+}) {
+  const fieldLabel = field.required ? `${field.label} *` : field.label;
+  const placeholder =
+    field.placeholder || t(locale, "请输入", "Enter a value");
+
+  if (field.type === "textarea") {
+    return (
+      <div className="space-y-2">
+        <Label htmlFor={`param-field-${field.key}`}>{fieldLabel}</Label>
+        <Textarea
+          id={`param-field-${field.key}`}
+          value={typeof value === "string" ? value : ""}
+          onChange={event => onChange(event.target.value)}
+          placeholder={placeholder}
+          disabled={disabled}
+          aria-invalid={error ? "true" : "false"}
+          className={surfaceTextareaClass("lg")}
+        />
+        {error ? (
+          <div className="text-xs text-[var(--workspace-danger)]">{error}</div>
+        ) : null}
+      </div>
+    );
+  }
+
+  if (field.type === "selection" && Array.isArray(field.options)) {
+    return (
+      <div className="space-y-2">
+        <Label htmlFor={`param-field-${field.key}`}>{fieldLabel}</Label>
+        <Select
+          disabled={disabled}
+          value={typeof value === "string" ? value : undefined}
+          onValueChange={nextValue => onChange(nextValue)}
+        >
+          <SelectTrigger
+            id={`param-field-${field.key}`}
+            className="w-full rounded-[14px] border-[var(--workspace-panel-border)] bg-[rgba(255,255,255,0.68)]"
+            aria-invalid={error ? "true" : "false"}
+          >
+            <SelectValue placeholder={placeholder} />
+          </SelectTrigger>
+          <SelectContent>
+            {field.options.map(option => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {error ? (
+          <div className="text-xs text-[var(--workspace-danger)]">{error}</div>
+        ) : null}
+      </div>
+    );
+  }
+
+  if (field.type === "boolean") {
+    return (
+      <div className="space-y-2">
+        <Label htmlFor={`param-field-${field.key}`}>{fieldLabel}</Label>
+        <div className="flex items-center gap-3 rounded-[14px] border border-[var(--workspace-panel-border)] bg-[rgba(255,255,255,0.68)] px-3 py-3">
+          <Checkbox
+            id={`param-field-${field.key}`}
+            checked={value === true}
+            disabled={disabled}
+            onCheckedChange={checked => onChange(checked === true)}
+          />
+          <Label
+            htmlFor={`param-field-${field.key}`}
+            className="text-sm font-medium text-stone-700"
+          >
+            {field.placeholder ||
+              t(locale, "勾选表示是", "Check to mark as true")}
+          </Label>
+        </div>
+        {error ? (
+          <div className="text-xs text-[var(--workspace-danger)]">{error}</div>
+        ) : null}
+      </div>
+    );
+  }
+
+  if (field.type === "attachment") {
+    const attachmentValue =
+      value && typeof value === "object" && "kind" in value
+        ? (value as WebAigcHitlAttachmentValue)
+        : undefined;
+
+    const patchAttachmentField = (
+      key: "ref" | "name" | "url" | "mimeType" | "size",
+      nextValue: string
+    ) => {
+      if (key === "ref") {
+        onChange(buildAttachmentInputValue(nextValue, attachmentValue));
+        return;
+      }
+
+      const normalized = normalizeAttachmentMetadataPatch(key, nextValue);
+      const current = attachmentValue ?? { kind: "attachment", source: "manual" };
+      const hasAnyValue =
+        Boolean(current.ref) ||
+        Boolean(current.name) ||
+        Boolean(current.url) ||
+        Boolean(current.mimeType) ||
+        typeof current.size === "number";
+
+      if (!hasAnyValue && normalized === undefined) {
+        onChange(undefined);
+        return;
+      }
+
+      const nextAttachment: WebAigcHitlAttachmentValue = {
+        ...current,
+        kind: "attachment",
+      };
+
+      if (normalized === undefined) {
+        delete (nextAttachment as Record<string, unknown>)[key];
+      } else {
+        (nextAttachment as Record<string, unknown>)[key] = normalized;
+      }
+
+      if (!nextAttachment.ref && !nextAttachment.name && !nextAttachment.url) {
+        onChange(undefined);
+        return;
+      }
+
+      onChange(nextAttachment);
+    };
+
+    return (
+      <div className="space-y-2">
+        <Label htmlFor={`param-field-${field.key}`}>{fieldLabel}</Label>
+        <div className="space-y-2 rounded-[16px] border border-[var(--workspace-panel-border)] bg-[rgba(255,255,255,0.68)] p-3">
+          <Input
+            id={`param-field-${field.key}`}
+            value={attachmentValue?.ref ?? ""}
+            onChange={event => patchAttachmentField("ref", event.target.value)}
+            placeholder={field.placeholder || t(locale, "输入附件引用 ID", "Enter attachment reference")}
+            disabled={disabled}
+            aria-invalid={error ? "true" : "false"}
+            className="h-10 rounded-[14px] border-[var(--workspace-panel-border)] bg-white/70"
+          />
+          <Input
+            value={attachmentValue?.name ?? ""}
+            onChange={event => patchAttachmentField("name", event.target.value)}
+            placeholder={t(locale, "附件名称（可选）", "Attachment name (optional)")}
+            disabled={disabled}
+            className="h-10 rounded-[14px] border-[var(--workspace-panel-border)] bg-white/70"
+          />
+          <Input
+            value={attachmentValue?.url ?? ""}
+            onChange={event => patchAttachmentField("url", event.target.value)}
+            placeholder={t(locale, "附件 URL（可选）", "Attachment URL (optional)")}
+            disabled={disabled}
+            className="h-10 rounded-[14px] border-[var(--workspace-panel-border)] bg-white/70"
+          />
+        </div>
+        {error ? (
+          <div className="text-xs text-[var(--workspace-danger)]">{error}</div>
+        ) : null}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      <Label htmlFor={`param-field-${field.key}`}>{fieldLabel}</Label>
+      <Input
+        id={`param-field-${field.key}`}
+        type={field.type === "number" ? "number" : "text"}
+        value={
+          typeof value === "number"
+            ? String(value)
+            : typeof value === "string"
+              ? value
+              : ""
+        }
+        onChange={event =>
+          onChange(normalizeParamCollectionTextInput(field, event.target.value))
+        }
+        placeholder={placeholder}
+        disabled={disabled}
+        aria-invalid={error ? "true" : "false"}
+        className="h-10 rounded-[14px] border-[var(--workspace-panel-border)] bg-[rgba(255,255,255,0.68)]"
+      />
+      {error ? (
+        <div className="text-xs text-[var(--workspace-danger)]">{error}</div>
+      ) : null}
+    </div>
+  );
 }
 
 function OptionCard({
@@ -588,13 +925,48 @@ export function DecisionPanel({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [commentTexts, setCommentTexts] = useState<Record<string, string>>({});
+  const paramCollectionFields = readWebAigcHitlFieldDefinitions(decision.payload);
+  const [paramCollectionDraft, setParamCollectionDraft] = useState<ParamCollectionDraft>(
+    () => buildInitialParamCollectionDraft(paramCollectionFields)
+  );
+  const [paramCollectionErrors, setParamCollectionErrors] = useState<
+    Record<string, string>
+  >({});
 
   const type = resolveDecisionType(decision);
   const options = decision.options ?? [];
+  const isParamCollection =
+    decision.payload?.nodeType === "param_collection" &&
+    type === "request-info" &&
+    paramCollectionFields.length > 0;
+  const primaryOptionId = options[0]?.id;
+
+  useEffect(() => {
+    setParamCollectionDraft(buildInitialParamCollectionDraft(paramCollectionFields));
+    setParamCollectionErrors({});
+  }, [paramCollectionFields]);
 
   const handleCommentChange = useCallback((optionId: string, text: string) => {
     setCommentTexts(previous => ({ ...previous, [optionId]: text }));
   }, []);
+
+  const handleParamCollectionFieldChange = useCallback(
+    (fieldKey: string, value: WebAigcHitlFieldValue | undefined) => {
+      setParamCollectionDraft(previous => ({
+        ...previous,
+        [fieldKey]: value,
+      }));
+      setParamCollectionErrors(previous => {
+        if (!(fieldKey in previous)) {
+          return previous;
+        }
+        const next = { ...previous };
+        delete next[fieldKey];
+        return next;
+      });
+    },
+    []
+  );
 
   const handleSubmit = useCallback(
     async (optionId: string, freeText?: string) => {
@@ -610,6 +982,22 @@ export function DecisionPanel({
         return;
       }
 
+      let metadata:
+        | ParamCollectionSubmissionMetadata
+        | undefined;
+      if (isParamCollection) {
+        const submission = buildParamCollectionSubmission(
+          decision,
+          paramCollectionDraft
+        );
+        if (submission.error) {
+          setParamCollectionErrors(submission.fieldErrors);
+          setError(submission.error);
+          return;
+        }
+        metadata = submission.metadata;
+      }
+
       setSubmitting(true);
       setError(null);
 
@@ -617,6 +1005,7 @@ export function DecisionPanel({
         await submitMissionDecision(missionId, {
           optionId,
           freeText: freeText?.trim() || undefined,
+          ...(metadata ? { metadata } : {}),
         });
         onDecisionSubmitted?.();
       } catch (error) {
@@ -629,7 +1018,16 @@ export function DecisionPanel({
         setSubmitting(false);
       }
     },
-    [locale, missionId, onDecisionSubmitted, options]
+    [
+      decision.payload,
+      isParamCollection,
+      locale,
+      missionId,
+      onDecisionSubmitted,
+      options,
+      paramCollectionDraft,
+      paramCollectionFields,
+    ]
   );
 
   const handleSubmitFreeText = useCallback(
@@ -699,12 +1097,45 @@ export function DecisionPanel({
             locale={locale}
           />
         ) : type === "request-info" ? (
-          <RequestInfoLayout
-            decision={decision}
-            submitting={submitting}
-            onSubmitFreeText={handleSubmitFreeText}
-            locale={locale}
-          />
+          isParamCollection ? (
+            <div className="space-y-4">
+              <div className="grid gap-3">
+                {paramCollectionFields.map(field => (
+                  <ParamCollectionField
+                    key={field.key}
+                    field={field}
+                    value={paramCollectionDraft[field.key]}
+                    error={paramCollectionErrors[field.key]}
+                    locale={locale}
+                    disabled={submitting}
+                    onChange={value =>
+                      handleParamCollectionFieldChange(field.key, value)
+                    }
+                  />
+                ))}
+              </div>
+              <Button
+                type="button"
+                disabled={submitting || !primaryOptionId}
+                onClick={() => primaryOptionId && handleSubmit(primaryOptionId)}
+                className="w-full rounded-[18px]"
+              >
+                {submitting ? (
+                  <LoaderCircle className="size-4 animate-spin" />
+                ) : (
+                  <Send className="size-4" />
+                )}
+                {t(locale, "提交参数", "Submit Parameters")}
+              </Button>
+            </div>
+          ) : (
+            <RequestInfoLayout
+              decision={decision}
+              submitting={submitting}
+              onSubmitFreeText={handleSubmitFreeText}
+              locale={locale}
+            />
+          )
         ) : type === "escalate" ? (
           <EscalateLayout
             options={options}

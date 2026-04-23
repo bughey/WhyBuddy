@@ -4,6 +4,12 @@ import type {
   MissionDecisionResolved,
   MissionDecisionSubmission,
   MissionRecord,
+  WebAigcHitlAttachmentValue,
+  WebAigcHitlFieldValue,
+} from '../../shared/mission/contracts.js';
+import {
+  normalizeWebAigcHitlFormData,
+  readWebAigcHitlFieldDefinitions,
 } from '../../shared/mission/contracts.js';
 import type { LineageCollectorLike } from '../../shared/runtime-agent.js';
 
@@ -114,10 +120,50 @@ export function submitMissionDecision(
   const freeText = request.freeText?.trim() || undefined;
   const submittedBy = request.submittedBy?.trim() || undefined;
   const metadata = request.metadata;
+  const prompt = task.decision;
+  const fieldDefinitions = readWebAigcHitlFieldDefinitions(prompt?.payload);
+  const normalizedFormData =
+    metadata?.nodeType === 'param_collection' && fieldDefinitions.length > 0
+      ? normalizeWebAigcHitlFormData(fieldDefinitions, metadata?.formData)
+      : null;
+
+  if (normalizedFormData && normalizedFormData.errors.length > 0) {
+    return {
+      ok: false,
+      statusCode: 400,
+      error: normalizedFormData.errors[0] || 'Invalid param_collection form data',
+    };
+  }
+
+  const normalizedMetadata =
+    metadata && normalizedFormData
+      ? {
+          ...metadata,
+          formData: normalizedFormData.value,
+        }
+      : metadata;
+
+  const normalizedFormDataSummary = Object.fromEntries(
+    Object.entries(normalizedMetadata?.formData ?? {}).map(([key, value]) => [
+      key,
+      typeof value === 'object' && value !== null && 'kind' in value
+        ? {
+            kind: (value as WebAigcHitlAttachmentValue).kind,
+            ref: (value as WebAigcHitlAttachmentValue).ref,
+            name: (value as WebAigcHitlAttachmentValue).name,
+            url: (value as WebAigcHitlAttachmentValue).url,
+            mimeType: (value as WebAigcHitlAttachmentValue).mimeType,
+            size: (value as WebAigcHitlAttachmentValue).size,
+            source: (value as WebAigcHitlAttachmentValue).source,
+          }
+        : (value as WebAigcHitlFieldValue),
+    ]),
+  );
+
   const decision: MissionDecisionResolved = {
     optionId,
     freeText,
-    metadata,
+    metadata: normalizedMetadata,
   };
 
   if (task.status !== 'waiting') {
@@ -146,7 +192,6 @@ export function submitMissionDecision(
     };
   }
 
-  const prompt = task.decision;
   if (typeof prompt?.timeoutAt === 'number' && prompt.timeoutAt <= Date.now()) {
     return {
       ok: false,
@@ -202,7 +247,7 @@ export function submitMissionDecision(
     optionId: selectedOption?.id,
     optionLabel: selectedOption?.label,
     freeText,
-    metadata,
+    metadata: normalizedMetadata,
   };
 
   const detail =
@@ -222,10 +267,11 @@ export function submitMissionDecision(
     submittedAt: Date.now(),
     reason: freeText,
     stageKey: task.currentStageKey,
-    sessionId: metadata?.sessionId,
-    nodeType: metadata?.nodeType,
-    interactionId: metadata?.interactionId,
-    branchKey: metadata?.branchKey,
+    nodeId: normalizedMetadata?.nodeId,
+    sessionId: normalizedMetadata?.sessionId,
+    nodeType: normalizedMetadata?.nodeType,
+    interactionId: normalizedMetadata?.interactionId,
+    branchKey: normalizedMetadata?.branchKey,
   };
 
   const updated = runtime.resumeMissionFromDecision(task.id, {
@@ -257,11 +303,11 @@ export function submitMissionDecision(
           optionLabel: selectedOption?.label,
           freeText,
           type: historyEntry.type,
-          sessionId: metadata?.sessionId,
-          nodeType: metadata?.nodeType,
-          interactionId: metadata?.interactionId,
-          branchKey: metadata?.branchKey,
-          formData: metadata?.formData,
+          sessionId: normalizedMetadata?.sessionId,
+          nodeType: normalizedMetadata?.nodeType,
+          interactionId: normalizedMetadata?.interactionId,
+          branchKey: normalizedMetadata?.branchKey,
+          formData: normalizedFormDataSummary,
         },
       });
     }

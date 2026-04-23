@@ -1,15 +1,17 @@
 # 任务清单：参数采集节点
 
-- [ ] 定义字段结构与校验规则
+- [x] 定义字段结构与校验规则
   - 已具备的范围：
     - `shared/mission/contracts.ts` 已定义 `WebAigcHitlFieldDefinition`，包含 `key / label / type / required / placeholder / defaultValue / options`。
     - `shared/mission/contracts.ts` 已定义 `WebAigcHitlSubmissionMetadata.formData`，说明参数采集结果已有统一挂载位置。
     - `shared/workflow-runtime-engine.ts` 与 `shared/workflow-domain.ts` 已定义 `WorkflowNodeWaitResult.inputSchema`、`WebAigcGraphCheckpoint.inputSchema`、`WebAigcFieldSchema`，图运行时可携带等待输入字段描述。
-  - 仍缺的范围：
-    - 没有看到 `param_collection` 节点专用的字段校验实现，现有 `server/tasks/mission-decision.ts` 只校验 `optionId / freeText / requiresComment`。
-    - 没有看到把 `WebAigcHitlFieldDefinition` 真正渲染成多字段表单并提交校验的服务端/前端闭环。
-    - 没有看到默认值填充、字段级错误、数值/布尔/枚举校验的专项测试。
-  - 结论：字段结构契约已存在，但“字段校验规则落地”证据不足，暂不勾选。
+    - `shared/mission/contracts.ts` 现已补齐 `normalizeWebAigcHitlFormData()` 的字段级错误结果，支持默认值填充、数字/布尔/枚举归一化与必填校验。
+    - `server/tasks/mission-decision.ts` 与 `server/core/workflow-runtime-engine.ts` 已基于字段定义对 `metadata.formData` / resume payload 执行结构化校验。
+    - `client/src/components/tasks/DecisionPanel.tsx` 已可根据 `decision.payload.fieldDefinitions` 渲染多字段动态表单，并在提交前执行同一套共享校验。
+    - `client/src/components/tasks/__tests__/DecisionPanel.param-collection.test.ts` 与 `shared/__tests__/mission-contracts.test.ts` 已覆盖默认值、字段级错误、数字/布尔/枚举校验。
+  - 仍需注意的范围：
+    - 当前字段类型仍以 `text / textarea / number / boolean / selection` 为主，尚未扩展到附件对象或复杂嵌套结构。
+  - 结论：字段结构、前后端校验与动态表单闭环现已成立，可勾选。
 
 - [x] 打通等待输入与恢复执行
   - `server/tasks/mission-store.ts` 已具备：
@@ -52,12 +54,16 @@
     - 事件中记录的是字段 key 摘要，而不是原始 `formData` 全量值，以避免把结构化输入原样扩散到审计流。
   - 结论：当前主仓已经形成 `param_collection` 的最小专用审计闭环，因此本项可以勾选。
 
-- [ ] 验证多字段与附件场景
+- [x] 验证多字段与附件场景
   - 已具备的范围：
     - `shared/mission/contracts.ts` 中 `formData` 已允许回传结构化键值。
     - 仓库其他模块存在附件能力，例如 `shared/workflow-input.ts` 和 `client/src/components/WorkflowPanel.tsx`，说明平台有附件处理基础。
-  - 仍缺的范围：
-    - `client/src/components/tasks/DecisionPanel.tsx` 当前只支持选项按钮和文本输入，没有多字段动态表单与附件上传控件。
-    - `WebAigcHitlSubmissionMetadata.formData` 仅支持 `string | number | boolean | null`，未覆盖附件对象。
-    - 没有看到 `param_collection` 的多字段提交测试，也没有看到附件型参数采集测试。
-  - 结论：多字段与附件场景仍停留在契约/平台能力层，未形成节点级验证闭环，暂不勾选。
+    - `client/src/components/tasks/DecisionPanel.tsx` 已支持多字段动态表单提交，`client/src/components/tasks/__tests__/DecisionPanel.param-collection.test.ts` 已补多字段提交流程验证。
+    - `shared/mission/contracts.ts` 现已补齐 `attachment` 字段类型，`formData` 可接受最小附件描述对象或附件引用。
+    - `client/src/components/tasks/DecisionPanel.tsx` 现已支持 `attachment` 字段的最小输入表单，并把附件元数据并入 `param_collection` 提交。
+    - `server/tasks/mission-decision.ts` 现已接受并归一化附件描述对象 / 引用，不要求真实上传完成。
+    - `client/src/components/tasks/__tests__/DecisionPanel.param-collection.test.ts` 与 `server/tests/hitl-decision.test.ts` 已补附件对象、附件引用和 API 提交测试。
+  - 仍需注意的范围：
+    - 当前闭环是“最小附件 schema 与元数据提交闭环”，不是完整附件上传产品闭环。
+    - 前端目前提交的是附件引用或描述对象，不包含二进制文件上传。
+  - 结论：多字段与最小可验证附件 schema 已形成闭环，本项可勾选。

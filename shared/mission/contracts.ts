@@ -95,18 +95,406 @@ export const WEB_AIGC_HITL_NODE_TYPES = [
 export type WebAigcHitlNodeType =
   (typeof WEB_AIGC_HITL_NODE_TYPES)[number];
 
+export const WEB_AIGC_HITL_FIELD_TYPES = [
+  "text",
+  "textarea",
+  "number",
+  "boolean",
+  "selection",
+  "attachment",
+] as const;
+
+export type WebAigcHitlFieldType =
+  (typeof WEB_AIGC_HITL_FIELD_TYPES)[number];
+
+export interface WebAigcHitlFieldOption {
+  value: string;
+  label: string;
+  description?: string;
+}
+
+export interface WebAigcHitlAttachmentValue {
+  kind: "attachment";
+  ref?: string;
+  name?: string;
+  url?: string;
+  mimeType?: string;
+  size?: number;
+  source?: "upload" | "artifact" | "url" | "manual";
+}
+
+export type WebAigcHitlFieldValue =
+  | string
+  | number
+  | boolean
+  | null
+  | WebAigcHitlAttachmentValue;
+
+export type WebAigcHitlFormData = Record<string, WebAigcHitlFieldValue>;
+
 export interface WebAigcHitlFieldDefinition {
   key: string;
   label: string;
-  type?: "text" | "textarea" | "number" | "boolean" | "selection";
+  type?: WebAigcHitlFieldType;
   required?: boolean;
   placeholder?: string;
-  defaultValue?: string | number | boolean | null;
-  options?: Array<{
-    value: string;
-    label: string;
-    description?: string;
-  }>;
+  defaultValue?: WebAigcHitlFieldValue;
+  options?: WebAigcHitlFieldOption[];
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function normalizeOptionalText(value: unknown): string | undefined {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+  const normalized = value.trim();
+  return normalized || undefined;
+}
+
+function normalizeFieldOption(
+  value: unknown,
+): WebAigcHitlFieldOption | undefined {
+  if (!isRecord(value)) {
+    return undefined;
+  }
+
+  const optionValue = normalizeOptionalText(value.value);
+  const label = normalizeOptionalText(value.label);
+  if (!optionValue || !label) {
+    return undefined;
+  }
+
+  return {
+    value: optionValue,
+    label,
+    description: normalizeOptionalText(value.description),
+  };
+}
+
+function normalizeAttachmentSource(
+  value: unknown,
+): WebAigcHitlAttachmentValue["source"] | undefined {
+  return value === "upload" ||
+    value === "artifact" ||
+    value === "url" ||
+    value === "manual"
+    ? value
+    : undefined;
+}
+
+function normalizeAttachmentSize(value: unknown): number | undefined {
+  if (typeof value === "number" && Number.isFinite(value) && value >= 0) {
+    return value;
+  }
+  if (typeof value === "string" && value.trim() !== "") {
+    const parsed = Number(value.trim());
+    if (Number.isFinite(parsed) && parsed >= 0) {
+      return parsed;
+    }
+  }
+  return undefined;
+}
+
+function normalizeAttachmentValue(
+  value: unknown,
+): WebAigcHitlAttachmentValue | undefined {
+  if (typeof value === "string") {
+    const normalized = value.trim();
+    if (!normalized) {
+      return undefined;
+    }
+    return {
+      kind: "attachment",
+      ref: normalized,
+    };
+  }
+
+  if (!isRecord(value)) {
+    return undefined;
+  }
+
+  const ref =
+    normalizeOptionalText(value.ref) ||
+    normalizeOptionalText(value.attachmentId) ||
+    normalizeOptionalText(value.artifactId) ||
+    normalizeOptionalText(value.id);
+  const name =
+    normalizeOptionalText(value.name) ||
+    normalizeOptionalText(value.fileName) ||
+    normalizeOptionalText(value.filename);
+  const url = normalizeOptionalText(value.url);
+  const mimeType =
+    normalizeOptionalText(value.mimeType) ||
+    normalizeOptionalText(value.contentType) ||
+    normalizeOptionalText(value.type);
+  const size = normalizeAttachmentSize(value.size);
+  const source = normalizeAttachmentSource(value.source);
+
+  if (!ref && !name && !url) {
+    return undefined;
+  }
+
+  return {
+    kind: "attachment",
+    ...(ref ? { ref } : {}),
+    ...(name ? { name } : {}),
+    ...(url ? { url } : {}),
+    ...(mimeType ? { mimeType } : {}),
+    ...(size !== undefined ? { size } : {}),
+    ...(source ? { source } : {}),
+  };
+}
+
+function normalizeFieldDefaultValue(
+  value: unknown,
+  fieldType?: WebAigcHitlFieldType,
+): WebAigcHitlFieldValue | undefined {
+  if (fieldType === "attachment") {
+    return normalizeAttachmentValue(value);
+  }
+  if (
+    typeof value === "string" ||
+    typeof value === "number" ||
+    typeof value === "boolean" ||
+    value === null
+  ) {
+    return value;
+  }
+  return undefined;
+}
+
+function normalizeFieldDefinition(
+  value: unknown,
+): WebAigcHitlFieldDefinition | undefined {
+  if (!isRecord(value)) {
+    return undefined;
+  }
+
+  const key = normalizeOptionalText(value.key);
+  const label = normalizeOptionalText(value.label);
+  if (!key || !label) {
+    return undefined;
+  }
+
+  const type = WEB_AIGC_HITL_FIELD_TYPES.includes(
+    value.type as WebAigcHitlFieldType,
+  )
+    ? (value.type as WebAigcHitlFieldType)
+    : undefined;
+
+  return {
+    key,
+    label,
+    type,
+    required: value.required === true,
+    placeholder: normalizeOptionalText(value.placeholder),
+    defaultValue: normalizeFieldDefaultValue(value.defaultValue, type),
+    options: Array.isArray(value.options)
+      ? value.options
+          .map(option => normalizeFieldOption(option))
+          .filter((option): option is WebAigcHitlFieldOption => Boolean(option))
+      : undefined,
+  };
+}
+
+export function readWebAigcHitlFieldDefinitions(
+  payload: unknown,
+): WebAigcHitlFieldDefinition[] {
+  if (!isRecord(payload)) {
+    return [];
+  }
+
+  const rawFieldDefinitions = payload.fieldDefinitions;
+  const rawFields =
+    Array.isArray(payload.fields)
+      ? payload.fields
+      : Array.isArray(rawFieldDefinitions)
+        ? rawFieldDefinitions
+        : [];
+
+  return rawFields
+    .map(field => normalizeFieldDefinition(field))
+    .filter(
+      (field): field is WebAigcHitlFieldDefinition => Boolean(field),
+    );
+}
+
+function coerceBooleanFieldValue(
+  value: unknown,
+): boolean | undefined {
+  if (typeof value === "boolean") {
+    return value;
+  }
+  if (typeof value === "number") {
+    if (value === 1) return true;
+    if (value === 0) return false;
+    return undefined;
+  }
+  if (typeof value !== "string") {
+    return undefined;
+  }
+
+  const normalized = value.trim().toLowerCase();
+  if (normalized === "true" || normalized === "1" || normalized === "yes") {
+    return true;
+  }
+  if (normalized === "false" || normalized === "0" || normalized === "no") {
+    return false;
+  }
+  return undefined;
+}
+
+function normalizeSingleFieldValue(
+  field: WebAigcHitlFieldDefinition,
+  value: unknown,
+): { value?: WebAigcHitlFieldValue; error?: string; empty: boolean } {
+  const fieldType = field.type || "text";
+  const rawValue =
+    value === undefined ? field.defaultValue : value;
+
+  if (rawValue === undefined || rawValue === null) {
+    return { value: rawValue === null ? null : undefined, empty: true };
+  }
+
+  if (typeof rawValue === "string" && rawValue.trim() === "") {
+    if (
+      fieldType === "text" ||
+      fieldType === "textarea" ||
+      fieldType === "selection" ||
+      fieldType === "attachment"
+    ) {
+      return { value: undefined, empty: true };
+    }
+  }
+
+  if (fieldType === "attachment") {
+    let attachmentValue: WebAigcHitlAttachmentValue | undefined;
+
+    if (typeof rawValue === "string") {
+      const trimmed = rawValue.trim();
+      if (!trimmed) {
+        return { value: undefined, empty: true };
+      }
+
+      if (trimmed.startsWith("{")) {
+        try {
+          attachmentValue = normalizeAttachmentValue(JSON.parse(trimmed));
+        } catch {
+          return {
+            error: `字段“${field.label}”需要附件描述对象或引用`,
+            empty: false,
+          };
+        }
+      } else {
+        attachmentValue = normalizeAttachmentValue(trimmed);
+      }
+    } else {
+      attachmentValue = normalizeAttachmentValue(rawValue);
+    }
+
+    if (!attachmentValue) {
+      return {
+        error: `字段“${field.label}”需要附件描述对象或引用`,
+        empty: false,
+      };
+    }
+
+    return {
+      value: attachmentValue,
+      empty: false,
+    };
+  }
+
+  if (fieldType === "number") {
+    if (typeof rawValue === "number" && Number.isFinite(rawValue)) {
+      return { value: rawValue, empty: false };
+    }
+    if (typeof rawValue === "string" && rawValue.trim() !== "") {
+      const parsed = Number(rawValue.trim());
+      if (Number.isFinite(parsed)) {
+        return { value: parsed, empty: false };
+      }
+    }
+    return {
+      error: `字段“${field.label}”需要数字值`,
+      empty: false,
+    };
+  }
+
+  if (fieldType === "boolean") {
+    const parsed = coerceBooleanFieldValue(rawValue);
+    if (parsed !== undefined) {
+      return { value: parsed, empty: false };
+    }
+    return {
+      error: `字段“${field.label}”需要布尔值`,
+      empty: false,
+    };
+  }
+
+  const textValue =
+    typeof rawValue === "string"
+      ? rawValue.trim()
+      : String(rawValue);
+
+  if (!textValue) {
+    return { value: undefined, empty: true };
+  }
+
+  if (fieldType === "selection" && Array.isArray(field.options) && field.options.length > 0) {
+    const allowedValues = new Set(field.options.map(option => option.value));
+    if (!allowedValues.has(textValue)) {
+      return {
+        error: `字段“${field.label}”的选项不合法`,
+        empty: false,
+      };
+    }
+  }
+
+  return { value: textValue, empty: false };
+}
+
+export function normalizeWebAigcHitlFormData(
+  fields: WebAigcHitlFieldDefinition[],
+  value: unknown,
+): {
+  value: WebAigcHitlFormData;
+  errors: string[];
+  fieldErrors: Record<string, string>;
+} {
+  const raw = isRecord(value) ? value : {};
+  const normalized: WebAigcHitlFormData = {};
+  const errors: string[] = [];
+  const fieldErrors: Record<string, string> = {};
+
+  for (const field of fields) {
+    const result = normalizeSingleFieldValue(field, raw[field.key]);
+    if (result.error) {
+      errors.push(result.error);
+      fieldErrors[field.key] = result.error;
+      continue;
+    }
+    if (result.empty) {
+      if (field.required) {
+        const message = `字段“${field.label}”为必填项`;
+        errors.push(message);
+        fieldErrors[field.key] = message;
+      }
+      continue;
+    }
+    if (result.value !== undefined) {
+      normalized[field.key] = result.value;
+    }
+  }
+
+  return {
+    value: normalized,
+    errors,
+    fieldErrors,
+  };
 }
 
 export interface WebAigcHitlSubmissionMetadata {
@@ -115,7 +503,7 @@ export interface WebAigcHitlSubmissionMetadata {
   nodeId?: string;
   interactionId?: string;
   branchKey?: string;
-  formData?: Record<string, string | number | boolean | null>;
+  formData?: WebAigcHitlFormData;
 }
 
 export interface MissionStage {
@@ -189,6 +577,7 @@ export interface DecisionHistoryEntry {
   submittedAt: number;
   reason?: string;
   stageKey?: string;
+  nodeId?: string;
   sessionId?: string;
   nodeType?: WebAigcHitlNodeType;
   interactionId?: string;
@@ -493,6 +882,11 @@ export interface MissionDecisionEntry {
   decision: MissionDecision;
   resolved?: MissionDecisionResolved;
   timestamp: number;
+  nodeId?: string;
+  nodeType?: WebAigcHitlNodeType;
+  sessionId?: string;
+  interactionId?: string;
+  branchKey?: string;
 }
 
 export interface AttachmentIndexEntry {
