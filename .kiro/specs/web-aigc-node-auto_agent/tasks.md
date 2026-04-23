@@ -1,6 +1,110 @@
 # 任务清单：自动代理节点
 
 - [x] 定义代理选择与输入结构
+  - `server/tool/api/auto-agent-adapter.ts` 已形成统一请求契约 `AutoAgentExecutionRequest`，当前不只支持 `agent / guest_agent / skill`，也已纳入 `internal_api / passthrough_api`。
+  - 统一输入层已覆盖：
+    - `kind`
+    - `targetId`
+    - `input`
+    - `context`
+    - `workflowId`
+    - `stage`
+    - `version`
+    - `delegateAgentId`
+    - `maxSkills`
+    - `metadata`
+  - 统一输出层 `AutoAgentExecutionResult` 已补齐：
+    - `delegatedTo`
+    - `metadata.source`
+    - `metadata.invokedAt`
+    - `metadata.workflowId`
+    - `metadata.stage`
+    - `metadata.requestMetadata`
+    - `metadata.targetLabel`
+    - `metadata.recovery`
+  - 结论：当前主线已经不是“只会转发 agent prompt”的薄封装，而是形成了一个可承接多种目标类型、并保留调用元数据的统一执行契约。
+
 - [x] 对接 A2A 与 skills 能力
+  - `server/routes/a2a.ts`、`server/routes/skills.ts`、`server/routes/guest-agents.ts` 已统一挂到 `AutoAgentExecutor`。
+  - 当前已验证的目标类型包括：
+    - `agent`
+    - `guest_agent`
+    - `skill`
+    - `internal_api`
+    - `passthrough_api`
+  - `server/tests/auto-agent-routes.test.ts` 已验证：
+    - `/api/a2a/auto-agent` 可分发 `agent / internal_api / passthrough_api`
+    - `/api/skills/:id/execute` 可转发成统一 skill 调用
+    - `/api/agents/guest/:id/execute` 可转发成统一 guest agent 调用
+  - `server/tests/auto-agent-adapter.test.ts` 已验证：
+    - resident agent 直连执行
+    - skill 通过 delegate agent + MCP 绑定执行
+    - internal_api 通过内部适配器执行
+    - passthrough_api 通过代理适配器执行
+  - 结论：这轮 tools-and-agents 主线增强后，`auto_agent` 已成为多类工具与代理目标的统一执行入口，而不是只服务单一 agent 类型。
+
 - [x] 记录代理调用审计事件
+  - `AutoAgentExecutor` 已支持注入 `auditLogger`，在成功与失败两条路径都统一写审计。
+  - 当前审计资源标识统一为 `auto_agent:{kind}:{targetId}`。
+  - 当前已稳定落审计的元数据包括：
+    - `targetKind`
+    - `targetId`
+    - `workflowId`
+    - `missionId`
+    - `sessionId`
+    - `operator`
+    - `stage`
+    - `inputPreview`
+    - `contextCount`
+    - `delegateAgentId`
+    - `delegatedAgentId`
+    - `delegatedAgentKind`
+    - `delegatedAgentRole`
+    - `targetLabel`
+    - `skillIds`
+    - `skillVersions`
+    - `mcpBindingCount`
+    - `attemptCount`
+    - `retryCount`
+    - `timeoutMs`
+    - `fallbackUsed`
+    - `fallbackTargetKind`
+    - `fallbackTargetId`
+    - `requestedTargetKind`
+    - `requestedTargetId`
+    - `errorChain`
+    - `metadataKeys`
+  - `server/tests/auto-agent-adapter.test.ts` 已验证：
+    - 成功执行写 `allowed`
+    - 目标缺失写 `error`
+    - timeout / retry / fallback 的恢复元数据会进入审计
+  - 结论：审计已经不是只记录“调过一次 auto_agent”，而是能保留本轮主线增强最关键的恢复和代理分发上下文。
+
 - [x] 增加失败回退与超时处理
+  - 当前恢复策略由 `metadata` 驱动，已支持：
+    - `timeoutMs`
+    - `retryCount`
+    - `fallback`
+    - `fallbackTarget`
+  - `timeoutMs` 已对 `agent / skill / internal_api / passthrough_api` 四类执行路径统一生效，超时会映射为 `504`。
+  - `retryCount` 已形成有界立即重试，当前上限为 3。
+  - 主目标失败后，已支持切换到一个显式 fallback 目标再执行一次。
+  - 恢复元数据 `metadata.recovery` 已稳定输出：
+    - `attemptCount`
+    - `retryCount`
+    - `timeoutMs`
+    - `fallbackUsed`
+    - `fallbackTarget`
+    - `requestedTarget`
+    - `errorChain`
+  - `server/tests/auto-agent-adapter.test.ts` 已验证：
+    - 慢执行超时失败
+    - 临时失败后按 `retryCount` 重试成功
+    - 主目标失败后切换 fallback 成功
+    - fallback 失败时返回主失败 + fallback 失败的组合错误
+    - 审计会同步记录恢复元数据
+  - 边界要写清楚：
+    - 当前超时是 Promise race 软超时，不等于底层执行被真实取消
+    - 当前 retry 没有 backoff / jitter
+    - 当前 fallback 只有一级显式后备目标
+  - 结论：按当前 spec 粒度，这一项已经是“最小恢复闭环已成立”，而不是停留在规划。
