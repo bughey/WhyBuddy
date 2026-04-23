@@ -1,0 +1,22 @@
+# 任务清单：任务自动驾驶证据回放与信任链
+
+- [ ] 梳理现有 `Route`、`Drive State`、`Takeover Point`、Mission Runtime、replay、audit、lineage 相关对象，形成证据链输入事实清单
+- [ ] 定义统一的 `AutopilotEvidenceChain`、`EvidenceItem`、`DriveTimelineEvent` 基础模型及字段口径
+- [ ] 定义 `drive_state_change`、`decision`、`route_change`、`takeover`、`tool_call`、`result` 六类核心证据对象的字段与语义边界
+- [ ] 定义驾驶时间线事件与现有 `Drive State`、Mission Runtime、workflow runtime 状态变化的映射规则
+- [ ] 定义关键决策证据与 Route 选择、风险判断、结果验收、人工决策之间的关联规则
+- [ ] 定义路线变化证据与 `replanning`、候选路线切换、步骤保留/失效/新增的表达方式
+- [ ] 定义接管证据与 `MissionDecision`、`waiting`、`approval`、`resume()`、`escalate()` 链路的映射方式
+- [ ] 定义工具调用证据与文件、浏览器、API、数据库、沙箱、MCP 工具等资源类型的统一摘要字段
+- [ ] 定义结果证据与工件、review、audit、verify、验收状态之间的支撑关系
+- [ ] 定义统一的 `EvidenceCorrelationIndex`，打通 `mission / workflow / route / runtime event / replay / audit / lineage` 的关联键
+- [ ] 定义从 replay 事件跳转到 audit 记录与 lineage 节点的上下文透传规则
+- [ ] 定义从 audit 记录和 lineage 节点回溯到驾驶时间线位置的定位规则
+- [ ] 定义 `TrustProfile`、`TrustMark` 与 `verified / partial / unverified / redacted` 可信状态口径
+- [ ] 定义证据脱敏、缺口标记、断链标记与可信降级规则，避免把不完整证据显示为完全可信
+- [ ] 设计服务端证据投影策略，明确哪些证据先由 view model 计算，哪些必须由事件层或服务端重建
+- [ ] 设计 replay 对统一时间线和关键证据的消费方式，明确关键时间点、偏航、接管与结果切换如何展示
+- [ ] 设计 audit 对关键决策、接管、权限、预算、风险与验收证据的消费方式
+- [ ] 设计 lineage 对工具输出、数据依赖、结果支撑和路线切换复用关系的消费方式
+- [ ] 补充首版验证方案，覆盖时间线重建、证据串联、路线切换解释、接管恢复、结果追溯与可信状态计算
+- [ ] 为后续驾驶舱、任务详情、回放页、审计页和血缘页提供统一的证据链实现基线

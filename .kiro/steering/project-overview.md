@@ -10,10 +10,14 @@
 
 ## inclusion: auto
 
-## 2026-04-23 增补：当前运行时与 Web-AIGC 主线快照
+## 2026-04-23 增补：mission-first -> task autopilot 主线快照
 
 本页已经同步到 2026-04-23 的主线口径，旧阶段性文档继续保留用于历史追溯。当前需要优先记住以下事实：
 
+- Cube Pets Office 的产品口径已经从 `mission-first` 任务操作系统升级为 `task autopilot` 任务自动驾驶平台
+- `mission-first` 不废弃：它仍是底层工程哲学与任务真相源，负责承载 Mission、Workflow、Runtime、Review、Audit、Replay 等主干能力
+- `task autopilot` 是上层产品抽象：用户输入“目的地”，系统生成“路线”，组织“车队”，展示“驾驶状态”，并在关键点请求“接管”
+- 第一阶段 `18 / 18` 份 task-autopilot specs 已完成文档建模，共 `54` 份 spec markdown，可进入驾驶舱原型、runtime 投影、telemetry / audit / replay 代码落地批次
 - 本地 Docker 可用时，完整链路走 `real`
 - 本地 Docker 不可用时，完整链路回退到 `native`
 - GitHub Pages 只走 Browser Runtime，不属于 executor 模式
@@ -23,6 +27,7 @@
 详见：
 
 - `.kiro/steering/2026-04-15-runtime-current-state.md`
+- `.kiro/steering/task-autopilot-spec-roadmap-2026-04-23.md`
 - `.kiro/steering/web-aigc-58-plan-progress-summary-2026-04-22.md`
 - `.kiro/steering/web-aigc-runtime-mainline-checkpoints-2026-04-23.md`
 - `docs/architecture-runtime-2026-04-21.svg`
@@ -31,7 +36,13 @@
 
 ## 项目定位
 
-多智能体可视化平台。用户输入自然语言指令，系统动态组建 AI 团队，通过十阶段管道协作执行，3D 办公场景实时展示过程。支持纯浏览器预演和服务端完整执行两种模式。Docker 容器真实执行、跨框架 Agent 互操作、不可篡改审计链、数据血缘追踪均已实现。
+Cube Pets Office 当前对内定义为：建立在 `mission-first` 底座上的 `task autopilot` 任务自动驾驶平台。
+
+`mission-first` 任务操作系统是当前已经落地的工程底座：用户不是触发零散工具调用，而是在创建和推进一个 Mission；系统不是返回单轮答案，而是围绕 Mission 组织 Workflow、Runtime、Agent、HITL、Review、Replay、Audit、Lineage 与交付物。任务工作台、`tasks-store`、Mission Runtime、十阶段工作流、Docker executor、浏览器运行时、审计链与回放能力共同构成这层底座。
+
+`task autopilot` 任务自动驾驶平台是在此基础上的产品升级方向：用户输入的是“目的地”而不是单次 prompt；系统生成的是“路线”而不是只给工程侧看的 workflow；Agent / 节点 / 工具被组织成可解释的“车队”；运行过程被呈现为“驾驶状态”；人工确认、澄清、审批和异常处理被统一表达为“接管点”。这不是推翻现有实现，也不是把底层对象立即改名，而是在现有主干之上增加一层面向用户、协作者和后续产品化的稳定语义。
+
+这样定义的原因是：当前仓库已经具备 Mission Runtime、workflow runtime、wait/resume、HITL、replay、audit、lineage、Web-AIGC 节点接线、RAG 治理和真实 / 浏览器双运行时等基础能力，继续称为“多智能体可视化平台”会低估主线；但直接承诺开放域全自动又会掩盖治理、接管和证据链的重要性。因此本项目应表达为“任务自动驾驶”：默认自动规划和执行，但必须可解释、可回放、可审计、可接管。
 
 ## 技术栈
 
@@ -48,22 +59,25 @@
 - 850+ 文件 / ~180,000 行 TypeScript
 - `web-aigc` 当前形成 `58 / 58` specs 封板基线，其中包含 `52` 个节点 specs 与 `6` 个平台 specs
 - `web-aigc` 顶层任务已完成 `238 / 238`，后续不再以“继续补 specs”作为主线推进指标
+- `task-autopilot` 第一阶段 `18 / 18` 份 specs 已完成文档建模，覆盖产品定位、核心概念、L1-L5 分级、Destination / Route、驾驶舱 IA、接管点、Drive State、runtime 编排、可解释性、恢复治理、证据回放与成功度量
+- 当前产品叙事已经从“任务操作系统”进入“任务自动驾驶平台”阶段；工程主干继续 compatibility-first，不立即大规模重命名 `mission / workflow / runtime`
 - 当前活跃增量已经从 spec 勾选切换到主线增强：类型债清理、runtime adapter result 统一、observability / lineage 深化、HITL / Office 面板闭环、tools-and-agents 治理字段统一
 - 14 个 shared/ 契约模块，主线能力已覆盖前端、服务端、执行器、审计与互操作层
 - 大量单元测试与属性测试已覆盖 Mission、执行器、RAG、审计、NL Command 等核心域
 
-> 说明：本页以 2026-04-23 主线接线后状态为准；旧的阶段性计划文档保留用于历史追溯，具体 Web-AIGC 封板口径见 `.kiro/steering/web-aigc-58-plan-progress-summary-2026-04-22.md`。
+> 说明：本页以 2026-04-23 主线接线后状态为准；旧的阶段性计划文档保留用于历史追溯。Web-AIGC 封板口径见 `.kiro/steering/web-aigc-58-plan-progress-summary-2026-04-22.md`；任务自动驾驶第一阶段口径见 `.kiro/steering/task-autopilot-spec-roadmap-2026-04-23.md`。
 
 ## 系统架构
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                         入口层                                   │
-│  用户浏览器 · 飞书 Relay                                         │
+│  用户浏览器 · 飞书 Relay · Destination 输入                      │
 ├─────────────────────────────────────────────────────────────────┤
-│              前端层 — Holographic Command Deck UI                 │
-│  3D 场景 · HoloDock · NL 指挥中心 · 成本治理面板                  │
-│  回放时间线 · 血缘 DAG · 审计面板 · 遥测仪表盘                    │
+│              前端层 — Task Autopilot Cockpit                     │
+│  3D 场景 · HoloDock · NL 指挥中心 · 任务驾驶舱 · 成本治理面板      │
+│  Route 视图 · Drive State · Takeover 面板 · 回放时间线            │
+│  血缘 DAG · 审计面板 · 遥测仪表盘                                │
 │  浏览器运行时 (IndexedDB + Web Worker)                           │
 │  i18n (中/英) · 移动端适配 · glass-panel + spring 动效            │
 ├─────────────────────────────────────────────────────────────────┤
@@ -72,13 +86,18 @@
 │  Skill 热插拔 · 动态角色切换 · 成本治理 · 20 分评审               │
 │  Guest Agent 生命周期 · RBAC 权限矩阵                            │
 ├─────────────────────────────────────────────────────────────────┤
+│              Autopilot Projection Layer                           │
+│  Mission -> Destination · Workflow -> Route                       │
+│  Runtime State -> Drive State · Decision/HITL -> Takeover         │
+│  Evidence · Telemetry · Success Metrics                           │
+├─────────────────────────────────────────────────────────────────┤
 │                    智能层                                        │
 │  三级记忆 · 知识图谱 · 向量 DB + RAG 管道                        │
 │  自进化引擎 · 信誉评分 · 自评估 + 竞争执行                       │
 │  LLM 多提供商抽象                                                │
 ├─────────────────────────────────────────────────────────────────┤
 │                 信任与合规层                                      │
-│  哈希链式审计日志 · 数据血缘 DAG · 异常检测 · 合规映射            │
+│  哈希链式审计日志 · 数据血缘 DAG · 证据链 · 异常检测 · 合规映射    │
 ├─────────────────────────────────────────────────────────────────┤
 │                    执行层                                        │
 │  Lobster Executor (Docker 真实容器)                               │
@@ -94,7 +113,7 @@
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-> 当前任务真相源仍为 `tasks-store`；后续桌面端主路径将改为“办公室壳 + 内嵌驾驶舱”，但不改变 `/tasks` 深链和 Mission 数据流。
+> 当前任务真相源仍为 `tasks-store` 与 Mission 数据流；`task autopilot` 是上层投影与产品语义，不改变 `/tasks` 深链。后续桌面端主路径将继续收敛为“办公室壳 + 内嵌驾驶舱”，但底层仍以 Mission / Workflow / Runtime 承接执行真实性。
 
 ## 模块完成状态
 
@@ -145,6 +164,24 @@
 | A2A 互操作协议    | 跨框架 Agent 通信 + 适配器                        |
 | Guest Agent 市场  | 外部 Agent 沙箱接入 + TTL                         |
 | 全息 UI 升级      | 毛玻璃拟态 + HoloDock + GlowButton + 呼吸光晕     |
+| 任务自动驾驶定位  | 从 mission-first 任务操作系统升级为 task autopilot 产品口径 |
+| Autopilot 第一阶段 specs | 18 份 specs 已完成文档建模，形成产品、对象、交互、runtime、治理与迁移层口径 |
+
+### 📍 当前进度快照（Task Autopilot 视角，2026-04-23）
+
+| 维度 | 当前状态 | 说明 |
+| ---- | -------- | ---- |
+| 产品定位 | 已升级 | 项目总览口径从“多智能体可视化平台 / mission-first 任务系统”升级为“task autopilot 任务自动驾驶平台” |
+| 工程底座 | 继续保留 | `Mission / Workflow / Runtime / HITL / Review / Replay / Audit / Lineage` 仍是底层事实对象 |
+| 第一阶段 specs | `18 / 18` | P0 产品定义、P1 驾驶舱交互、P2 runtime 与治理增强均已完成首轮文档产出 |
+| 文档产物 | `54` 份 markdown | 每个 spec 均包含 `requirements.md`、`design.md`、`tasks.md`；`tasks.md` 保持未勾选，便于进入实现批次 |
+| 概念映射 | 已统一 | `Mission -> Destination`、`Workflow -> Route`、`Runtime State -> Drive State`、`Decision / HITL -> Takeover` |
+| 下一轮重点 | 待落地 | 驾驶舱 IA 原型、runtime projection、telemetry / explainability、evidence replay、audit trust chain 与 success metrics |
+
+- `task autopilot` 不是新建一套孤立 runtime，而是把现有 runtime、replay、audit、lineage、HITL 和 Web-AIGC 节点接线组织成一条可解释的任务送达主线。
+- 第一阶段不追求开放域 L5 全自动执行，而是先建立 L1-L3 可产品化表达：自动规划、受治理执行、关键点接管、结果可验证。
+- Web-AIGC 的 58 份 specs 是能力与节点基座；task-autopilot 的 18 份 specs 是产品抽象、驾驶舱体验、runtime 投影和治理解释层。
+- 后续实现应优先新增投影层、解释层和驾驶舱消费层，避免用底层大规模改名替代产品建模。
 
 ### 📍 当前进度快照（Web-AIGC 视角，2026-04-23）
 
@@ -160,6 +197,7 @@
 - `web-aigc` spec 完成度已经封板，后续 steering 不再用“新增多少 specs / checklist”衡量主线进度。
 - 主服务入口已覆盖 MCP、搜索问答、Office / 内容生产、多模态识别、高风险动作、宿主打开动作、向量更新 / 删除等节点族。
 - runtime 主线已经形成 built-in、extra adapters、wait/resume、audit/replay 四个最小执行与治理层。
+- 在 `task autopilot` 口径下，Web-AIGC 节点不直接作为用户主入口暴露，而是被包装为 Route 阶段、Fleet 能力、Takeover 风险点与 Evidence 来源。
 - 当前后续重点是内部收敛：类型债、runtime adapter result、observability / lineage、HITL / Office 前端闭环、tools-and-agents 治理字段。
 
 ### 📋 待收尾 / 待深化 / 待环境就绪
@@ -175,7 +213,8 @@
 
 ## 工程健康快照
 
-- 当前近端增量集中在 Web-AIGC 主线接线后的内部收敛，不再集中在 spec 数量增长。
+- 当前近端增量集中在 Web-AIGC 主线接线后的内部收敛，以及 task-autopilot 第一阶段 specs 完成后的投影层落地；不再集中在 spec 数量增长。
+- 产品语言可以升级为 `Destination / Route / Drive State / Fleet / Takeover / Evidence`，但工程代码仍优先保留 `Mission / Workflow / Runtime / Decision / Audit / Replay` 主干，避免概念升级演变成高风险重命名。
 - `node --run check` 当前仍有历史 TypeScript 类型债，主要分布在 HITL 附件类型、runtime extra adapter result、guest-agents、NL Command、command-list / recommended-commands node adapter、risk-actions 和 MCP tool adapter 等区域。
 - 后续增量工作建议以“不扩大现有 TypeScript 基线错误数”为最低要求，并单独安排一轮类型清债。
 

@@ -1,0 +1,33 @@
+# 任务清单：车队组织与角色封装
+
+- [ ] 定义 `Fleet` 的统一产品层语义，明确其与 `Route`、`Drive State`、`Takeover` 的关系
+- [ ] 定义首轮稳定车队角色集合，包括 `Planner`、`Clarifier`、`Researcher`、`Operator`、`Generator`、`Reviewer`、`Auditor`、`Coordinator`
+- [ ] 为每个车队角色补齐职责边界、典型输入、典型输出、典型风险和典型接管点说明
+- [ ] 定义 `FleetComposition` 结构，用于表达某一时刻或某一路线阶段的车队编组快照
+- [ ] 定义 `FleetRolePackage` 结构，明确角色标识、职责、状态、阶段关联、输入输出契约和底层关联字段
+- [ ] 定义 `CapabilityPackage` 结构，明确 skill、tool、MCP、policy、executor preference 等能力如何组成角色能力包
+- [ ] 定义 `ExecutionUnitRef` 结构，明确 agent、node、executor、task 等执行单元如何被角色引用
+- [ ] 定义 `AttachmentRef` 结构，明确 skill、tool、MCP、policy、memory、evidence 等附着能力如何表达
+- [ ] 梳理 `agent -> role carrier` 的映射规则，明确 agent 在角色封装中的承载方式
+- [ ] 梳理 `node -> role action` 的映射规则，明确节点在用户语义中更适合作为角色动作还是阶段动作
+- [ ] 梳理 `executor -> role actuator` 的映射规则，明确执行器如何作为角色的执行装置而不是一级角色
+- [ ] 梳理 `skill / tool / MCP -> role attachment` 的映射规则，明确附着能力的统一包装方式
+- [ ] 定义无法稳定归类时的回退策略，包括 `Generalist`、`Composite` 或 `Custom` 等保守角色类型
+- [ ] 形成一版节点家族到角色家族的初步分类表，覆盖常见 Web-AIGC 节点类别
+- [ ] 形成一版角色能力包目录，明确研究、生成、执行、复核、治理等常见能力包模板
+- [ ] 定义 `Route -> Fleet` 的投影规则，明确路线模板、阶段、分支和重规划如何影响车队编组
+- [ ] 定义 `Drive State -> role status` 的投影规则，明确角色状态如何与高层驾驶状态联动
+- [ ] 定义 `Takeover` 与角色的关系，明确哪些角色更接近澄清、审批、权限、预算、结果验收和异常接管
+- [ ] 定义 `RoleRiskProfile` 和 `RoleTakeoverProfile` 的最小结构，用于承接风险和接管语义
+- [ ] 明确 `Fleet` 与现有 `mission-first / workflow / runtime / task / audit / replay` 的兼容分层关系
+- [ ] 输出一版从 `mission + workflow + runtime` 投影生成 `FleetComposition` 的流程说明
+- [ ] 明确哪些角色字段应由服务端 projection 层生成，哪些字段可由前端 view model 补充
+- [ ] 设计角色摘要对象在驾驶舱、车队状态视图、接管面板和回放视图中的复用口径
+- [ ] 明确角色卡默认展示字段与展开字段，避免节点、工具、执行器在主视图中平铺泄露
+- [ ] 梳理与 `dynamic-role-system` 的边界，明确上层车队角色封装与底层角色模板机制的关系
+- [ ] 梳理与 `fleet-status-and-live-execution-view` 的边界，明确本 spec 负责角色组织模型，对方负责执行主视图投影
+- [ ] 梳理与 `mission-model-to-autopilot-model-mapping` 的边界，明确本 spec 负责 `Fleet` 这一映射分支的细化
+- [ ] 补充单角色单线任务、多角色并行任务、接管任务、重规划任务四类示例编组
+- [ ] 设计角色封装层的单元测试计划，覆盖归类、回退、追溯、阶段切换和展示摘要稳定性
+- [ ] 设计与 runtime 兼容的集成测试计划，覆盖真实 agent、node、executor 状态投影到角色层的关键场景
+- [ ] 评估渐进落地顺序，明确先做角色词汇表、再做映射表、再做 projection、最后接入前端主视图的实施路径

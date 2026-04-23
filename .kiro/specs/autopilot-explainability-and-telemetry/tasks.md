@@ -1,0 +1,25 @@
+# 任务清单：任务自动驾驶可解释性与遥测层
+
+- [ ] 梳理当前主仓中可用于解释层的真实事实来源，包括 mission、workflow、runtime event、replay、audit、artifact、decision、review 与 monitoring projection
+- [ ] 定义 `AutopilotExplanation` 基础对象结构，覆盖解释类型、来源、关联对象、证据引用、建议动作、状态与更新时间
+- [ ] 定义当前状态解释对象 `CurrentStateExplanation`，明确如何从 `Drive State`、Mission Runtime 与 workflow runtime 投影生成
+- [ ] 定义推荐原因对象 `RecommendationReason`，覆盖路线推荐、动作推荐、接管默认动作与重规划策略解释
+- [ ] 定义剩余步骤解释对象 `RemainingStepsExplanation`，覆盖主线步骤、并行支路、待执行步骤与重规划后的变化说明
+- [ ] 定义风险解释对象 `RiskExplanation`，覆盖风险类型、严重程度、触发原因、影响范围、缓解动作、接管与重规划关系
+- [ ] 定义置信度解释对象 `ConfidenceExplanation`，覆盖目标理解、路线可行性、执行完成、结果质量与证据充分性维度
+- [ ] 定义证据提示对象 `EvidenceHint`，明确 runtime event、replay timeline、audit entry、artifact、log、decision、review、lineage ref 的引用方式
+- [ ] 定义实时状态信号目录，包括 `drive_state.changed`、`route.recommended`、`route.selected`、`route.replanned`、`step.progressed`、`risk.changed`、`confidence.changed`、`evidence.updated`、`takeover.requested`、`takeover.resolved`、`runtime.health_changed`
+- [ ] 输出高层遥测信号与现有 Web-AIGC runtime events 的映射表，明确哪些来自原生事件，哪些来自 projection 或组合推断
+- [ ] 明确解释对象与 `Destination`、`Route`、`Drive State`、`Fleet`、`Takeover Point`、`Replan`、`Confidence`、`Risk`、Evidence 的映射关系
+- [ ] 设计解释来源 `ExplanationSource` 口径，区分 runtime event、mission projection、workflow projection、route planner、audit entry、replay snapshot、frontend view model 与 combined inference
+- [ ] 设计解释关联引用 `ExplanationRelatedRefs`，覆盖 mission、workflow、workflow instance、route、step、node、runtime event、decision、audit、replay、artifact、lineage
+- [ ] 评估哪些解释可以先由前端 view model 推导，哪些必须优先进入服务端 projection、replay 或 audit
+- [ ] 梳理高风险解释进入 audit 的规则，包括权限、预算、合规、外部副作用、风险接受、路线切换与重规划
+- [ ] 梳理 replay 需要复原的解释时间线内容，包括当前状态、推荐原因、风险、置信度、剩余步骤、接管提示与证据提示
+- [ ] 定义证据不足时的展示与记录规则，避免把推断解释伪装为确定事实
+- [ ] 明确可解释性与遥测层不新建独立 telemetry backend、不替代现有 observability / audit / runtime events 的兼容边界
+- [ ] 设计第一阶段前端接入方案，在驾驶舱或任务详情页展示当前状态解释、剩余步骤、风险、置信度与证据提示
+- [ ] 设计第二阶段服务端 projection 接入方案，使关键解释对象可被驾驶舱、任务详情、接管面板、replay 与 audit 复用
+- [ ] 设计第三阶段 runtime events 增强方案，补齐关键高层信号的事件或投影证据
+- [ ] 设计第四阶段 replay / audit 闭环方案，支持任务完成后追踪“为什么这么做”和“当时依据是什么”
+- [ ] 补充测试计划，覆盖解释对象生成、信号映射、风险与置信度变化、接管解释、重规划解释、证据提示和回放复原
