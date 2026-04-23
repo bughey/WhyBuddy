@@ -4,7 +4,7 @@
 
 定义 Web-AIGC 节点编排在 Cube 主仓中的运行时执行框架，承接图定义、节点调度、等待输入恢复、终态收敛与最小控制面，而不是继续依赖单一路径的线性流程推进。
 
-## 当前主仓边界（2026-04-22）
+## 当前主仓边界（2026-04-23）
 
 以下能力已经有代码与测试依据支撑：
 
@@ -13,11 +13,23 @@
 - `WAITING_INPUT -> resume()` 人工恢复链路
 - `selection / confirm_judge / end` 三类内置运行时节点
 - 显式 `terminate / retry / escalate` 控制入口
+- 通过 `/api/workflows/:id/runtime/run` 向实例注入 `runtimeGovernance` 治理策略
 - 节点级最小自动策略
   - `retryBudget`
   - `retryDelayMs`
   - `autoEscalateOnFailure`
   - `escalateOnRetryExhausted`
+- 实例级最小治理策略
+  - `maxAutomaticRetries`
+  - `maxManualRetries`
+  - `maxTotalRetries`
+  - `retryDelayMs`
+  - `escalateOnRetryBlocked`
+- 治理阻断证据链
+  - `runtimeGovernancePolicy`
+  - `runtimeGovernanceState`
+  - `runtimeRetryBlocked`
+  - `instance.retry_requested / instance.terminated / instance.escalated`
 
 以下能力仍不应写成“已完整完成”：
 
@@ -80,4 +92,16 @@
 当前验收口径：
 
 - 已成立：显式 `terminate / retry / escalate` 入口与最小行为测试。
-- 未完全成立：统一治理策略闭环，例如跨节点重试编排、统一退避策略、统一预算控制。
+- 已成立：`/runtime/run` 支持注入实例级 `runtimeGovernance`，并在自动重试、显式重试、升级控制之间共享同一份治理预算。
+- 已成立：当治理策略阻断手动或自动重试时，运行时会留下结构化阻断状态，并继续发出统一控制面事件，形成 replay / audit 可消费的证据链。
+- 仍属后续增强：独立后台重试队列、独立退避服务、跨实例统一治理中台。
+
+### 需求 6：治理证据与可审计性
+
+系统应在运行时治理发生时保留统一、可追踪、可回放的证据，而不是只留下最终失败结果。
+
+当前验收口径：
+
+- 已成立：显式 `retry / terminate / escalate` 事件元数据会附带治理快照。
+- 已成立：治理阻断会持久化到 `runtimeGovernanceState / runtimeRetryBlocked`，并通过 `instance.retry_requested` 暴露 `allowed: false` 与 `blockedReason`。
+- 未完全成立：runtime 事件尚未直接写入 lineage，仍以 replay / audit 为主。

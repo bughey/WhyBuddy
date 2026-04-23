@@ -66,6 +66,7 @@ Web-AIGC 运行时引擎当前的真实定位，是挂接在 Cube 主仓现有 `
 
 - 自动重试
 - 重试耗尽后自动升级到人工 review
+- 手动重试受实例级治理预算约束，阻断时会留下统一治理快照与控制面事件证据
 
 但以下部分仍未形成完整设计闭环：
 
@@ -85,6 +86,17 @@ Web-AIGC 运行时引擎当前的真实定位，是挂接在 Cube 主仓现有 `
 - `instance.terminated`
 - `instance.retry_requested`
 - `instance.escalated`
+
+其中当前主仓的控制面事件证据链已经进一步明确为：
+
+- `instance.retry_requested`
+  - 覆盖“允许的手动/自动重试请求”
+  - 也覆盖“被治理策略阻断的手动重试请求”
+  - 在阻断场景下，事件元数据中会保留 `allowed: false`、`blockedReason` 与治理快照
+- `instance.terminated`
+  - 元数据中会携带终止原因与治理快照
+- `instance.escalated`
+  - 元数据中会携带升级原因与治理快照
 
 这些事件当前的真实落点是：
 
