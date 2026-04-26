@@ -8,6 +8,20 @@ export type LaunchRouteKind =
   | "workflow"
   | "upgrade-required";
 
+export type LaunchRouteCandidateId =
+  | "clarify-first"
+  | "fast-route"
+  | "standard-route"
+  | "deep-route"
+  | "upgrade-runtime";
+
+export type LaunchRouteCandidateMode =
+  | "clarify"
+  | "fast"
+  | "standard"
+  | "deep"
+  | "upgrade";
+
 export type LaunchReason =
   | "command_too_short"
   | "missing_outcome"
@@ -31,6 +45,39 @@ export interface LaunchRouteDecision {
   requiresAdvancedRuntime: boolean;
   needsClarification: boolean;
   canOverride: boolean;
+}
+
+export interface LaunchRouteCandidate {
+  id: LaunchRouteCandidateId;
+  mode: LaunchRouteCandidateMode;
+  launchKind: LaunchRouteKind;
+  routeOverride?: "mission" | "workflow";
+  recommended: boolean;
+  available: boolean;
+  disabledReason:
+    | "needs_destination_detail"
+    | "requires_runtime_upgrade"
+    | "not_needed"
+    | null;
+  reasons: LaunchReason[];
+  stages: Array<
+    | "destination"
+    | "clarification"
+    | "route"
+    | "fleet"
+    | "execution"
+    | "review"
+    | "evidence"
+  >;
+  takeoverPoints: Array<
+    "clarification" | "runtime-upgrade" | "route-selection" | "final-review"
+  >;
+}
+
+export interface LaunchRoutePlan {
+  decision: LaunchRouteDecision;
+  recommendedRouteId: LaunchRouteCandidateId;
+  candidates: LaunchRouteCandidate[];
 }
 
 function normalizeLaunchText(value: string): string {
@@ -157,6 +204,111 @@ export function evaluateLaunchRoute(
     requiresAdvancedRuntime: wantsAdvancedRuntime,
     needsClarification: false,
     canOverride: true,
+  };
+}
+
+function getRecommendedRouteId(
+  decision: LaunchRouteDecision
+): LaunchRouteCandidateId {
+  if (decision.kind === "upgrade-required") {
+    return "upgrade-runtime";
+  }
+  if (decision.kind === "clarify") {
+    return "clarify-first";
+  }
+  if (decision.kind === "workflow") {
+    return "deep-route";
+  }
+  return "standard-route";
+}
+
+export function buildLaunchRoutePlan(
+  input: UnifiedLaunchInput
+): LaunchRoutePlan {
+  const decision = evaluateLaunchRoute(input);
+  const recommendedRouteId = getRecommendedRouteId(decision);
+  const blockedByUpgrade = decision.kind === "upgrade-required";
+  const blockedByClarification = decision.kind === "clarify";
+  const canDrive =
+    !blockedByUpgrade && !blockedByClarification && input.text.trim().length > 0;
+
+  const candidates: LaunchRouteCandidate[] = [
+    {
+      id: "clarify-first",
+      mode: "clarify",
+      launchKind: "clarify",
+      recommended: recommendedRouteId === "clarify-first",
+      available: blockedByClarification,
+      disabledReason: blockedByClarification ? null : "not_needed",
+      reasons: decision.reasons,
+      stages: ["destination", "clarification", "route", "execution"],
+      takeoverPoints: ["clarification", "route-selection"],
+    },
+    {
+      id: "fast-route",
+      mode: "fast",
+      launchKind: "mission",
+      routeOverride: "mission",
+      recommended: recommendedRouteId === "fast-route",
+      available: canDrive,
+      disabledReason: blockedByUpgrade
+        ? "requires_runtime_upgrade"
+        : blockedByClarification
+          ? "needs_destination_detail"
+          : null,
+      reasons: decision.reasons,
+      stages: ["destination", "route", "execution", "evidence"],
+      takeoverPoints: ["final-review"],
+    },
+    {
+      id: "standard-route",
+      mode: "standard",
+      launchKind: "mission",
+      routeOverride: "mission",
+      recommended: recommendedRouteId === "standard-route",
+      available: canDrive,
+      disabledReason: blockedByUpgrade
+        ? "requires_runtime_upgrade"
+        : blockedByClarification
+          ? "needs_destination_detail"
+          : null,
+      reasons: [...decision.reasons, "complete_task_brief"],
+      stages: ["destination", "route", "fleet", "execution", "review", "evidence"],
+      takeoverPoints: ["route-selection", "final-review"],
+    },
+    {
+      id: "deep-route",
+      mode: "deep",
+      launchKind: "workflow",
+      routeOverride: "workflow",
+      recommended: recommendedRouteId === "deep-route",
+      available: canDrive,
+      disabledReason: blockedByUpgrade
+        ? "requires_runtime_upgrade"
+        : blockedByClarification
+          ? "needs_destination_detail"
+          : null,
+      reasons: decision.reasons,
+      stages: ["destination", "route", "fleet", "execution", "review", "evidence"],
+      takeoverPoints: ["route-selection", "runtime-upgrade", "final-review"],
+    },
+    {
+      id: "upgrade-runtime",
+      mode: "upgrade",
+      launchKind: "upgrade-required",
+      recommended: recommendedRouteId === "upgrade-runtime",
+      available: blockedByUpgrade,
+      disabledReason: blockedByUpgrade ? null : "not_needed",
+      reasons: decision.reasons,
+      stages: ["destination", "route", "execution"],
+      takeoverPoints: ["runtime-upgrade"],
+    },
+  ];
+
+  return {
+    decision,
+    recommendedRouteId,
+    candidates,
   };
 }
 

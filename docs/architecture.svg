@@ -8,11 +8,13 @@
 >
   <title id="title">Cube Pets Office Architecture</title>
   <desc id="desc">
-    Product architecture overview for Cube Pets Office updated on 2026-04-23.
+    Product architecture overview for Cube Pets Office updated on 2026-04-26.
     This 1440 by 900 landscape version preserves the original detailed labels
     and pastel card style while adding the Web-AIGC 58/58 spec mainline wiring,
     route mounting, runtime adapters, workflow governance, RAG vector governance,
-    MCP tooling, HITL/Office closure, and observability context.
+    MCP tooling, HITL/Office closure, observability context, and the Task
+    Autopilot Phase 1 closure: 18/18 specs, 345/345 core tasks, 602/602 raw
+    checklist items, plus the shared/server/client projection slice.
   </desc>
 
   <style>
@@ -99,8 +101,8 @@
   <text class="sm" x="454" y="84" text-anchor="middle" fill="#185fa5">bottom primary input</text>
 
   <rect x="508" y="54" width="88" height="38" rx="8" fill="#ffffff" stroke="#85b7eb" stroke-width="0.6" />
-  <text class="ts" x="552" y="69" text-anchor="middle" fill="#0c447c">Detail tabs</text>
-  <text class="sm" x="552" y="84" text-anchor="middle" fill="#185fa5">task + ctx + Launch guide</text>
+  <text class="ts" x="552" y="69" text-anchor="middle" fill="#0c447c">Detail + drive</text>
+  <text class="sm" x="552" y="84" text-anchor="middle" fill="#185fa5">autopilot panel</text>
 
   <rect x="606" y="54" width="88" height="38" rx="8" fill="#ffffff" stroke="#85b7eb" stroke-width="0.6" />
   <text class="ts" x="650" y="69" text-anchor="middle" fill="#0c447c">Scene3D</text>
@@ -123,19 +125,19 @@
   <text class="sm" x="1042" y="84" text-anchor="middle" fill="#185fa5">IndexedDB + preview</text>
 
   <rect x="1120" y="20" width="300" height="92" rx="14" fill="#eef2ff" stroke="#818cf8" stroke-width="0.8" />
-  <text class="th" x="1270" y="42" text-anchor="middle" fill="#3730a3">Web-AIGC 2026-04-23 mainline snapshot</text>
+  <text class="th" x="1270" y="42" text-anchor="middle" fill="#3730a3">Web-AIGC + Task Autopilot snapshot</text>
   <rect x="1130" y="54" width="66" height="38" rx="8" fill="#ffffff" stroke="#818cf8" stroke-width="0.6" />
   <text class="ts" x="1163" y="69" text-anchor="middle" fill="#3730a3">58/58</text>
-  <text class="sm" x="1163" y="84" text-anchor="middle" fill="#4f46e5">specs sealed</text>
+  <text class="sm" x="1163" y="84" text-anchor="middle" fill="#4f46e5">Web-AIGC</text>
   <rect x="1204" y="54" width="66" height="38" rx="8" fill="#ffffff" stroke="#818cf8" stroke-width="0.6" />
-  <text class="ts" x="1237" y="69" text-anchor="middle" fill="#3730a3">238</text>
-  <text class="sm" x="1237" y="84" text-anchor="middle" fill="#4f46e5">tasks tracked</text>
+  <text class="ts" x="1237" y="69" text-anchor="middle" fill="#3730a3">18/18</text>
+  <text class="sm" x="1237" y="84" text-anchor="middle" fill="#4f46e5">autopilot</text>
   <rect x="1278" y="54" width="66" height="38" rx="8" fill="#ffffff" stroke="#818cf8" stroke-width="0.6" />
-  <text class="ts" x="1311" y="69" text-anchor="middle" fill="#3730a3">Routes</text>
-  <text class="sm" x="1311" y="84" text-anchor="middle" fill="#4f46e5">MCP + QA</text>
+  <text class="ts" x="1311" y="69" text-anchor="middle" fill="#3730a3">345/345</text>
+  <text class="sm" x="1311" y="84" text-anchor="middle" fill="#4f46e5">core tasks</text>
   <rect x="1352" y="54" width="58" height="38" rx="8" fill="#ffffff" stroke="#818cf8" stroke-width="0.6" />
-  <text class="ts" x="1381" y="69" text-anchor="middle" fill="#3730a3">Gov</text>
-  <text class="sm" x="1381" y="84" text-anchor="middle" fill="#4f46e5">wired</text>
+  <text class="ts" x="1381" y="69" text-anchor="middle" fill="#3730a3">602</text>
+  <text class="sm" x="1381" y="84" text-anchor="middle" fill="#4f46e5">raw tasks</text>
 
   <path d="M454 92 L454 122 L392 122 L392 132" fill="none" stroke="#185fa5" stroke-width="1" marker-end="url(#a)" />
   <rect x="394" y="114" width="96" height="14" rx="4" fill="#e6f1fb" />
@@ -147,9 +149,9 @@
 
   <path d="M552 92 L552 122 L490 122 L490 132" fill="none" stroke="#185fa5" stroke-width="0.8" stroke-dasharray="4 3" marker-end="url(#a)" />
   <rect x="528" y="114" width="96" height="14" rx="4" fill="#e6f1fb" />
-  <text class="fl" x="576" y="124" text-anchor="middle" fill="#185fa5">③ actions + guide</text>
+  <text class="fl" x="576" y="124" text-anchor="middle" fill="#185fa5">③ drive panel sync</text>
 
-  <!-- ==================== ROW 1: CONTRACTS + CUBE BRAIN + INTELLIGENCE + WEB-AIGC ==================== -->
+  <!-- ==================== ROW 1: CONTRACTS + CUBE BRAIN + INTELLIGENCE + TASK AUTOPILOT ==================== -->
 
   <rect x="20" y="132" width="160" height="418" rx="14" fill="#fbeaf0" stroke="#ed93b1" stroke-width="0.8" />
   <text class="th" x="100" y="158" text-anchor="middle" fill="#4b1528">Shared contracts</text>
@@ -163,12 +165,15 @@
   <text class="ts" x="34" y="328" fill="#72243e">lineage/contracts.ts</text>
   <text class="ts" x="34" y="348" fill="#72243e">a2a-protocol.ts</text>
   <text class="ts" x="34" y="368" fill="#72243e">mission/contracts.ts</text>
-  <text class="ts" x="34" y="388" fill="#72243e">swarm.ts</text>
-  <text class="ts" x="34" y="408" fill="#72243e">guest-agent-utils.ts</text>
+  <text class="ts" x="34" y="388" fill="#72243e">mission/autopilot.ts</text>
+  <text class="ts" x="34" y="408" fill="#72243e">mission/api.ts</text>
+  <text class="ts" x="34" y="428" fill="#72243e">swarm.ts</text>
+  <text class="ts" x="34" y="448" fill="#72243e">guest-agent-utils.ts</text>
   <text class="sm" x="100" y="508" text-anchor="middle" fill="#993556">contract modules</text>
   <text class="sm" x="100" y="524" text-anchor="middle" fill="#993556">representative examples shown</text>
   <line x1="180" y1="248" x2="218" y2="248" stroke="#ed93b1" stroke-width="0.5" stroke-dasharray="3 3" />
   <line x1="180" y1="328" x2="218" y2="328" stroke="#ed93b1" stroke-width="0.5" stroke-dasharray="3 3" />
+  <line x1="180" y1="388" x2="218" y2="388" stroke="#ed93b1" stroke-width="0.5" stroke-dasharray="3 3" />
   <line x1="180" y1="408" x2="218" y2="408" stroke="#ed93b1" stroke-width="0.5" stroke-dasharray="3 3" />
 
   <rect x="200" y="132" width="390" height="418" rx="16" fill="#eaf3de" stroke="#97c459" stroke-width="0.8" />
@@ -200,7 +205,7 @@
 
   <rect x="220" y="364" width="160" height="48" rx="8" fill="#ffffff" stroke="#97c459" stroke-width="0.6" />
   <text class="ts" x="300" y="384" text-anchor="middle" fill="#27500a">Mission runtime</text>
-  <text class="sm" x="300" y="402" text-anchor="middle" fill="#3b6d11">FSM + controls + step flow</text>
+  <text class="sm" x="300" y="402" text-anchor="middle" fill="#3b6d11">FSM + Drive State + Takeover</text>
 
   <rect x="410" y="364" width="160" height="48" rx="8" fill="#ffffff" stroke="#97c459" stroke-width="0.6" />
   <text class="ts" x="490" y="384" text-anchor="middle" fill="#27500a">Review system</text>
@@ -213,6 +218,14 @@
   <rect x="410" y="426" width="160" height="48" rx="8" fill="#ffffff" stroke="#97c459" stroke-width="0.6" />
   <text class="ts" x="490" y="446" text-anchor="middle" fill="#27500a">Permission</text>
   <text class="sm" x="490" y="464" text-anchor="middle" fill="#3b6d11">RBAC + capability checks</text>
+
+  <rect x="220" y="488" width="350" height="38" rx="8" fill="#ffffff" stroke="#97c459" stroke-width="0.6" />
+  <text class="ts" x="395" y="504" text-anchor="middle" fill="#27500a">Task Autopilot projection slice</text>
+  <text class="sm" x="395" y="518" text-anchor="middle" fill="#3b6d11">Mission → Destination / Route / Drive / Fleet / Takeover</text>
+
+  <path d="M570 507 L958 507 L958 223 L978 223" fill="none" stroke="#97c459" stroke-width="0.8" stroke-dasharray="4 3" marker-end="url(#a)" />
+  <rect x="738" y="499" width="116" height="14" rx="4" fill="#eaf3de" />
+  <text class="fl" x="796" y="509" text-anchor="middle" fill="#3b6d11">autopilot projection</text>
 
   <line x1="380" y1="326" x2="408" y2="326" stroke="#97c459" stroke-width="0.9" marker-end="url(#a)" />
   <path d="M490 364 L490 356 L380 356 L380 350" fill="none" stroke="#3b6d11" stroke-width="0.8" stroke-dasharray="3 2" marker-end="url(#a)" />
@@ -299,43 +312,53 @@
   <text class="fl" x="827" y="126" text-anchor="middle" fill="#6b46c1">⑨ lineage DAG</text>
 
   <rect x="960" y="132" width="460" height="418" rx="16" fill="#eef2ff" stroke="#818cf8" stroke-width="0.8" />
-  <text class="th" x="1190" y="158" text-anchor="middle" fill="#3730a3">Web-AIGC mainline wiring</text>
-  <text class="sm" x="1190" y="176" text-anchor="middle" fill="#4f46e5">58-node AI Agent orchestration migration baseline</text>
+  <text class="th" x="1190" y="158" text-anchor="middle" fill="#3730a3">Task Autopilot architecture</text>
+  <text class="sm" x="1190" y="176" text-anchor="middle" fill="#4f46e5">goal → route → fleet → drive state → takeover → evidence</text>
 
-  <rect x="980" y="198" width="196" height="54" rx="8" fill="#ffffff" stroke="#818cf8" stroke-width="0.6" />
-  <text class="ts" x="1078" y="220" text-anchor="middle" fill="#3730a3">Specs sealed</text>
-  <text class="sm" x="1078" y="238" text-anchor="middle" fill="#4f46e5">58/58 specs · 238 tasks</text>
+  <rect x="980" y="198" width="196" height="50" rx="8" fill="#ffffff" stroke="#818cf8" stroke-width="0.6" />
+  <text class="ts" x="1078" y="218" text-anchor="middle" fill="#3730a3">Destination parser</text>
+  <text class="sm" x="1078" y="235" text-anchor="middle" fill="#4f46e5">goal · constraints · success</text>
 
-  <rect x="1208" y="198" width="196" height="54" rx="8" fill="#ffffff" stroke="#818cf8" stroke-width="0.6" />
-  <text class="ts" x="1306" y="220" text-anchor="middle" fill="#3730a3">Server routes</text>
-  <text class="sm" x="1306" y="238" text-anchor="middle" fill="#4f46e5">MCP · QA · Office mounted</text>
+  <rect x="1208" y="198" width="196" height="50" rx="8" fill="#ffffff" stroke="#818cf8" stroke-width="0.6" />
+  <text class="ts" x="1306" y="218" text-anchor="middle" fill="#3730a3">Route planner</text>
+  <text class="sm" x="1306" y="235" text-anchor="middle" fill="#4f46e5">main route · candidates · risk</text>
 
-  <rect x="980" y="270" width="196" height="54" rx="8" fill="#ffffff" stroke="#818cf8" stroke-width="0.6" />
-  <text class="ts" x="1078" y="292" text-anchor="middle" fill="#3730a3">Runtime layer</text>
-  <text class="sm" x="1078" y="310" text-anchor="middle" fill="#4f46e5">built-in + extra adapters</text>
+  <rect x="980" y="264" width="196" height="50" rx="8" fill="#ffffff" stroke="#818cf8" stroke-width="0.6" />
+  <text class="ts" x="1078" y="284" text-anchor="middle" fill="#3730a3">Fleet organizer</text>
+  <text class="sm" x="1078" y="301" text-anchor="middle" fill="#4f46e5">planner · researcher · reviewer</text>
 
-  <rect x="1208" y="270" width="196" height="54" rx="8" fill="#ffffff" stroke="#818cf8" stroke-width="0.6" />
-  <text class="ts" x="1306" y="292" text-anchor="middle" fill="#3730a3">Workflow governance</text>
-  <text class="sm" x="1306" y="310" text-anchor="middle" fill="#4f46e5">run · retry · escalate</text>
+  <rect x="1208" y="264" width="196" height="50" rx="8" fill="#ffffff" stroke="#818cf8" stroke-width="0.6" />
+  <text class="ts" x="1306" y="284" text-anchor="middle" fill="#3730a3">Mission runtime</text>
+  <text class="sm" x="1306" y="301" text-anchor="middle" fill="#4f46e5">run · wait · resume · replan</text>
 
-  <rect x="980" y="342" width="196" height="54" rx="8" fill="#ffffff" stroke="#818cf8" stroke-width="0.6" />
-  <text class="ts" x="1078" y="364" text-anchor="middle" fill="#3730a3">RAG vector governance</text>
-  <text class="sm" x="1078" y="382" text-anchor="middle" fill="#4f46e5">update · delete · risk actions</text>
+  <rect x="980" y="330" width="196" height="50" rx="8" fill="#ffffff" stroke="#818cf8" stroke-width="0.6" />
+  <text class="ts" x="1078" y="350" text-anchor="middle" fill="#3730a3">Telemetry + explain</text>
+  <text class="sm" x="1078" y="367" text-anchor="middle" fill="#4f46e5">why · confidence · status</text>
 
-  <rect x="1208" y="342" width="196" height="54" rx="8" fill="#ffffff" stroke="#818cf8" stroke-width="0.6" />
-  <text class="ts" x="1306" y="364" text-anchor="middle" fill="#3730a3">MCP tools</text>
-  <text class="sm" x="1306" y="382" text-anchor="middle" fill="#4f46e5">checker + invoker</text>
+  <rect x="1208" y="330" width="196" height="50" rx="8" fill="#ffffff" stroke="#818cf8" stroke-width="0.6" />
+  <text class="ts" x="1306" y="350" text-anchor="middle" fill="#3730a3">Review + recovery</text>
+  <text class="sm" x="1306" y="367" text-anchor="middle" fill="#4f46e5">score · revise · fallback</text>
 
-  <rect x="980" y="414" width="196" height="54" rx="8" fill="#ffffff" stroke="#818cf8" stroke-width="0.6" />
-  <text class="ts" x="1078" y="436" text-anchor="middle" fill="#3730a3">HITL / Office panel</text>
-  <text class="sm" x="1078" y="454" text-anchor="middle" fill="#4f46e5">front-end closure next</text>
+  <rect x="980" y="396" width="196" height="50" rx="8" fill="#ffffff" stroke="#818cf8" stroke-width="0.6" />
+  <text class="ts" x="1078" y="416" text-anchor="middle" fill="#3730a3">Takeover bridge</text>
+  <text class="sm" x="1078" y="433" text-anchor="middle" fill="#4f46e5">decision · budget · permission</text>
 
-  <rect x="1208" y="414" width="196" height="54" rx="8" fill="#ffffff" stroke="#818cf8" stroke-width="0.6" />
-  <text class="ts" x="1306" y="436" text-anchor="middle" fill="#3730a3">Observability</text>
-  <text class="sm" x="1306" y="454" text-anchor="middle" fill="#4f46e5">audit · replay · lineage</text>
+  <rect x="1208" y="396" width="196" height="50" rx="8" fill="#ffffff" stroke="#818cf8" stroke-width="0.6" />
+  <text class="ts" x="1306" y="416" text-anchor="middle" fill="#3730a3">Evidence trust chain</text>
+  <text class="sm" x="1306" y="433" text-anchor="middle" fill="#4f46e5">audit · replay · lineage</text>
 
-  <rect x="980" y="492" width="424" height="34" rx="8" fill="#ffffff" stroke="#818cf8" stroke-width="0.6" />
-  <text class="ts" x="1192" y="513" text-anchor="middle" fill="#3730a3">Mainline mode: local main branch batches, no active worktree fan-out</text>
+  <path d="M1176 223 L1206 223" fill="none" stroke="#818cf8" stroke-width="0.8" marker-end="url(#a)" />
+  <path d="M1306 248 L1306 262" fill="none" stroke="#818cf8" stroke-width="0.8" marker-end="url(#a)" />
+  <path d="M1208 289 L1178 289" fill="none" stroke="#818cf8" stroke-width="0.8" marker-end="url(#a)" />
+  <path d="M1078 314 L1078 328" fill="none" stroke="#818cf8" stroke-width="0.8" marker-end="url(#a)" />
+  <path d="M1176 355 L1206 355" fill="none" stroke="#818cf8" stroke-width="0.8" marker-end="url(#a)" />
+  <path d="M1306 380 L1306 394" fill="none" stroke="#818cf8" stroke-width="0.8" marker-end="url(#a)" />
+  <path d="M1208 421 L1178 421" fill="none" stroke="#818cf8" stroke-width="0.8" marker-end="url(#a)" />
+
+  <rect x="980" y="468" width="424" height="62" rx="8" fill="#ffffff" stroke="#818cf8" stroke-width="0.6" />
+  <text class="ts" x="1192" y="486" text-anchor="middle" fill="#3730a3">Phase 1 closed: 18/18 specs · 345/345 core · 602 raw</text>
+  <text class="sm" x="1192" y="502" text-anchor="middle" fill="#4f46e5">shared parser + server projection + tasks-store + cockpit panel</text>
+  <text class="sm" x="1192" y="518" text-anchor="middle" fill="#4f46e5">Web-AIGC 58/58 nodes stay as capability pool, not user-facing node list</text>
 
   <path d="M940 326 L958 326" fill="none" stroke="#818cf8" stroke-width="0.8" stroke-dasharray="4 3" marker-end="url(#a)" />
   <rect x="920" y="314" width="52" height="14" rx="4" fill="#eef2ff" />
@@ -421,9 +444,9 @@
   <rect x="600" y="544" width="108" height="14" rx="4" fill="#e6fffa" />
   <text class="fl" x="654" y="554" text-anchor="middle" fill="#2c7a7b">⑮ external results</text>
 
-  <path d="M1208 369 L1192 369 L1192 552 L1000 552 L1000 630" fill="none" stroke="#38b2ac" stroke-width="0.8" stroke-dasharray="4 3" marker-end="url(#a)" />
-  <rect x="1114" y="544" width="60" height="14" rx="4" fill="#e6fffa" />
-  <text class="fl" x="1144" y="554" text-anchor="middle" fill="#2c7a7b">tool calls</text>
+  <path d="M1208 289 L1192 289 L1192 552 L1000 552 L1000 630" fill="none" stroke="#38b2ac" stroke-width="0.8" stroke-dasharray="4 3" marker-end="url(#a)" />
+  <rect x="1098" y="544" width="92" height="14" rx="4" fill="#e6fffa" />
+  <text class="fl" x="1144" y="554" text-anchor="middle" fill="#2c7a7b">capability calls</text>
 
   <rect x="1040" y="575" width="380" height="150" rx="16" fill="#f8fafc" stroke="#d4d4d8" stroke-width="0.8" />
   <text class="th" x="1230" y="602" text-anchor="middle" fill="#3f3f46">Dual runtime</text>
@@ -515,7 +538,7 @@
   <circle cx="686" cy="858" r="5" fill="#eeedfe" stroke="#afa9ec" stroke-width="0.5" />
   <text class="sm" x="696" y="862" fill="#52525b">Workflow</text>
   <circle cx="780" cy="858" r="5" fill="#eef2ff" stroke="#818cf8" stroke-width="0.5" />
-  <text class="sm" x="790" y="862" fill="#52525b">Web-AIGC</text>
+  <text class="sm" x="790" y="862" fill="#52525b">Web-AIGC / Autopilot</text>
 
   <line x1="900" y1="858" x2="930" y2="858" stroke="#d85a30" stroke-width="1" marker-end="url(#a)" />
   <text class="sm" x="940" y="862" fill="#52525b">Data flow</text>
@@ -529,6 +552,6 @@
   </text>
 
   <text class="xs" x="720" y="887" text-anchor="middle" fill="#94a3b8">
-    2026-04-23 snapshot - 77 tracked specs baseline - bottom launch dock restored - right Launch downgraded to guidance - wall HUD visibility fixed - Web-AIGC 58/58 specs sealed
+    2026-04-26 snapshot - Web-AIGC 58/58 sealed - Task Autopilot Phase 1 closed: 18/18 specs, 345/345 core, 602/602 raw - runtime deepening next
   </text>
 </svg>

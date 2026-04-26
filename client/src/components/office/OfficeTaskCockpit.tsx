@@ -813,7 +813,7 @@ export function OfficeTaskCockpit({
           <div className="flex flex-wrap items-center gap-1.5">
             <div className="flex rounded-[10px] border border-white/65 bg-white/78 p-0.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]">
               <span className="inline-flex items-center gap-1 rounded-[8px] bg-[#d07a4f] px-1.5 py-0.5 text-[8px] font-semibold text-white shadow-[0_10px_24px_rgba(184,111,69,0.18)]">
-                {t(locale, "统一智能发起", "Unified smart launch")}
+                {t(locale, "任务自动驾驶", "Task Autopilot")}
               </span>
               <button
                 type="button"
@@ -957,6 +957,21 @@ export function OfficeTaskCockpit({
         </div>
 
         <div className="mt-1 flex flex-wrap gap-0.5">
+          <span className="workspace-status workspace-tone-info !gap-0.5 !px-1 !py-0.5 !text-[8px] font-semibold">
+            {t(locale, "目的地", "Destination")}
+          </span>
+          <span className="workspace-status workspace-tone-neutral !gap-0.5 !px-1 !py-0.5 !text-[8px] font-semibold">
+            {selectedDetail?.autopilotSummary?.route.selected?.label ||
+              selectedDetail?.autopilotSummary?.route.label ||
+              t(locale, "路线待规划", "Route pending")}
+          </span>
+          <span className="workspace-status workspace-tone-neutral !gap-0.5 !px-1 !py-0.5 !text-[8px] font-semibold">
+            {t(
+              locale,
+              `编队 ${selectedDetail?.autopilotSummary?.fleet.activeRoleCount ?? selectedDetail?.activeAgentCount ?? 0}`,
+              `Fleet ${selectedDetail?.autopilotSummary?.fleet.activeRoleCount ?? selectedDetail?.activeAgentCount ?? 0}`
+            )}
+          </span>
           <span
             className={cn(
               "workspace-status !gap-0.5 !px-1 !py-0.5 !text-[8px] font-semibold",
@@ -987,6 +1002,27 @@ export function OfficeTaskCockpit({
             )}
           >
             {t(locale, `关注 ${warningCount}`, `Warnings ${warningCount}`)}
+          </span>
+          <span
+            className={cn(
+              "workspace-status !gap-0.5 !px-1 !py-0.5 !text-[8px] font-semibold",
+              selectedDetail?.autopilotSummary?.takeover.required ||
+                hasPendingDecision
+                ? "workspace-tone-warning"
+                : "workspace-tone-neutral"
+            )}
+          >
+            {selectedDetail?.autopilotSummary?.takeover.required ||
+            hasPendingDecision
+              ? t(locale, "需要接管", "Takeover needed")
+              : t(locale, "可自动推进", "Auto-driving")}
+          </span>
+          <span className="workspace-status workspace-tone-neutral !gap-0.5 !px-1 !py-0.5 !text-[8px] font-semibold">
+            {t(
+              locale,
+              `证据 ${selectedDetail?.autopilotSummary?.evidence.eventCount ?? selectedDetail?.timeline.length ?? 0}`,
+              `Evidence ${selectedDetail?.autopilotSummary?.evidence.eventCount ?? selectedDetail?.timeline.length ?? 0}`
+            )}
           </span>
         </div>
 

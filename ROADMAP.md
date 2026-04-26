@@ -1,5 +1,15 @@
 # 实现路径规划：从展示页面到多智能体编排系统
 
+## 2026-04-26 增补：Task Autopilot Phase 1 闭环
+
+- [x] 任务自动驾驶第一阶段 `18 / 18` specs 已完成并收口，覆盖产品定位、核心概念、L1-L5 分级、Destination / Route、驾驶舱 IA、接管点、Drive State、runtime 编排、可解释性、恢复治理、证据回放与成功指标。
+- [x] 第一阶段文档产物已闭合为 `54 / 54` markdown，每份 spec 均包含 `requirements.md`、`design.md`、`tasks.md`。
+- [x] 顶层核心任务项已重算为 `345 / 345`，raw checklist 已重算为 `602 / 602`。
+- [x] 已输出进度总览 SVG：`docs/task-autopilot-18-spec-progress-overview-2026-04-24.svg`，当前文件内容刷新到 2026-04-26 口径。
+- [x] 第一条 compatibility-first 代码纵切已进入主线：`shared/mission/autopilot.ts` 提供 `parseMissionDestination()` 与 autopilot summary 合同，`server/tasks/mission-projection.ts` 透传 autopilot projection / orchestration，`client/src/lib/tasks-store.ts` 完成 autopilot normalize，`TaskAutopilotPanel` 提供驾驶舱消费面。
+- [x] 聚焦验证已通过：shared mission autopilot tests、server mission routes tests、client tasks-store autopilot tests、TaskAutopilotPanel tests。
+- [ ] 下一阶段不再优先追加 specs 数量，而是推进真实 runtime 深水区：parser 版本化与 clarification merge、route planner 自动编队、fleet orchestration、takeover governance、evidence replay trust chain、success metrics 与 live mission facts 对齐。
+
 ## 2026-04-15 增补
 
 - [x] `launch-operator-surface-convergence` 第一阶段已完成：`UnifiedLaunchComposer` 已接入底部任务操作 rail，统一发起区与任务操作区开始收敛为同一块首屏控制面。

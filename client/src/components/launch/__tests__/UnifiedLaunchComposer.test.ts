@@ -14,35 +14,35 @@ import {
 describe("UnifiedLaunchComposer helper logic", () => {
   it("uses mission copy for direct mission launches", () => {
     expect(getLaunchRouteBannerTitle("zh-CN", "mission")).toBe("系统判断：快速任务");
-    expect(getUnifiedLaunchRouteHint("zh-CN", "mission")).toContain("直接创建 mission");
+    expect(getUnifiedLaunchRouteHint("zh-CN", "mission")).toContain("快速路线");
     expect(
       getUnifiedLaunchSubmitLabel("zh-CN", {
         kind: "mission",
         submitting: false,
       })
-    ).toBe("创建任务");
+    ).toBe("规划路线");
   });
 
   it("uses clarification copy for underspecified requests", () => {
     expect(getLaunchRouteBannerTitle("zh-CN", "clarify")).toBe("系统判断：先补问");
-    expect(getUnifiedLaunchRouteHint("zh-CN", "clarify")).toContain("先补问关键信息");
+    expect(getUnifiedLaunchRouteHint("zh-CN", "clarify")).toContain("补问关键路标");
     expect(
       getUnifiedLaunchSubmitLabel("zh-CN", {
         kind: "clarify",
         submitting: false,
       })
-    ).toBe("先澄清");
+    ).toBe("先补路标");
   });
 
   it("uses workflow copy when attachment context is required", () => {
     expect(getLaunchRouteBannerTitle("zh-CN", "workflow")).toBe("系统判断：高级编排");
-    expect(getUnifiedLaunchRouteHint("zh-CN", "workflow")).toContain("进入 workflow");
+    expect(getUnifiedLaunchRouteHint("zh-CN", "workflow")).toContain("深度路线");
     expect(
       getUnifiedLaunchSubmitLabel("zh-CN", {
         kind: "workflow",
         submitting: false,
       })
-    ).toBe("智能发起");
+    ).toBe("自动驾驶发起");
   });
 
   it("uses runtime upgrade copy when frontend mode cannot execute directly", () => {
@@ -50,7 +50,7 @@ describe("UnifiedLaunchComposer helper logic", () => {
       "系统判断：需要高级执行"
     );
     expect(getUnifiedLaunchRouteHint("zh-CN", "upgrade-required")).toContain(
-      "切换到高级模式"
+      "高级执行环境"
     );
     expect(
       getUnifiedLaunchSubmitLabel("zh-CN", {

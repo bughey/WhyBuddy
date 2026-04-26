@@ -5,8 +5,10 @@ import type {
 } from "@shared/nl-command/api";
 
 import {
+  buildLaunchRoutePlan,
   evaluateLaunchRoute,
   type LaunchRouteDecision,
+  type LaunchRouteCandidateId,
   type UnifiedLaunchInput,
 } from "./launch-router";
 import { useNLCommandStore, type TaskHubCommandSubmissionResult } from "./nl-command-store";
@@ -21,6 +23,7 @@ export interface UnifiedLaunchSubmitInput extends UnifiedLaunchInput {
   priority?: SubmitCommandRequest["priority"];
   timeframe?: SubmitCommandRequest["timeframe"];
   routeOverride?: "mission" | "workflow";
+  selectedRouteId?: LaunchRouteCandidateId;
 }
 
 export type UnifiedLaunchResult =
@@ -83,12 +86,26 @@ function focusMissionIfAvailable(missionId: string | null) {
 }
 
 function resolveDecision(input: UnifiedLaunchSubmitInput): LaunchRouteDecision {
-  const decision = evaluateLaunchRoute(input);
-  if (!input.routeOverride) {
+  const routePlan = input.selectedRouteId ? buildLaunchRoutePlan(input) : null;
+  const selectedCandidate = routePlan?.candidates.find(
+    candidate => candidate.id === input.selectedRouteId && candidate.available
+  );
+  const baseDecision = evaluateLaunchRoute(input);
+  const decision = selectedCandidate
+    ? {
+        ...baseDecision,
+        kind: selectedCandidate.launchKind,
+      }
+    : baseDecision;
+  const selectedRouteOverride = input.selectedRouteId
+    ? selectedCandidate?.routeOverride
+    : null;
+  const routeOverride = input.routeOverride ?? selectedRouteOverride;
+  if (!routeOverride) {
     return decision;
   }
 
-  if (input.routeOverride === "mission" && decision.kind !== "upgrade-required") {
+  if (routeOverride === "mission" && decision.kind !== "upgrade-required") {
     return {
       ...decision,
       kind: "mission",
@@ -97,7 +114,7 @@ function resolveDecision(input: UnifiedLaunchSubmitInput): LaunchRouteDecision {
     };
   }
 
-  if (input.routeOverride === "workflow" && decision.kind !== "upgrade-required") {
+  if (routeOverride === "workflow" && decision.kind !== "upgrade-required") {
     return {
       ...decision,
       kind: "workflow",

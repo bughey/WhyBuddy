@@ -103,7 +103,10 @@ describe("MissionWallTaskPanel", () => {
       <MissionWallTaskPanel mission={null} detail={null} />
     );
 
-    expect(markup).toContain("Mission Control");
+    expect(markup).toContain("Autopilot Control");
+    expect(markup).toContain("目的地");
+    expect(markup).toContain("路线");
+    expect(markup).toContain("接管");
     expect(markup).toContain("MC");
     expect(markup).toContain("0%");
   });

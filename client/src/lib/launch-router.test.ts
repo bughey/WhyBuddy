@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { WorkflowInputAttachment } from "@shared/workflow-input";
 
-import { evaluateLaunchRoute } from "./launch-router";
+import { buildLaunchRoutePlan, evaluateLaunchRoute } from "./launch-router";
 
 function makeAttachment(
   overrides?: Partial<WorkflowInputAttachment>
@@ -67,6 +67,96 @@ describe("launch-router", () => {
     expect(decision.kind).toBe("upgrade-required");
     expect(decision.requiresAdvancedRuntime).toBe(true);
     expect(decision.reasons).toContain("advanced_runtime_required");
+  });
+
+  it("builds a visible route plan with the standard route recommended for complete briefs", () => {
+    const plan = buildLaunchRoutePlan({
+      text: "本周内重构支付模块，要求零停机和可回滚，并给出验收标准与交付结果。",
+      runtimeMode: "advanced",
+      attachments: [],
+    });
+
+    expect(plan.recommendedRouteId).toBe("standard-route");
+    expect(plan.candidates).toHaveLength(5);
+    expect(plan.candidates.map(candidate => candidate.id)).toEqual([
+      "clarify-first",
+      "fast-route",
+      "standard-route",
+      "deep-route",
+      "upgrade-runtime",
+    ]);
+    expect(
+      plan.candidates.find(candidate => candidate.id === "standard-route")
+    ).toMatchObject({
+      available: true,
+      recommended: true,
+      launchKind: "mission",
+      routeOverride: "mission",
+    });
+  });
+
+  it("recommends the clarification route when the destination is underspecified", () => {
+    const plan = buildLaunchRoutePlan({
+      text: "帮我推进这个任务",
+      runtimeMode: "advanced",
+      attachments: [],
+    });
+
+    expect(plan.recommendedRouteId).toBe("clarify-first");
+    expect(
+      plan.candidates.find(candidate => candidate.id === "clarify-first")
+    ).toMatchObject({
+      available: true,
+      recommended: true,
+      launchKind: "clarify",
+    });
+    expect(
+      plan.candidates.find(candidate => candidate.id === "fast-route")
+    ).toMatchObject({
+      available: false,
+      disabledReason: "needs_destination_detail",
+    });
+  });
+
+  it("recommends the deep route when attachments or workflow context are present", () => {
+    const plan = buildLaunchRoutePlan({
+      text: "根据附件里的需求文档和表格，先整理 brief，再拆出工作包和角色分工，最后输出交付结果和时间安排。",
+      runtimeMode: "advanced",
+      attachments: [makeAttachment()],
+    });
+
+    expect(plan.recommendedRouteId).toBe("deep-route");
+    expect(
+      plan.candidates.find(candidate => candidate.id === "deep-route")
+    ).toMatchObject({
+      available: true,
+      recommended: true,
+      launchKind: "workflow",
+      routeOverride: "workflow",
+    });
+  });
+
+  it("blocks driving routes and recommends runtime upgrade when execution needs advanced runtime", () => {
+    const plan = buildLaunchRoutePlan({
+      text: "在沙盒里打开浏览器验证支付页面，抓日志并输出测试结果和回滚建议。",
+      runtimeMode: "frontend",
+      attachments: [],
+    });
+
+    expect(plan.recommendedRouteId).toBe("upgrade-runtime");
+    expect(
+      plan.candidates.find(candidate => candidate.id === "upgrade-runtime")
+    ).toMatchObject({
+      available: true,
+      recommended: true,
+      launchKind: "upgrade-required",
+    });
+    expect(
+      plan.candidates.find(candidate => candidate.id === "deep-route")
+    ).toMatchObject({
+      available: false,
+      disabledReason: "requires_runtime_upgrade",
+    });
   });
 });
 

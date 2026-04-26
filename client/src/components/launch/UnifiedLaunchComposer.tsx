@@ -13,7 +13,11 @@ import { GlowButton } from "@/components/ui/GlowButton";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/i18n";
 import { CAN_USE_ADVANCED_RUNTIME } from "@/lib/deploy-target";
-import { evaluateLaunchRoute } from "@/lib/launch-router";
+import {
+  buildLaunchRoutePlan,
+  type LaunchRouteCandidate,
+  type LaunchRouteCandidateId,
+} from "@/lib/launch-router";
 import {
   selectTaskHubLaunchSession,
   useNLCommandStore,
@@ -51,26 +55,26 @@ export function getUnifiedLaunchRouteHint(
     case "workflow":
       return t(
         locale,
-        "已识别为附件/高级编排请求，提交后会进入 workflow 并尽快回落到任务焦点。",
-        "Detected as an attachment-heavy or advanced launch. Submission enters workflow first, then returns to the task focus."
+        "自动驾驶将选择深度路线：先进入高级编排，完成素材处理后回落到任务焦点。",
+        "Autopilot will choose the deep route: enter advanced orchestration first, then return to the task focus."
       );
     case "upgrade-required":
       return t(
         locale,
-        "这条请求需要高级执行环境。提交时会先提示切换到高级模式。",
-        "This request needs the advanced runtime. Submission prompts a runtime upgrade first."
+        "自动驾驶判断这条路线需要高级执行环境，提交时会先切换运行时再继续。",
+        "Autopilot determined this route needs the advanced runtime and will switch runtime before continuing."
       );
     case "clarify":
       return t(
         locale,
-        "当前信息还不完整，提交后会先补问关键信息。",
-        "The request is still underspecified. Submission asks for the missing details first."
+        "自动驾驶发现目的地信息不足，会先补问关键路标，再继续规划路线。",
+        "Autopilot found the destination underspecified and will ask for key waypoints before planning the route."
       );
     default:
       return t(
         locale,
-        "已识别为快速任务指令，提交后会直接创建 mission。",
-        "Detected as a direct task command. Submission creates a mission immediately."
+        "自动驾驶将选择快速路线：解析目的地后直接创建 mission 并开始推进。",
+        "Autopilot will choose the fast route: parse the destination, create a mission, and start moving."
       );
   }
 }
@@ -89,18 +93,184 @@ export function getUnifiedLaunchSubmitLabel(
     return t(locale, "切到高级执行", "Switch to advanced");
   }
   if (options.kind === "workflow") {
-    return t(locale, "智能发起", "Smart launch");
+    return t(locale, "自动驾驶发起", "Autopilot launch");
   }
   if (options.kind === "clarify") {
-    return t(locale, "先澄清", "Clarify first");
+    return t(locale, "先补路标", "Clarify waypoints");
   }
-  return t(locale, "创建任务", "Create task");
+  return t(locale, "规划路线", "Plan route");
 }
 
 export interface UnifiedWorkflowResolution extends WorkflowLaunchResult {
   directive: string;
   attachmentCount: number;
   requestedAt: number;
+}
+
+function getCandidateCopy(locale: string, candidate: LaunchRouteCandidate) {
+  switch (candidate.id) {
+    case "clarify-first":
+      return {
+        title: t(locale, "先补路标", "Clarify waypoints"),
+        eta: t(locale, "最稳", "Safest"),
+        detail: t(
+          locale,
+          "目的地不够清晰时，先问关键问题，再规划路线。",
+          "When the destination is unclear, ask key questions before planning."
+        ),
+      };
+    case "fast-route":
+      return {
+        title: t(locale, "最快路线", "Fastest route"),
+        eta: t(locale, "少接管", "Low takeover"),
+        detail: t(
+          locale,
+          "直接创建 mission，优先快速产出和短反馈环。",
+          "Create a mission directly for fast output and a short feedback loop."
+        ),
+      };
+    case "standard-route":
+      return {
+        title: t(locale, "标准路线", "Standard route"),
+        eta: t(locale, "推荐", "Recommended"),
+        detail: t(
+          locale,
+          "先解析目的地，再规划路线、编队执行、审阅证据。",
+          "Parse destination, plan route, form fleet, execute, and review evidence."
+        ),
+      };
+    case "deep-route":
+      return {
+        title: t(locale, "深度路线", "Deep route"),
+        eta: t(locale, "更完整", "More complete"),
+        detail: t(
+          locale,
+          "进入高级编排，适合附件、团队分工和多阶段交付。",
+          "Use advanced orchestration for attachments, team split, and multi-stage delivery."
+        ),
+      };
+    case "upgrade-runtime":
+      return {
+        title: t(locale, "切换高级执行", "Switch runtime"),
+        eta: t(locale, "需确认", "Needs confirm"),
+        detail: t(
+          locale,
+          "当前目的地需要浏览器、命令、沙盒或容器能力。",
+          "This destination needs browser, command, sandbox, or container capabilities."
+        ),
+      };
+  }
+}
+
+function localizeCandidateStage(locale: string, value: string): string {
+  const zh: Record<string, string> = {
+    destination: "目的地",
+    clarification: "澄清",
+    route: "路线",
+    fleet: "编队",
+    execution: "执行",
+    review: "审阅",
+    evidence: "证据",
+  };
+  const en: Record<string, string> = {
+    destination: "Destination",
+    clarification: "Clarify",
+    route: "Route",
+    fleet: "Fleet",
+    execution: "Execute",
+    review: "Review",
+    evidence: "Evidence",
+  };
+  return locale === "zh-CN" ? (zh[value] ?? value) : (en[value] ?? value);
+}
+
+function localizeCandidateDisabledReason(
+  locale: string,
+  value: LaunchRouteCandidate["disabledReason"]
+): string | null {
+  switch (value) {
+    case "needs_destination_detail":
+      return t(locale, "需先补全目的地", "Needs destination details");
+    case "requires_runtime_upgrade":
+      return t(locale, "需先切高级执行", "Needs advanced runtime");
+    case "not_needed":
+      return t(locale, "当前不推荐", "Not recommended now");
+    default:
+      return null;
+  }
+}
+
+function RouteCandidateCard({
+  candidate,
+  locale,
+  selected,
+  onSelect,
+}: {
+  candidate: LaunchRouteCandidate;
+  locale: string;
+  selected: boolean;
+  onSelect: (candidate: LaunchRouteCandidate) => void;
+}) {
+  const copy = getCandidateCopy(locale, candidate);
+  const disabledReason = localizeCandidateDisabledReason(
+    locale,
+    candidate.disabledReason
+  );
+
+  return (
+    <button
+      type="button"
+      disabled={!candidate.available}
+      aria-pressed={selected}
+      onClick={() => onSelect(candidate)}
+      className={cn(
+        "min-w-0 rounded-[14px] border px-2 py-2 text-left transition-all",
+        selected
+          ? "border-[#d07a4f] bg-[#fff7ed] shadow-[0_12px_28px_rgba(184,111,69,0.14)]"
+          : "border-[#ead8c3]/80 bg-white/78 hover:border-[#d9a47c] hover:bg-[#fffaf4]",
+        !candidate.available && "cursor-not-allowed opacity-55"
+      )}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <div className="truncate text-[11px] font-bold text-stone-800">
+            {copy.title}
+          </div>
+          <div className="mt-0.5 text-[9px] leading-3 text-stone-500">
+            {copy.detail}
+          </div>
+        </div>
+        <span
+          className={cn(
+            "shrink-0 rounded-full px-1.5 py-0.5 text-[8px] font-semibold",
+            candidate.recommended
+              ? "bg-[#d07a4f] text-white"
+              : "bg-stone-100 text-stone-500"
+          )}
+        >
+          {candidate.recommended ? t(locale, "推荐", "Best") : copy.eta}
+        </span>
+      </div>
+      <div className="mt-2 flex flex-wrap gap-1">
+        {candidate.stages.slice(0, 5).map(stage => (
+          <span
+            key={stage}
+            className="rounded-full border border-[#ead8c3]/70 bg-white/72 px-1.5 py-0.5 text-[8px] font-semibold text-[#9a5d32]"
+          >
+            {localizeCandidateStage(locale, stage)}
+          </span>
+        ))}
+      </div>
+      <div className="mt-1.5 text-[8px] font-semibold text-stone-500">
+        {disabledReason ||
+          t(
+            locale,
+            `接管点 ${candidate.takeoverPoints.length}`,
+            `${candidate.takeoverPoints.length} takeover point(s)`
+          )}
+      </div>
+    </button>
+  );
 }
 
 export function UnifiedLaunchComposer({
@@ -162,21 +332,38 @@ export function UnifiedLaunchComposer({
   const [attachments, setAttachments] = useState<WorkflowInputAttachment[]>([]);
   const [isPreparingFiles, setIsPreparingFiles] = useState(false);
   const [attachmentError, setAttachmentError] = useState<string | null>(null);
+  const [selectedRouteId, setSelectedRouteId] =
+    useState<LaunchRouteCandidateId | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const isDense = dense;
   const isCompact = compact;
   const isBare = bare;
   const submitting = loadingCommand || loadingWorkflow || isPreparingFiles;
 
-  const decision = useMemo(
+  const routePlan = useMemo(
     () =>
-      evaluateLaunchRoute({
+      buildLaunchRoutePlan({
         text: draftText,
         attachments,
         runtimeMode,
       }),
     [attachments, draftText, runtimeMode]
   );
+  const decision = routePlan.decision;
+  const selectedCandidate =
+    routePlan.candidates.find(
+      candidate => candidate.id === selectedRouteId && candidate.available
+    ) ??
+    routePlan.candidates.find(
+      candidate => candidate.id === routePlan.recommendedRouteId
+    ) ??
+    routePlan.candidates[0];
+  const recommendedCandidate =
+    routePlan.candidates.find(
+      candidate => candidate.id === routePlan.recommendedRouteId
+    ) ?? selectedCandidate;
+  const hasDraftDestination =
+    draftText.trim().length > 0 || attachments.length > 0;
   const commandHistory = useMemo(
     () => commands.map(command => command.commandText),
     [commands]
@@ -184,10 +371,10 @@ export function UnifiedLaunchComposer({
 
   const submitLabel = useMemo(() => {
     return getUnifiedLaunchSubmitLabel(locale, {
-      kind: decision.kind,
+      kind: selectedCandidate?.launchKind ?? decision.kind,
       submitting,
     });
-  }, [decision.kind, locale, submitting]);
+  }, [decision.kind, locale, selectedCandidate?.launchKind, submitting]);
   const hasActiveClarification = currentDialog?.status === "active";
 
   async function handleSubmit(commandText: string) {
@@ -196,7 +383,10 @@ export function UnifiedLaunchComposer({
       return;
     }
 
-    if (decision.kind === "upgrade-required") {
+    if (
+      decision.kind === "upgrade-required" ||
+      selectedCandidate?.launchKind === "upgrade-required"
+    ) {
       if (!CAN_USE_ADVANCED_RUNTIME) {
         toast(
           t(
@@ -224,6 +414,7 @@ export function UnifiedLaunchComposer({
         text: commandText,
         attachments,
         runtimeMode,
+        selectedRouteId: selectedCandidate?.id,
         userId: "current-user",
         priority: "medium",
       });
@@ -411,13 +602,70 @@ export function UnifiedLaunchComposer({
         rows={isCompact ? 2 : 3}
         placeholder={t(
           locale,
-          "直接描述目标、约束、交付物，必要时附上文件；系统会自动判断走快速任务、澄清还是高级编排...",
-          "Describe the goal, constraints, deliverable, and attach files if needed. The system decides between mission, clarification, and workflow..."
+          "输入目的地：目标、约束、交付物、截止时间；系统会自动规划路线、组队、澄清并推进...",
+          "Enter the destination: goal, constraints, deliverable, deadline. Autopilot plans the route, forms the fleet, clarifies, and drives..."
         )}
         submitLabel={submitLabel}
         sendingLabel={submitLabel}
         hideSubmitButton
       />
+
+      {hasDraftDestination ? (
+        <div className="mt-2 rounded-[18px] border border-[#ead8c3]/80 bg-[linear-gradient(135deg,rgba(255,248,239,0.96),rgba(250,238,224,0.78))] p-2 shadow-[0_14px_34px_rgba(128,82,45,0.08)]">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="min-w-0">
+              <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#9a5d32]">
+                {t(locale, "自动驾驶路线规划", "Autopilot route plan")}
+              </div>
+              <div className="mt-0.5 text-[10px] leading-4 text-stone-600">
+                {t(
+                  locale,
+                  "输入目的地后先弹出候选路线，确认路线再启动执行。",
+                  "After a destination is entered, route candidates appear before execution starts."
+                )}
+              </div>
+            </div>
+            <div className="shrink-0 rounded-full border border-[#e6c5a7] bg-white/80 px-2 py-1 text-[9px] font-semibold text-[#9a5d32]">
+              {t(locale, "推荐：", "Best: ")}
+              {recommendedCandidate
+                ? getCandidateCopy(locale, recommendedCandidate).title
+                : "-"}
+            </div>
+          </div>
+
+          <div className="mt-2 grid grid-cols-1 gap-1.5 sm:grid-cols-2 xl:grid-cols-5">
+            {routePlan.candidates.map(candidate => (
+              <RouteCandidateCard
+                key={candidate.id}
+                candidate={candidate}
+                locale={locale}
+                selected={candidate.id === selectedCandidate?.id}
+                onSelect={item => {
+                  if (item.available) {
+                    setSelectedRouteId(item.id);
+                  }
+                }}
+              />
+            ))}
+          </div>
+
+          {selectedCandidate ? (
+            <div className="mt-2 flex flex-wrap items-center justify-between gap-2 rounded-[14px] border border-white/80 bg-white/60 px-2 py-1.5 text-[9px] text-stone-600">
+              <span className="font-semibold text-stone-700">
+                {t(locale, "当前路线：", "Selected route: ")}
+                {getCandidateCopy(locale, selectedCandidate).title}
+              </span>
+              <span>
+                {t(locale, "接管点 ", "Takeover points ")}
+                {selectedCandidate.takeoverPoints.length}
+                {" · "}
+                {t(locale, "阶段 ", "Stages ")}
+                {selectedCandidate.stages.length}
+              </span>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
 
       <LaunchRuntimeMeta
         locale={locale}
@@ -450,6 +698,21 @@ export function UnifiedLaunchComposer({
         submitLabel={submitLabel}
         submitDisabled={!draftText.trim() || submitting}
       />
+      <div className="mt-2 grid grid-cols-2 gap-1.5 text-[9px] leading-4 text-stone-600 sm:grid-cols-4">
+        {[
+          t(locale, "目的地解析", "Destination"),
+          t(locale, "路线规划", "Route"),
+          t(locale, "编队执行", "Fleet"),
+          t(locale, "接管/证据", "Takeover / Evidence"),
+        ].map(item => (
+          <span
+            key={item}
+            className="rounded-full border border-[#ead8c3]/80 bg-[#fff7ed]/78 px-2 py-0.5 text-center font-semibold text-[#9a5d32]"
+          >
+            {item}
+          </span>
+        ))}
+      </div>
     </div>
   );
 
@@ -467,19 +730,19 @@ export function UnifiedLaunchComposer({
           <div className="min-w-0">
             <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-500">
               <Sparkles className="size-4" />
-              {t(locale, "统一智能发起", "Unified smart launch")}
+              {t(locale, "任务自动驾驶", "Task Autopilot")}
             </div>
             <div className="mt-1 text-sm text-stone-700">
               {activeTaskTitle
                 ? t(
                     locale,
-                    `围绕当前焦点“${activeTaskTitle}”发起任务或高级编排。`,
-                    `Launch tasks or advanced workflows around the current focus "${activeTaskTitle}".`
+                    `围绕当前焦点“${activeTaskTitle}”输入目的地，系统会规划路线并在关键点请求接管。`,
+                    `Enter a destination around "${activeTaskTitle}"; the system plans the route and asks for takeover at key points.`
                   )
                 : t(
                     locale,
-                    "用一个输入框发起任务、附件编排或执行请求。",
-                    "Use one input to launch tasks, attachment workflows, or runtime requests."
+                    "像导航一样输入目的地：系统自动拆目标、选路线、组队执行，并保留可接管的证据轨迹。",
+                    "Enter a destination like navigation: the system splits the goal, chooses a route, forms a fleet, and keeps takeover-ready evidence."
                   )}
             </div>
           </div>

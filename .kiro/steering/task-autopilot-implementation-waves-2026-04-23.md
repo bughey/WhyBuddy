@@ -1,5 +1,17 @@
 # 任务自动驾驶实现波次（2026-04-23）
 
+## 2026-04-26 增补：Wave 1 已完成，进入 runtime 深化
+
+截至 2026-04-26，Task Autopilot 第一阶段已经从“规格拆分”推进到“可验证基线闭环”：
+
+- `18 / 18` 份 task-autopilot specs 已闭合，`54 / 54` 份 markdown、`345 / 345` 顶层核心任务项、`602 / 602` raw checklist 项均已完成。
+- `Wave 1` 的语义契约与投影基线已落地：`shared/mission/autopilot.ts`、`parseMissionDestination()`、服务端 `Mission -> Destination / Route / Drive State / Takeover` projection、客户端 `tasks-store` normalize 已形成兼容优先的纵切。
+- `Wave 3` 已有最小驾驶舱消费切片：`TaskAutopilotPanel` 能在任务详情侧消费 destination、route、drive state、takeover、fleet 与 evidence 摘要。
+- 当前闭环不等于开放域 L5，也不表示 runtime 已经具备完全无人值守自动编队；它表示第一阶段读模型、投影链路、任务面展示和测试直证已经对齐。
+- 下一阶段应继续推进 `Wave 2 / Wave 4`：runtime orchestration、takeover bridge、replan record、fleet snapshot、evidence / replay / metrics 闭环，而不是继续新增大批 specs。
+
+进度总览以 `docs/task-autopilot-18-spec-progress-overview-2026-04-24.svg` 为准；闭环说明见 `.kiro/steering/task-autopilot-phase-1-closure-2026-04-26.md`。
+
 ## 目的
 
 这份文档不是重复 18 份 `task-autopilot` specs 的摘要，而是把它们收敛成当前主仓可执行的代码落地顺序。
@@ -23,12 +35,12 @@
 
 18 份 specs 的落地并不是从零开始，当前主仓已经有可复用的承载面：
 
-- 共享契约与投影：`shared/mission/contracts.ts`、`shared/mission/projection.ts`、`shared/mission/api.ts`、`shared/mission/socket.ts`、`shared/workflow-domain.ts`、`shared/workflow-runtime.ts`
+- 共享契约与投影：`shared/mission/autopilot.ts`、`shared/mission/contracts.ts`、`shared/mission/projection.ts`、`shared/mission/api.ts`、`shared/mission/socket.ts`、`shared/workflow-domain.ts`、`shared/workflow-runtime.ts`
 - 任务运行时与编排：`server/tasks/mission-runtime.ts`、`server/core/mission-orchestrator.ts`、`server/tasks/mission-operator-service.ts`、`server/tasks/mission-decision.ts`
 - projection 与 API：`server/tasks/mission-projection.ts`、`server/routes/tasks.ts`、`server/routes/workflows.ts`
 - runtime 与可观测桥接：`server/core/workflow-runtime-engine.ts`、`server/core/web-aigc-runtime-observability.ts`
 - 回放、审计、血缘：`server/routes/replay.ts`、`server/replay/*`、`server/audit/*`、`server/lineage/*`
-- 前端任务承载面：`client/src/lib/mission-client.ts`、`client/src/lib/tasks-store.ts`、`client/src/components/tasks/*`、`client/src/pages/tasks/*`
+- 前端任务承载面：`client/src/lib/mission-client.ts`、`client/src/lib/tasks-store.ts`、`client/src/components/tasks/TaskAutopilotPanel.tsx`、`client/src/components/tasks/*`、`client/src/pages/tasks/*`
 - 前端 replay / telemetry 承载面：`client/src/lib/replay/*`、`client/src/lib/browser-telemetry-store.ts`、`client/src/components/replay/*`、`client/src/components/permissions/AuditTimeline.tsx`、`client/src/components/lineage/*`
 
 上面的代码面决定了实现顺序应当是“在现有基座上补 autopilot 语义和投影”，而不是另造一层平行产品壳。

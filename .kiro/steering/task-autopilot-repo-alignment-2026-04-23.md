@@ -4,6 +4,38 @@ inclusion: manual
 
 # 任务自动驾驶与现有仓库对齐关系（2026-04-23）
 
+## 2026-04-26 增补：Phase 1 已闭合
+
+本文件原始判断仍然成立：`task-autopilot` 是现有 `mission-first` 主仓之上的产品投影层，不是第二套事实源。
+
+但当前状态已经从“18 份 specs 待实现”推进为：
+
+- `18 / 18` specs 已完成并收口
+- `54 / 54` markdown 已完成
+- `345 / 345` 顶层任务项已闭合
+- `602 / 602` raw checklist 已闭合
+- 第一条 compatibility-first 代码纵切已进入主线
+
+当前已经落地的对齐锚点：
+
+- `Mission -> Destination`
+  - `shared/mission/autopilot.ts` 的 `parseMissionDestination()` 与 `MissionAutopilotSummary.destination`
+- `Workflow / Mission stage -> Route`
+  - autopilot route summary、candidate route、route selection / replan 字段
+- `Runtime state -> Drive State`
+  - `inferMissionAutopilotDriveState()` 与 server projection
+- `Decision / HITL -> Takeover`
+  - takeover summary、decision prompt、missing-info clarifications、operator actions
+- `Runtime facts -> Evidence / Explanation`
+  - evidence timeline、correlation index、recommendation details、remaining steps
+
+仍需保持的边界：
+
+- 不宣称开放域 L5。
+- 不把 projection 等同于完整 runtime 自动化。
+- 不以产品对象重命名替代 Mission / Workflow / Runtime 的事实主干。
+- 下一阶段重点应转向 runtime 行为深化：parser 版本化、route planner 自动编队、fleet orchestration、takeover governance、evidence replay trust chain 与 success metrics。
+
 ## 目的
 
 这份文档用于回答一个实际问题：`task-autopilot` 的 18 份 specs，不应该被理解成“另起一套新的任务平台”，而应该被理解成对现有 `mission-first` 主仓的一层上位产品抽象。

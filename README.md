@@ -24,7 +24,7 @@
   <img alt="server" src="https://img.shields.io/badge/server-Node%20%2B%20Express-0f766e" />
   <img alt="executor" src="https://img.shields.io/badge/executor-Lobster-7c3aed" />
   <img alt="3d" src="https://img.shields.io/badge/3D-Three.js-f97316" />
-  <img alt="autopilot" src="https://img.shields.io/badge/task%20autopilot-18%20phase--1%20specs-0f766e" />
+  <img alt="autopilot" src="https://img.shields.io/badge/task%20autopilot-602%2F602%20tasks-0f766e" />
   <img alt="pages" src="https://img.shields.io/badge/demo-GitHub%20Pages-0ea5e9" />
 </p>
 
@@ -60,7 +60,8 @@ What is already present as foundation:
 - Human-in-the-loop control paths such as wait/resume, decision handling, approvals, and manual recovery hooks.
 - Review, audit, replay, lineage, evidence, and runtime observability concepts across existing specs and mainline integration.
 - A Web-AIGC mainline baseline where `58 / 58` specs have been closed and multiple node/route families have been integrated into the server mainline.
-- A first-phase Task Autopilot specification baseline: `18` specs, each with `requirements.md`, `design.md`, and `tasks.md`.
+- A closed first-phase Task Autopilot baseline: `18` specs, `54` markdown files, `345 / 345` top-level task items, and `602 / 602` raw task checklist items.
+- A first implementation slice for Task Autopilot projections: shared Destination parsing contracts, server projection/orchestration fields, client store normalization, and a cockpit-facing `TaskAutopilotPanel`.
 
 What is not being claimed:
 
@@ -68,7 +69,7 @@ What is not being claimed:
 - The system does not promise to complete every complex task without human review.
 - High-risk side effects, permission changes, external writes, budget-sensitive actions, and ambiguous goals still require explicit governance and takeover.
 - The new product language does not require an immediate large-scale rename of the existing `mission / workflow / runtime` code.
-- The 18 Task Autopilot specs are a completed first-phase documentation and modeling baseline; their implementation task checklists are intentionally the next body of work.
+- The closed first-phase Task Autopilot checklist does not mean open-domain L5 autonomy; it means the product model, spec backlog, and first shared/server/client projection slice now have a traceable baseline for the next runtime deepening work.
 
 ---
 
@@ -139,13 +140,21 @@ The intended implementation model is task-level and phase-level. A mission may s
 
 ## Phase-1 Task Autopilot Specs
 
-The first Task Autopilot phase has completed its spec modeling baseline: `18` specs across `54` markdown files. Each spec has:
+The first Task Autopilot phase is now closed as a tracked baseline: `18` specs across `54` markdown files. Each spec has:
 
 - `requirements.md`
 - `design.md`
 - `tasks.md`
 
-The current status is documentation-complete for phase 1, not implementation-complete for every task in those specs. The unchecked task lists are the next implementation backlog.
+As of the 2026-04-26 refresh, the phase-1 tracking view is:
+
+- Specs: `18 / 18`
+- Markdown files: `54 / 54`
+- Core top-level task items: `345 / 345`
+- Raw task checklist items: `602 / 602`
+- Progress overview: [`docs/task-autopilot-18-spec-progress-overview-2026-04-24.svg`](./docs/task-autopilot-18-spec-progress-overview-2026-04-24.svg)
+
+The corresponding first implementation slice is intentionally compatibility-first. It adds shared `Destination` parser/projection contracts, server autopilot projection fields, client store normalization, and cockpit-facing destination/route/takeover/evidence presentation without renaming the underlying `mission / workflow / runtime` backbone.
 
 ### P0: Product Definition And Object Model
 
@@ -174,7 +183,7 @@ The current status is documentation-complete for phase 1, not implementation-com
 - `autopilot-evidence-replay-and-trust-chain`: defines the driving timeline, evidence chain, replay chain, and trust chain.
 - `task-autopilot-success-metrics`: defines delivery rate, takeover rate, replan rate, deviation rate, completion time, review pass rate, and drill-down evidence.
 
-The next implementation direction is to connect these specs into the running product incrementally: projection objects first, cockpit surfaces second, runtime events and governance third, then replay/audit/metrics closure.
+The next implementation direction is no longer to create more phase-1 specs. It is to deepen the runtime slices behind the closed baseline: parser versioning and clarification merge, route planner automation, fleet organization, replay/evidence trust chains, and success metrics that can be measured from live mission facts.
 
 ---
 
@@ -438,7 +447,7 @@ Because GitHub Pages is a static deployment target. It has no local backend proc
 
 ### Is Task Autopilot already fully implemented?
 
-No. The mission-first runtime foundation exists, the Web-AIGC mainline is integrated, and the first `18` Task Autopilot specs are documented. The next work is to land the projection layer, cockpit experience, runtime orchestration fields, takeover governance, evidence chain, and metrics in production code.
+Not as open-domain L5 autonomy. The mission-first runtime foundation exists, the Web-AIGC mainline is integrated, the first `18` Task Autopilot specs are closed as a tracked baseline, and the first shared/server/client projection slice is in code. The next work is to deepen runtime behavior behind that slice: route planning automation, fleet orchestration, takeover governance, evidence replay, parser versioning, and metrics measured from live mission facts.
 
 ### Does Task Autopilot require renaming all existing mission code?
 

@@ -150,7 +150,22 @@ function MissionWallTaskPanelInner({
     mission?.status === "failed" ||
     mission?.status === "waiting" ||
     (detail?.failureReasons.length ?? 0) > 0;
-  const summaryLabels = [statusLabel, stageLabel];
+  const autopilot = detail?.autopilotSummary ?? mission?.autopilotSummary;
+  const destinationLabel = autopilot?.destination.goal
+    ? compactText(autopilot.destination.goal, fullscreen ? 42 : 18)
+    : t(locale, "等待目的地", "Awaiting destination");
+  const routeLabel =
+    autopilot?.route.selected?.label ||
+    autopilot?.route.label ||
+    t(locale, "路线待规划", "Route pending");
+  const driveStateLabel =
+    autopilot?.driveState.label ||
+    t(locale, "自动驾驶待命", "Autopilot standby");
+  const takeoverLabel =
+    autopilot?.takeover.required || mission?.status === "waiting"
+      ? t(locale, "需要接管", "Takeover")
+      : t(locale, "可自动推进", "Auto-driving");
+  const summaryLabels = [statusLabel, stageLabel, driveStateLabel];
 
   const rootStyle: React.CSSProperties = fullscreen
     ? {
@@ -297,7 +312,7 @@ function MissionWallTaskPanelInner({
                     color: "rgba(148,163,184,0.88)",
                   }}
                 >
-                  Mission Control
+                  Autopilot Control
                 </div>
                 <div
                   style={{
@@ -379,6 +394,64 @@ function MissionWallTaskPanelInner({
             }}
           >
             {compactText(title, fullscreen ? 96 : 32)}
+          </div>
+
+          <div
+            style={{
+              marginTop: fullscreen ? 18 : 6,
+              display: "grid",
+              gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+              gap: fullscreen ? 10 : 4,
+            }}
+          >
+            {[
+              [t(locale, "目的地", "Destination"), destinationLabel],
+              [t(locale, "路线", "Route"), compactText(routeLabel, fullscreen ? 28 : 14)],
+              [
+                t(locale, "编队", "Fleet"),
+                String(
+                  autopilot?.fleet.activeRoleCount ??
+                    mission?.activeAgentCount ??
+                    0
+                ),
+              ],
+              [t(locale, "接管", "Takeover"), takeoverLabel],
+            ].map(([label, value]) => (
+              <div
+                key={label}
+                style={{
+                  minWidth: 0,
+                  borderRadius: fullscreen ? 14 : 8,
+                  border: `1px solid ${tone.accentSoft}`,
+                  background: "rgba(15,23,42,0.38)",
+                  padding: fullscreen ? "8px 10px" : "4px 5px",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: fullscreen ? 11 : 6,
+                    letterSpacing: "0.12em",
+                    textTransform: "uppercase",
+                    color: "rgba(148,163,184,0.9)",
+                  }}
+                >
+                  {label}
+                </div>
+                <div
+                  style={{
+                    marginTop: fullscreen ? 4 : 2,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                    fontSize: fullscreen ? 15 : 8,
+                    fontWeight: 700,
+                    color: "#e2e8f0",
+                  }}
+                >
+                  {value}
+                </div>
+              </div>
+            ))}
           </div>
 
           <div style={{ marginTop: fullscreen ? 24 : 6 }}>
