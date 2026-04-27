@@ -1,13 +1,15 @@
 import { ContactShadows, useGLTF } from '@react-three/drei';
 import { Canvas } from '@react-three/fiber';
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import { ACESFilmicToneMapping } from 'three';
 
+import { useContainerWidth } from '@/hooks/useContainerWidth';
 import { useIdleActivation } from '@/hooks/useIdleActivation';
 import { useViewportTier } from '@/hooks/useViewportTier';
 import { FURNITURE_MODELS, PET_MODELS } from '@/lib/assets';
 import { useTasksStore } from '@/lib/tasks-store';
 
+import { CameraController } from './three/CameraController';
 import { CrossFrameworkParticles } from './three/CrossFrameworkParticles';
 import { CrossPodParticles } from './three/CrossPodParticles';
 import { MissionIsland } from './three/MissionIsland';
@@ -43,12 +45,22 @@ const SECONDARY_SCENE_MODELS = [
 
 export type ScenePerformanceProfile = 'balanced' | 'resizing';
 
+export interface Scene3DProps {
+  performanceProfile?: ScenePerformanceProfile;
+  /** Current sidebar width in pixels, used for camera compensation. Default 0. */
+  sidebarWidth?: number;
+  /** Hide the scene via CSS visibility (preserves WebGL context). Default false. */
+  hidden?: boolean;
+}
+
 export function Scene3D({
   performanceProfile = 'balanced',
-}: {
-  performanceProfile?: ScenePerformanceProfile;
-}) {
-  const { isMobile, isTablet } = useViewportTier();
+  sidebarWidth = 0,
+  hidden = false,
+}: Scene3DProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const { isMobile, isTablet, tier } = useViewportTier();
+  const effectiveWidth = useContainerWidth(containerRef);
   const deferredDetailsReady = useIdleActivation(
     performanceProfile === 'balanced',
     600
@@ -124,12 +136,18 @@ export function Scene3D({
   const primaryShadowSize = reducedSceneEffects ? 768 : 1024;
 
   return (
-    <div className="absolute inset-0 z-0 h-full w-full touch-pan-y">
+    <div
+      ref={containerRef}
+      className="absolute inset-0 z-0 h-full w-full touch-pan-y"
+      style={{ visibility: hidden ? 'hidden' : 'visible' }}
+    >
       <Canvas
         shadows
         camera={camera}
         dpr={dpr}
+        frameloop={hidden ? 'demand' : 'always'}
         gl={{ antialias: !reducedSceneEffects, alpha: false }}
+        resize={{ scroll: false, debounce: { scroll: 0, resize: 0 } }}
         onCreated={({ gl, camera: sceneCamera }) => {
           gl.setClearColor('#BFDFFF');
           gl.toneMapping = ACESFilmicToneMapping;
@@ -137,6 +155,7 @@ export function Scene3D({
           sceneCamera.lookAt(0, isMobile ? 1.6 : 1.35, 0);
         }}
       >
+        <CameraController effectiveWidth={effectiveWidth} tier={tier} />
         <Suspense fallback={null}>
           <ambientLight intensity={0.38} color="#F7EDE1" />
           <hemisphereLight color="#FAEEDD" groundColor="#B28A67" intensity={0.34} />
