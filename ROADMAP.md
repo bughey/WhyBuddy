@@ -1,5 +1,11 @@
 # 实现路径规划：从展示页面到多智能体编排系统
 
+## 2026-04-26 Lane F：Task Autopilot 前端文档回补
+
+- [x] README / README.zh-CN 已补齐“如何触发任务自动驾驶”的最小目的地输入示例，并与前端六类 chips（analysis、generation、implementation、research、attachment、advanced-execution）对齐。
+- [x] steering 已回补 Destination parser / projection 与 launch preview、cockpit goal card 的字段差异，避免把审计字段误读为每张前端卡片都已展示或持久化。
+- [x] steering 与 README 已补充 desktop / tablet / mobile 的 cockpit 能力边界：桌面三栏，平板双栏，移动分段导航、压缩卡片与 bottom sheet；GitHub Pages 仍是 browser-only，不包含 Node server / executor。
+
 ## 2026-04-26 增补：Task Autopilot Phase 1 闭环
 
 - [x] 任务自动驾驶第一阶段 `18 / 18` specs 已完成并收口，覆盖产品定位、核心概念、L1-L5 分级、Destination / Route、驾驶舱 IA、接管点、Drive State、runtime 编排、可解释性、恢复治理、证据回放与成功指标。

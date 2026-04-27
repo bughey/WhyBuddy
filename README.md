@@ -122,6 +122,27 @@ Takeover, replan, confidence, risk, evidence, audit, and replay make that chain 
 
 ---
 
+## Triggering Task Autopilot
+
+The smallest useful trigger is a destination-oriented sentence: state the outcome, the constraints, and what a good delivery should look like. The launch surface currently keeps six example chips aligned to the frontend view model:
+
+| Chip | Minimal destination example |
+| ---- | --------------------------- |
+| Analysis | Analyze this week's support incidents by Friday; deliver root causes, constraints, and success criteria. |
+| Generation | Draft a bilingual partner launch brief with a rollout checklist and approval criteria. |
+| Implementation | Implement a guarded checkout banner change; keep rollback path and tests explicit. |
+| Research | Research three pricing options and summarize evidence, risks, and recommendation. |
+| Attachment | Use the attached requirements doc to produce schedule, risk register, and acceptance criteria. |
+| Advanced execution | Open the sandbox/browser, verify the payment flow, collect logs, and provide a rollback recommendation. |
+
+The Destination parser/projection layer is intentionally richer than the launch preview and goal card. Parser-facing fields such as `sourceInput`, `normalizedGoal`, structured `constraints`, structured `successCriteria`, `missingInformation`, `suggestedClarifications`, `evidence`, mission/workflow mapping, and version metadata support audit and runtime projection. The frontend summary is lighter: launch preview focuses on `goal`, `deliverable`, `constraints`, `timeline`, `successCriteria`, `missingFields`, `confidence`, `attachmentInfluence`, and `route`; the cockpit goal card focuses on `goal`, `request`, `subGoals`, `constraints`, `successCriteria`, `deliverables`, `fieldSources`, `lockState`, and `routeImpact`. Not every parser field is shown in every card or persisted as a locked goal yet.
+
+On desktop, the cockpit can present the richer three-column structure: Destination/Route on the left, Drive/Fleet/Outputs in the center, and Takeover/Evidence/Cost/Risk on the right when data is available. Tablet and mobile keep the same core objects reachable through two-column, segmented, compressed-card, and bottom-sheet patterns, but they do not show every dense desktop panel at the same time. The GitHub Pages preview remains browser-only and does not include the Node server or executor.
+
+These examples are user-state positioning examples, not backend capability promises. They describe what the user is trying to reach: quick analysis, generated delivery material, implementation with rollback, evidence-backed research, attachment-grounded planning, or guarded advanced execution.
+
+---
+
 ## Autopilot Levels
 
 The Task Autopilot specs define L1-L5 as an execution commitment model, not as marketing shorthand. The repository should not be described as globally L5.
@@ -224,6 +245,8 @@ Projection layer: bindings, view models, server aggregation, event normalization
 Runtime layer:   Mission Runtime / workflow engine / HITL / review / audit / replay
 Execution layer: Lobster executor / adapters / tools / Web-AIGC nodes / external services
 ```
+
+The visual direction follows the same projection model: Destination, Route, Fleet, Drive State, Takeover, and Evidence should read as stable cockpit objects with consistent status color semantics, restrained motion, and reduced-motion fallbacks. Route reveal, route selection glow, drive-state rail advance, takeover alerts, and evidence timeline append should explain progress and risk without implying unsupported autonomy.
 
 The runtime architecture SVG is available here:
 

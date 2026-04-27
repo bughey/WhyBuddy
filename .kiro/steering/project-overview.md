@@ -75,6 +75,15 @@ Cube Pets Office 当前对内定义为：建立在 `mission-first` 底座上的 
 
 > 说明：本页以 2026-04-26 Task Autopilot Phase 1 闭环后状态为准；旧的阶段性计划文档保留用于历史追溯。Web-AIGC 封板口径见 `.kiro/steering/web-aigc-58-plan-progress-summary-2026-04-22.md`；任务自动驾驶闭环口径见 `.kiro/steering/task-autopilot-phase-1-closure-2026-04-26.md` 与 `docs/task-autopilot-18-spec-progress-overview-2026-04-24.svg`。
 
+## 2026-04-26 增补：前端体验触发与响应式边界
+
+- 任务自动驾驶的最小触发输入应是“目的地”句子：包含目标、约束、交付物或成功标准，而不是只输入泛化 prompt。README 已同步六类前端 chips：analysis、generation、implementation、research、attachment、advanced-execution。
+- 六类 chips 是用户态定位示例，不是后端能力承诺：它们分别表达快速分析、生成交付材料、带回滚的实现、有证据的研究、基于附件的规划，以及受保护的高级执行。
+- Destination parser / projection 是运行时和审计侧的丰富模型；launch preview 与 cockpit goal card 是更轻的 frontend view model。已展示字段和 parser 审计字段不应混同，避免误判为所有字段都已持久化或在所有卡片中可见。
+- 桌面端主结构按三栏表达：左侧 Destination / Route，中间 Drive / Fleet / Outputs，右侧 Takeover / Evidence / Cost / Risk。tablet / mobile 通过双栏、分段导航、压缩卡片和 bottom sheet 访问同一组核心对象，但不承诺同时展示所有桌面高密度面板。
+- 自动驾驶视觉方向按 Destination / Route / Fleet / Drive State / Takeover / Evidence 六类对象组织 token、状态色和动效；路线 reveal、路线选择 glow、驾驶状态 rail advance、接管提示和证据 timeline append 只用于解释进度与风险，不用于夸大自动化等级。
+- GitHub Pages 预览继续按 browser-only 口径说明，不包含 Node server / executor；本地或服务端模式才覆盖完整 runtime / executor 链路。
+
 ## 系统架构
 
 ```
