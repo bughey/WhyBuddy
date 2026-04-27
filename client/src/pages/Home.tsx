@@ -156,7 +156,7 @@ export default function Home() {
 
   return (
     <div className="relative h-[100svh] w-screen overflow-hidden bg-[linear-gradient(180deg,#d8e5f0_0%,#e9dfd2_48%,#e3d2c0_100%)]">
-      <Scene3D performanceProfile={scenePerformanceProfile} />
+      <Scene3D performanceProfile={scenePerformanceProfile} sidebarWidth={0} />
 
       <div className="pointer-events-none absolute inset-0 z-[5]">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(228,241,252,0.72),rgba(228,241,252,0)_38%)]" />
