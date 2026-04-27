@@ -32,6 +32,7 @@ import { ClarificationPanel } from "@/components/nl-command/ClarificationPanel";
 import { ArtifactListBlock } from "@/components/tasks/ArtifactListBlock";
 import { ArtifactPreviewDialog } from "@/components/tasks/ArtifactPreviewDialog";
 import { CreateMissionDialog } from "@/components/tasks/CreateMissionDialog";
+import { TaskDetailCardsView } from "@/components/tasks/TaskDetailCardsView";
 import { TasksCockpitDetail } from "@/components/tasks/TasksCockpitDetail";
 import { TasksQueueRail } from "@/components/tasks/TasksQueueRail";
 import {
@@ -1576,7 +1577,27 @@ export function OfficeTaskCockpit({
           min="28%"
           style={{ overflow: "visible" }}
         >
-          <div className="h-full min-h-0" />
+          <div className="h-full min-h-0 relative">
+            {activeTaskId && selectedDetail ? (
+              <div className="absolute inset-0 transition-opacity duration-200 ease-in-out opacity-100">
+                <TaskDetailCardsView
+                  taskId={activeTaskId}
+                  detail={selectedDetail}
+                  autopilotSummary={selectedDetail.autopilotSummary ?? null}
+                  locale={locale}
+                  onSubmitOperatorAction={handleSubmitOperatorAction}
+                  onLaunchDecision={handleLaunchDecision}
+                  onSetDecisionNote={setDecisionNote}
+                  decisionNote={decisionNote}
+                  operatorActionLoading={
+                    activeTaskId
+                      ? (operatorActionLoadingByMissionId[activeTaskId] ?? false)
+                      : false
+                  }
+                />
+              </div>
+            ) : null}
+          </div>
         </Splitter.Panel>
 
         <Splitter.Panel
