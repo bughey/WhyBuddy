@@ -699,7 +699,7 @@ function TtsPlayButton({ id, content }: { id: string; content: string }) {
       }}
       className={`relative ml-1 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full transition-all ${
         isPlaying
-          ? "bg-[#D4845A] text-white"
+          ? "bg-primary text-white"
           : "bg-white/10 text-white/50 hover:bg-white/20"
       }`}
       title={isPlaying ? "Stop" : "Play"}
@@ -710,7 +710,7 @@ function TtsPlayButton({ id, content }: { id: string; content: string }) {
         <Play className="h-2.5 w-2.5" />
       )}
       {isPlaying && (
-        <span className="absolute inset-0 animate-ping rounded-full bg-[#D4845A] opacity-25" />
+        <span className="absolute inset-0 animate-ping rounded-full bg-primary opacity-25" />
       )}
     </button>
   );
@@ -868,7 +868,7 @@ function DirectiveView() {
                 key={step}
                 className="rounded-xl bg-white/8 px-3 py-2 text-[11px] text-white/80"
               >
-                <p className="font-semibold text-[#D4845A]">{step}</p>
+                <p className="font-semibold text-primary">{step}</p>
                 <p className="mt-1">{desc}</p>
               </div>
             ))}
@@ -1283,7 +1283,7 @@ function OrgView() {
                       onClick={() => openMemory(worker.id)}
                       className="flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-left hover:bg-white/5"
                     >
-                      <div className="h-2 w-2 rounded-full bg-[#D4845A]" />
+                      <div className="h-2 w-2 rounded-full bg-primary" />
                       <span className="flex-1 truncate text-[11px] text-white/80">
                         {worker.name}
                       </span>
@@ -1822,7 +1822,7 @@ function AgentAssessmentPanel() {
                       })
                     );
                   }}
-                  className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/10 px-2 py-0.5 text-[9px] font-medium text-white/60 transition-colors hover:border-[#D4845A] hover:text-[#D4845A]"
+                  className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/10 px-2 py-0.5 text-[9px] font-medium text-white/60 transition-colors hover:border-primary hover:text-primary"
                 >
                   <Hand className="h-3 w-3" />
                   {t(locale, "介入", "Intervene")}
@@ -1848,7 +1848,7 @@ function AgentAssessmentPanel() {
                   <div className="mt-1.5">
                     <ScoreBar
                       value={result.fitnessScore}
-                      color="bg-[#D4845A]"
+                      color="bg-primary"
                     />
                   </div>
                   {result.reason ? (
@@ -1903,7 +1903,7 @@ function CompetitionResultsPanel() {
                       })
                     );
                   }}
-                  className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/10 px-2 py-0.5 text-[9px] font-medium text-white/60 transition-colors hover:border-[#D4845A] hover:text-[#D4845A]"
+                  className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/10 px-2 py-0.5 text-[9px] font-medium text-white/60 transition-colors hover:border-primary hover:text-primary"
                 >
                   <Hand className="h-3 w-3" />
                   {t(locale, "介入", "Intervene")}
@@ -2063,7 +2063,7 @@ function TaskforcePanel() {
                       })
                     );
                   }}
-                  className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/10 px-2 py-0.5 text-[9px] font-medium text-white/60 transition-colors hover:border-[#D4845A] hover:text-[#D4845A]"
+                  className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/10 px-2 py-0.5 text-[9px] font-medium text-white/60 transition-colors hover:border-primary hover:text-primary"
                 >
                   <Hand className="h-3 w-3" />
                   {t(locale, "介入", "Intervene")}
@@ -3190,7 +3190,7 @@ function MemoryView() {
               onClick={() => setSelectedMemoryAgent(agent.id)}
               className={`rounded-full px-2.5 py-1 text-[10px] font-medium ${
                 selectedAgent?.id === agent.id
-                  ? "bg-[#D4845A] text-white"
+                  ? "bg-primary text-white"
                   : "bg-white/5 text-white/60"
               }`}
             >

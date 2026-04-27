@@ -1502,7 +1502,7 @@ export function OfficeTaskCockpit({
           <div className="pointer-events-auto absolute left-1/2 top-[-9px] z-30 -translate-x-1/2">
             <button
               type="button"
-              className="inline-flex h-7 w-12 items-center justify-center rounded-full border border-stone-200/80 bg-white/94 text-[#9c6b47] shadow-[0_10px_24px_rgba(88,61,39,0.14)] backdrop-blur-md transition hover:bg-[#fff8f1] hover:text-[#5e8b72]"
+              className="inline-flex h-7 w-12 items-center justify-center rounded-full border border-stone-200/80 bg-white/94 text-muted-foreground shadow-[0_10px_24px_rgba(15,23,42,0.14)] backdrop-blur-md transition hover:bg-background hover:text-primary"
               aria-label={
                 launcherContextExpanded
                   ? t(locale, "收起辅助信息", "Collapse supporting context")

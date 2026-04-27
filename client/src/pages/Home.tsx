@@ -148,11 +148,11 @@ export default function Home() {
   const scenePerformanceProfile =
     resizeActive && !isMobile ? "resizing" : "balanced";
   const desktopGlassClass = resizeActive
-    ? "border-stone-200/90 bg-[#fff8f0]/96 shadow-[0_8px_20px_rgba(88,61,39,0.06)]"
-    : "border-white/50 bg-[rgba(255,252,248,0.8)] shadow-[0_10px_28px_rgba(88,61,39,0.08)] backdrop-blur";
+    ? "border-stone-200/90 bg-[hsl(var(--background))]/96 shadow-[0_8px_20px_rgba(15,23,42,0.06)]"
+    : "border-white/50 bg-[hsl(var(--background) / 0.8)] shadow-[0_10px_28px_rgba(15,23,42,0.08)] backdrop-blur";
   const utilityChipClass = resizeActive
-    ? "border-stone-200/90 bg-[#fff8f0]/96 shadow-[0_8px_20px_rgba(88,61,39,0.06)]"
-    : "border-white/55 bg-[rgba(255,252,248,0.82)] shadow-[0_10px_24px_rgba(88,61,39,0.08)] backdrop-blur";
+    ? "border-stone-200/90 bg-[hsl(var(--background))]/96 shadow-[0_8px_20px_rgba(15,23,42,0.06)]"
+    : "border-white/55 bg-[hsl(var(--background) / 0.82)] shadow-[0_10px_24px_rgba(15,23,42,0.08)] backdrop-blur";
 
   return (
     <div className="relative h-[100svh] w-screen overflow-hidden bg-[linear-gradient(180deg,#d8e5f0_0%,#e9dfd2_48%,#e3d2c0_100%)]">
@@ -170,7 +170,7 @@ export default function Home() {
 
       {isSceneReady && isMobile ? (
         <div className="pointer-events-none absolute inset-x-0 z-[18] flex justify-center px-3 top-[calc(env(safe-area-inset-top)+108px)]">
-          <div className="pointer-events-auto w-full max-w-none rounded-[28px] studio-shell px-4 py-4 shadow-[0_18px_45px_rgba(78,58,38,0.12)]">
+          <div className="pointer-events-auto w-full max-w-none rounded-[28px] studio-shell px-4 py-4 shadow-[0_18px_45px_rgba(15,23,42,0.12)]">
             <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#A08972]">
               {copy.home.officeEyebrow}
             </p>
@@ -245,8 +245,8 @@ export default function Home() {
                 className={cn(
                   "flex min-w-0 items-center gap-2 rounded-[16px] px-2.5 py-1.5",
                   resizeActive
-                    ? "border border-stone-200/90 bg-[#fff8f0]/96 shadow-[0_8px_20px_rgba(88,61,39,0.06)]"
-                    : "border border-white/55 bg-[linear-gradient(180deg,rgba(255,252,248,0.84),rgba(246,238,229,0.74))] shadow-[0_14px_36px_rgba(88,61,39,0.1)] backdrop-blur"
+                    ? "border border-stone-200/90 bg-[hsl(var(--background))]/96 shadow-[0_8px_20px_rgba(15,23,42,0.06)]"
+                    : "border border-white/55 bg-[linear-gradient(180deg,hsl(var(--card) / 0.84),hsl(var(--muted) / 0.74))] shadow-[0_14px_36px_rgba(15,23,42,0.1)] backdrop-blur"
                 )}
               >
                 <div className="flex h-7 w-7 items-center justify-center rounded-[10px] bg-[linear-gradient(180deg,#d69871,#c98257)] text-white shadow-[0_10px_24px_rgba(201,130,87,0.22)]">

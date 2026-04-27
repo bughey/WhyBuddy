@@ -131,10 +131,10 @@ function App() {
             position="top-center"
             toastOptions={{
               style: {
-                background: "rgba(255, 248, 240, 0.95)",
+                background: "hsl(var(--card))",
                 backdropFilter: "blur(12px)",
-                border: "1px solid rgba(232, 221, 208, 0.6)",
-                color: "#3A2A1A",
+                border: "1px solid hsl(var(--border))",
+                color: "hsl(var(--foreground))",
                 borderRadius: "16px",
                 boxShadow: "0 8px 32px rgba(0,0,0,0.08)",
               },

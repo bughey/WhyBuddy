@@ -153,7 +153,7 @@ export default function LineageHeatmap() {
                         background,
                         borderColor:
                           count > 0
-                            ? "rgba(151, 120, 90, 0.22)"
+                            ? "hsl(var(--border))"
                             : LINEAGE_NEUTRAL.border,
                         color,
                       }}

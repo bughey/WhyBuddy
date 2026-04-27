@@ -117,7 +117,7 @@ function toneFromDecisionTone(
   tone: "primary" | "secondary" | "warning"
 ): string {
   if (tone === "warning") {
-    return workspaceCalloutClass("warning", "hover:bg-[rgba(201,130,87,0.22)]");
+    return workspaceCalloutClass("warning", "hover:bg-accent");
   }
   if (tone === "secondary") {
     return workspaceCalloutClass("info", "hover:bg-[rgba(91,137,165,0.22)]");
@@ -605,7 +605,7 @@ function MissionCostTab() {
         <Card
           className={cn(
             DETAIL_CARD_STRONG_CLASS,
-            "border-[rgba(201,130,87,0.24)] bg-[linear-gradient(180deg,rgba(255,250,246,0.96),rgba(249,238,228,0.92))]"
+            "border-amber-200 bg-amber-50/80"
           )}
         >
           <CardContent className="flex items-center gap-3 py-4">

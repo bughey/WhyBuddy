@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1120" viewBox="0 0 1600 1120" role="img" aria-labelledby="title desc">
   <title id="title">UI Redesign 8 Spec Progress Overview 2026-04-27</title>
-  <desc id="desc">Progress overview for 8 UI redesign specs. Current implementation progress is 236 of 329 sub-tasks, 72 percent complete. Wave 1-2 complete (102/102), Wave 3 complete (92/94), Wave 4-5 partial (42/84).</desc>
+  <desc id="desc">Progress overview for 8 UI redesign specs. Current implementation progress is 329 of 329 sub-tasks, 100 percent complete. All 8 specs and 6 waves fully done.</desc>
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="#f6f8fc"/>
@@ -58,9 +58,9 @@
   <!-- ═══════════ Hero Banner ═══════════ -->
   <rect x="36" y="28" width="1528" height="194" rx="28" fill="url(#hero)" filter="url(#shadow)"/>
   <text x="60" y="78" class="title">UI 改造 8 个 Specs 实施进度总览</text>
-  <text x="60" y="108" class="subtitle">统计时间: 2026-04-27 | 口径: 8 个 UI 改造 specs, requirements/design/tasks 三件套与 tasks.md 子任务</text>
-  <text x="60" y="138" class="subtitle">当前状态: Wave 1-3 已完成 (#1 色板 + #2 导航 + #3 卡片 + #5 发起 + #6 场景 + #7 指示器); #4 面板 + #8 回归待启动</text>
-  <text x="60" y="176" class="subtitle">口径提醒: specs 8 / 8, Markdown 32 / 32; 子任务 236 / 329 (72%); 第二批 2 个并行 worktree 已合并到 main</text>
+  <text x="60" y="108" class="subtitle">统计时间: 2026-04-28 | 口径: 8 个 UI 改造 specs, requirements/design/tasks 三件套与 tasks.md 子任务</text>
+  <text x="60" y="138" class="subtitle">当前状态: Wave 1-6 全部完成 (#1-#8 ✅); 8 个 specs 329 个子任务全部 100%</text>
+  <text x="60" y="176" class="subtitle">口径提醒: specs 8 / 8, Markdown 32 / 32; 子任务 329 / 329 (100%); 三批共 8 个并行 worktree 已合并到 main</text>
 
   <rect x="954" y="46" width="142" height="66" rx="18" fill="rgba(255,255,255,0.11)" stroke="rgba(255,255,255,0.18)"/>
   <text x="972" y="71" class="hero-k">Specs</text>
@@ -72,12 +72,12 @@
 
   <rect x="1274" y="46" width="220" height="66" rx="18" fill="rgba(255,255,255,0.11)" stroke="rgba(255,255,255,0.18)"/>
   <text x="1292" y="71" class="hero-k">子任务</text>
-  <text x="1292" y="101" class="hero-v">236 / 329</text>
+  <text x="1292" y="101" class="hero-v">329 / 329</text>
 
-  <!-- Hero progress bar (72%) -->
+  <!-- Hero progress bar (100%) -->
   <rect x="954" y="138" width="540" height="10" rx="5" fill="rgba(255,255,255,0.18)"/>
-  <rect x="954" y="138" width="389" height="10" rx="5" fill="url(#heroBar)"/>
-  <text x="954" y="174" class="subtitle">文档完整率 100% | 实施完成率 72% | Wave 1-3 ✅ | #4 面板 + #8 回归待启动</text>
+  <rect x="954" y="138" width="540" height="10" rx="5" fill="url(#heroBar)"/>
+  <text x="954" y="174" class="subtitle">文档完整率 100% | 实施完成率 100% | Wave 1-6 全部 ✅ | 8 specs 329 子任务全部完成</text>
 
   <!-- ═══════════ Summary Cards ═══════════ -->
   <rect x="36" y="244" width="360" height="112" rx="22" fill="#ffffff" stroke="#dbe5f1" filter="url(#shadow)"/>
@@ -87,18 +87,18 @@
 
   <rect x="416" y="244" width="360" height="112" rx="22" fill="#ffffff" stroke="#dbe5f1" filter="url(#shadow)"/>
   <text x="438" y="278" class="card-title">已完成 specs</text>
-  <text x="438" y="316" class="card-value">5 / 8</text>
-  <text x="438" y="340" class="card-meta">#1 色板 ✅ | #2 导航 ✅ | #3 卡片 ✅ | #5 发起 95% | #6 场景 ✅</text>
+  <text x="438" y="316" class="card-value">8 / 8</text>
+  <text x="438" y="340" class="card-meta">#1-#8 全部 ✅ | 329 / 329 子任务 100%</text>
 
   <rect x="796" y="244" width="360" height="112" rx="22" fill="#ffffff" stroke="#dbe5f1" filter="url(#shadow)"/>
   <text x="818" y="278" class="card-title">子任务完成</text>
-  <text x="818" y="316" class="card-value">236 / 329</text>
-  <text x="818" y="340" class="card-meta">整体完成率 72%, 按 tasks.md 子任务行统计</text>
+  <text x="818" y="316" class="card-value">329 / 329</text>
+  <text x="818" y="340" class="card-meta">整体完成率 100%, 按 tasks.md 子任务行统计</text>
 
   <rect x="1176" y="244" width="388" height="112" rx="22" fill="#ffffff" stroke="#dbe5f1" filter="url(#shadow)"/>
   <text x="1198" y="278" class="card-title">并行 Worktree</text>
-  <text x="1198" y="316" class="card-value">5 merged</text>
-  <text x="1198" y="340" class="card-meta">两批共 5 个 worktree 已合并, i18n 冲突已解决</text>
+  <text x="1198" y="316" class="card-value">8 merged</text>
+  <text x="1198" y="340" class="card-meta">三批共 7 个 worktree + #8 worktree 全部已合并</text>
 
   <!-- Legend -->
   <circle cx="1112" cy="390" r="6" fill="#27c281"/>
@@ -112,7 +112,7 @@
 
   <!-- ═══════════ Wave 1-2: 基础层 ═══════════ -->
   <text x="44" y="424" class="section-title">Wave 1-2 基础层: 色板 → 导航 + 指示器</text>
-  <text x="480" y="424" class="section-meta">3 specs | 子任务 102 / 119 | 当前 86% | ✅ 全部已合并到 main</text>
+  <text x="480" y="424" class="section-meta">3 specs | 子任务 119 / 119 | 当前 100% | ✅ 全部已合并到 main</text>
 
   <!-- Spec 1: Color Tokens — 51/51 = 100% -->
   <rect x="36" y="442" width="490" height="126" rx="18" fill="#ffffff" stroke="#27c281"/>
@@ -136,19 +136,20 @@
   <rect x="562" y="548" width="418" height="6" rx="3" fill="#e5ebf3"/>
   <rect x="562" y="548" width="418" height="6" rx="3" fill="url(#readyFill)"/>
 
-  <!-- Spec 7: Status Indicators — included in #2, 0/17 standalone -->
-  <rect x="1056" y="442" width="508" height="126" rx="18" fill="#ffffff" stroke="#94a3b8"/>
+  <!-- Spec 7: Status Indicators — 17/17 = 100% -->
+  <rect x="1056" y="442" width="508" height="126" rx="18" fill="#ffffff" stroke="#27c281"/>
   <rect x="1072" y="454" width="58" height="18" rx="9" fill="#e8fbf2"/><text x="1084" y="467" class="spec-badge-done">文档就绪</text>
-  <rect x="1138" y="454" width="70" height="18" rx="9" fill="#fef3c7"/><text x="1148" y="467" class="spec-badge-todo">含在 #2 中</text>
-  <text x="1532" y="470" text-anchor="end" class="card-value" style="font-size:18px;">0%</text>
-  <text x="1072" y="500" class="spec-title">#7 状态指示器卡片 (独立任务)</text>
-  <text x="1072" y="520" class="spec-slug">ui-redesign-status-indicators | 核心已随 #2 落地, 独立任务待补</text>
-  <text x="1072" y="540" class="spec-task">子任务 0 / 17 | 独立组件测试、driveState 完整映射、折叠模式 Tooltip</text>
+  <rect x="1138" y="454" width="50" height="18" rx="9" fill="#e8fbf2"/><text x="1148" y="467" class="spec-badge-done">已完成</text>
+  <text x="1532" y="470" text-anchor="end" class="card-value" style="font-size:18px;">100%</text>
+  <text x="1072" y="500" class="spec-title">#7 状态指示器卡片</text>
+  <text x="1072" y="520" class="spec-slug">ui-redesign-status-indicators | Wave 2 | ✅ 已合并</text>
+  <text x="1072" y="540" class="spec-task">子任务 17 / 17 | SidebarStatusBlock, driveState 映射, 折叠 Tooltip, 组件测试 ✅</text>
   <rect x="1072" y="548" width="436" height="6" rx="3" fill="#e5ebf3"/>
+  <rect x="1072" y="548" width="436" height="6" rx="3" fill="url(#readyFill)"/>
 
   <!-- ═══════════ Wave 3: 内容层 ═══════════ -->
   <text x="44" y="612" class="section-title">Wave 3 内容层: 任务卡片 + 发起面板</text>
-  <text x="440" y="612" class="section-meta">2 specs | 子任务 92 / 94 | 当前 98% | #3 ✅ 已合并, #5 95% 已合并</text>
+  <text x="440" y="612" class="section-meta">2 specs | 子任务 94 / 94 | 当前 100% | #3 ✅ 已合并, #5 ✅ 已合并</text>
 
   <!-- Spec 3: Task Detail Cards — 50/50 = 100% -->
   <rect x="36" y="630" width="750" height="126" rx="18" fill="#ffffff" stroke="#27c281"/>
@@ -161,30 +162,31 @@
   <rect x="52" y="736" width="678" height="6" rx="3" fill="#e5ebf3"/>
   <rect x="52" y="736" width="678" height="6" rx="3" fill="url(#readyFill)"/>
 
-  <!-- Spec 5: Launch Panel — 42/44 = 95% -->
-  <rect x="806" y="630" width="758" height="126" rx="18" fill="#ffffff" stroke="#3b82f6"/>
+  <!-- Spec 5: Launch Panel — 44/44 = 100% -->
+  <rect x="806" y="630" width="758" height="126" rx="18" fill="#ffffff" stroke="#27c281"/>
   <rect x="822" y="642" width="58" height="18" rx="9" fill="#e8fbf2"/><text x="834" y="655" class="spec-badge-done">文档就绪</text>
-  <rect x="888" y="642" width="50" height="18" rx="9" fill="#dbeafe"/><text x="898" y="655" class="spec-badge-wip">进行中</text>
-  <text x="1532" y="658" text-anchor="end" class="card-value" style="font-size:18px;">95%</text>
+  <rect x="888" y="642" width="50" height="18" rx="9" fill="#e8fbf2"/><text x="898" y="655" class="spec-badge-done">已完成</text>
+  <text x="1532" y="658" text-anchor="end" class="card-value" style="font-size:18px;">100%</text>
   <text x="822" y="688" class="spec-title">#5 任务发起浮层面板</text>
-  <text x="822" y="708" class="spec-slug">ui-redesign-launch-panel | Wave 3 | ✅ 已合并 (2 子任务待补)</text>
-  <text x="822" y="728" class="spec-task">子任务 42 / 44 | LaunchPanelShell, ModeTabBar, GoalInput, CockpitGrid ✅ | i18n 视觉验收待补</text>
+  <text x="822" y="708" class="spec-slug">ui-redesign-launch-panel | Wave 3 | ✅ 已合并</text>
+  <text x="822" y="728" class="spec-task">子任务 44 / 44 | LaunchPanelShell, ModeTabBar, GoalInput, CockpitGrid, i18n 视觉验收 ✅</text>
   <rect x="822" y="736" width="686" height="6" rx="3" fill="#e5ebf3"/>
-  <rect x="822" y="736" width="652" height="6" rx="3" fill="url(#progressFill)"/>
+  <rect x="822" y="736" width="686" height="6" rx="3" fill="url(#readyFill)"/>
 
   <!-- ═══════════ Wave 4-5: 深化层 ═══════════ -->
   <text x="44" y="800" class="section-title">Wave 4-5 深化层: 右侧面板 + 3D 场景适配</text>
-  <text x="470" y="800" class="section-meta">2 specs | 子任务 42 / 84 | 当前 50% | #6 ✅ 已合并, #4 待启动</text>
+  <text x="470" y="800" class="section-meta">2 specs | 子任务 84 / 84 | 当前 100% | #4 ✅ 已合并, #6 ✅ 已合并</text>
 
-  <!-- Spec 4: Right Info Panel — 0/42 = 0% -->
-  <rect x="36" y="818" width="750" height="126" rx="18" fill="#ffffff" stroke="#cfdceb"/>
-  <rect x="52" y="830" width="58" height="18" rx="9" fill="#e8fbf2"/><text x="64" y="843" class="spec-badge-ready">文档就绪</text>
-  <rect x="118" y="830" width="50" height="18" rx="9" fill="#fef3c7"/><text x="128" y="843" class="spec-badge-todo">待实施</text>
-  <text x="754" y="846" text-anchor="end" class="card-value" style="font-size:18px;">0%</text>
+  <!-- Spec 4: Right Info Panel — 42/42 = 100% -->
+  <rect x="36" y="818" width="750" height="126" rx="18" fill="#ffffff" stroke="#27c281"/>
+  <rect x="52" y="830" width="58" height="18" rx="9" fill="#e8fbf2"/><text x="64" y="843" class="spec-badge-done">文档就绪</text>
+  <rect x="118" y="830" width="50" height="18" rx="9" fill="#e8fbf2"/><text x="128" y="843" class="spec-badge-done">已完成</text>
+  <text x="754" y="846" text-anchor="end" class="card-value" style="font-size:18px;">100%</text>
   <text x="52" y="876" class="spec-title">#4 右侧信息面板重排</text>
-  <text x="52" y="896" class="spec-slug">ui-redesign-right-info-panel | Wave 4 | 依赖 #1 ✅, #3 ✅ → 可启动</text>
-  <text x="52" y="916" class="spec-task">子任务 0 / 42 | TaskOverview, LiveProgress (ProgressRing), RecentActivity 时间线</text>
+  <text x="52" y="896" class="spec-slug">ui-redesign-right-info-panel | Wave 4 | ✅ 已合并</text>
+  <text x="52" y="916" class="spec-task">子任务 42 / 42 | TaskOverview, ProgressRing, RecentActivity 时间线, ErrorBoundary ✅</text>
   <rect x="52" y="924" width="678" height="6" rx="3" fill="#e5ebf3"/>
+  <rect x="52" y="924" width="678" height="6" rx="3" fill="url(#readyFill)"/>
 
   <!-- Spec 6: Scene Adaptation — 42/42 = 100% -->
   <rect x="806" y="818" width="758" height="126" rx="18" fill="#ffffff" stroke="#27c281"/>
@@ -199,18 +201,19 @@
 
   <!-- ═══════════ Wave 6: 收尾 ═══════════ -->
   <text x="44" y="988" class="section-title">Wave 6 收尾: 响应式回归</text>
-  <text x="310" y="988" class="section-meta">1 spec | 子任务 0 / 32 | 当前 0% | 依赖 #1-#7 全部完成</text>
+  <text x="310" y="988" class="section-meta">1 spec | 子任务 32 / 32 | 当前 100% | ✅ 暖色清理+构建+测试+断点+无障碍+文档全部完成</text>
 
-  <!-- Spec 8: Responsive Regression — 0/32 = 0% -->
-  <rect x="36" y="1006" width="1528" height="80" rx="18" fill="#ffffff" stroke="#cfdceb"/>
-  <rect x="52" y="1018" width="58" height="18" rx="9" fill="#e8fbf2"/><text x="64" y="1031" class="spec-badge-ready">文档就绪</text>
-  <rect x="118" y="1018" width="50" height="18" rx="9" fill="#fef3c7"/><text x="128" y="1031" class="spec-badge-todo">待实施</text>
-  <text x="1532" y="1034" text-anchor="end" class="card-value" style="font-size:18px;">0%</text>
+  <!-- Spec 8: Responsive Regression — 32/32 = 100% -->
+  <rect x="36" y="1006" width="1528" height="80" rx="18" fill="#ffffff" stroke="#27c281"/>
+  <rect x="52" y="1018" width="58" height="18" rx="9" fill="#e8fbf2"/><text x="64" y="1031" class="spec-badge-done">文档就绪</text>
+  <rect x="118" y="1018" width="50" height="18" rx="9" fill="#e8fbf2"/><text x="128" y="1031" class="spec-badge-done">已完成</text>
+  <text x="1532" y="1034" text-anchor="end" class="card-value" style="font-size:18px;">100%</text>
   <text x="52" y="1058" class="spec-title">#8 响应式适配与回归收尾</text>
-  <text x="340" y="1058" class="spec-slug">ui-redesign-responsive-regression | Wave 6 | 依赖 #1-#7</text>
-  <text x="700" y="1058" class="spec-task">子任务 0 / 32 | 暖色残留扫描, 桌面/平板/移动端断点回归, 构建验证, 无障碍回归, 文档同步</text>
+  <text x="340" y="1058" class="spec-slug">ui-redesign-responsive-regression | Wave 6 | ✅ 已完成</text>
+  <text x="700" y="1058" class="spec-task">子任务 32 / 32 | 暖色清理 ✅, 构建 ✅, 类型检查 ✅, 测试 ✅, 断点回归 ✅, 无障碍 ✅, 文档 ✅</text>
   <rect x="52" y="1068" width="1490" height="6" rx="3" fill="#e5ebf3"/>
+  <rect x="52" y="1068" width="1490" height="6" rx="3" fill="url(#readyFill)"/>
 
   <!-- Footer -->
-  <text x="60" y="1108" class="foot">Source: .kiro/specs/ui-redesign-* | Updated 2026-04-27 | Wave 1-3+5 ✅ merged | 下一步: #4 右侧面板 + #7 指示器独立任务 + #8 响应式回归 (可在 main 上串行执行)</text>
+  <text x="60" y="1108" class="foot">Source: .kiro/specs/ui-redesign-* | Updated 2026-04-28 | Wave 1-6 全部 ✅ | 329/329 (100%) | UI 改造 8 个 specs 全部完成 🎉</text>
 </svg>

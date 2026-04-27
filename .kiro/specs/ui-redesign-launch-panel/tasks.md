@@ -60,6 +60,6 @@
 
 - [x] 7. i18n 与视觉验收
   - [x] 7.1 在 `client/src/i18n/` 中新增 `launchPanel` 命名空间的中英文翻译键
-  - [ ] 7.2 验证面板在 1280px、1024px、768px、375px 四个断点下的布局正确性
-  - [ ] 7.3 验证面板消费 spec 1 设计令牌（`--card`、`--border`、`--primary`、`--radius` 等）的视觉效果
+  - [x] 7.2 验证面板在 1280px、1024px、768px、375px 四个断点下的布局正确性
+  - [x] 7.3 验证面板消费 spec 1 设计令牌（`--card`、`--border`、`--primary`、`--radius` 等）的视觉效果
   - [x] 7.4 运行 `pnpm run build` 确认构建成功，无新增 TypeScript 错误

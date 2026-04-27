@@ -474,7 +474,7 @@ function severityClasses(severity?: "info" | "warn" | "danger"): string {
     case "info":
       return `${workspaceToneClass("info")} hover:bg-[rgba(91,137,165,0.22)]`;
     case "warn":
-      return `${workspaceToneClass("warning")} hover:bg-[rgba(201,130,87,0.22)]`;
+      return `${workspaceToneClass("warning")} hover:bg-accent`;
     case "danger":
       return `${workspaceToneClass("danger")} hover:bg-[rgba(180,93,77,0.2)]`;
     default:

@@ -160,11 +160,11 @@ export function TasksQueueRail({
                       : "rounded-[12px] px-2.5 py-1.75",
                     active
                       ? isCompact
-                        ? "border-[rgba(201,130,87,0.34)] bg-[rgba(255,247,234,0.95)] shadow-[0_10px_24px_rgba(164,113,29,0.1)]"
-                        : "border-[rgba(201,130,87,0.34)] bg-[linear-gradient(180deg,rgba(255,248,234,0.98),rgba(255,241,220,0.94))] shadow-[0_16px_40px_rgba(164,113,29,0.14)]"
-                      : "border-[var(--workspace-panel-border)] bg-[rgba(255,255,255,0.58)] hover:border-[rgba(151,120,90,0.3)] hover:bg-[rgba(255,255,255,0.76)]",
+                        ? "border-primary/30 bg-[rgba(255,247,234,0.95)] shadow-[0_10px_24px_rgba(15,23,42,0.1)]"
+                        : "border-primary/30 bg-accent shadow-[0_16px_40px_rgba(15,23,42,0.14)]"
+                      : "border-[var(--workspace-panel-border)] bg-[rgba(255,255,255,0.58)] hover:border-border hover:bg-[rgba(255,255,255,0.76)]",
                     task.id === highlightedTaskId &&
-                      "ring-2 ring-amber-300 ring-offset-2 ring-offset-[#fff7eb]"
+                      "ring-2 ring-amber-300 ring-offset-2 ring-offset-background"
                   )}
                   onClick={() => onSelectTask(task.id)}
                 >

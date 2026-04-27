@@ -71,7 +71,7 @@ export function Toolbar() {
           className="fixed left-3 right-3 top-[calc(env(safe-area-inset-top)+12px)] z-[80]"
           style={{ pointerEvents: "auto" }}
         >
-          <div className="rounded-[28px] studio-shell px-3 py-3 shadow-[0_18px_45px_rgba(78,58,38,0.16)]">
+          <div className="rounded-[28px] studio-shell px-3 py-3 shadow-[0_18px_45px_rgba(15,23,42,0.16)]">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#A08972]">
@@ -160,7 +160,7 @@ export function Toolbar() {
             className="fixed bottom-5 left-1/2 z-[80] -translate-x-1/2"
             style={{ pointerEvents: "auto" }}
           >
-            <div className="studio-shell rounded-[34px] px-3 py-2.5 shadow-[0_18px_45px_rgba(78,58,38,0.16)]">
+            <div className="studio-shell rounded-[34px] px-3 py-2.5 shadow-[0_18px_45px_rgba(15,23,42,0.16)]">
               <div className="flex items-center gap-2">
                 {PRIMARY_NAV_ITEMS.map(item => {
                   const Icon = item.icon;

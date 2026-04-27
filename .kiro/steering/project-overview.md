@@ -58,7 +58,7 @@ Cube Pets Office 当前对内定义为：建立在 `mission-first` 底座上的 
 - 存储：浏览器 IndexedDB / 服务端本地 JSON
 - 执行：Docker (dockerode) + seccomp/AppArmor 安全沙箱
 - 测试：Vitest + fast-check (PBT)
-- UI 风格：Holographic Command Deck（毛玻璃拟态 + 有机科幻）
+- UI 风格：冷灰色板 + OKLCH 设计令牌 + 左侧导航 + 三栏驾驶舱布局
 
 ## 项目规模
 
@@ -180,7 +180,7 @@ Cube Pets Office 当前对内定义为：建立在 `mission-first` 底座上的 
 | 数据血缘追踪      | DAG 采集/查询/导出 + 审计集成                     |
 | A2A 互操作协议    | 跨框架 Agent 通信 + 适配器                        |
 | Guest Agent 市场  | 外部 Agent 沙箱接入 + TTL                         |
-| 全息 UI 升级      | 毛玻璃拟态 + HoloDock + GlowButton + 呼吸光晕     |
+| UI 改造 8 specs    | 冷灰色板 + 左侧导航 + 任务卡片 + 右侧面板 + 发起浮层 + 3D 适配 + 状态指示器 + 响应式回归 |
 | 任务自动驾驶定位  | 从 mission-first 任务操作系统升级为 task autopilot 产品口径 |
 | Autopilot 第一阶段 specs | 18 份 specs 已完成并收口，形成产品、对象、交互、runtime、治理与迁移层口径 |
 
