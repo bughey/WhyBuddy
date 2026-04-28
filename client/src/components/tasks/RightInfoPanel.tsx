@@ -425,8 +425,9 @@ export function RightInfoPanel({
     <div
       className={cn("flex min-h-0 flex-col overflow-y-auto", className)}
       style={{
-        minWidth: "300px",
-        maxWidth: "360px",
+        width: "100%",
+        minWidth: 0,
+        maxWidth: "none",
         scrollbarGutter: "stable",
         backgroundColor: "var(--background)",
       }}

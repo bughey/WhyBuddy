@@ -109,7 +109,7 @@ function RecoveryGuard() {
   );
 }
 
-function AppShell() {
+export function AppShell() {
   const { isMobile, isTablet } = useViewportTier();
   const [location] = useLocation();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -132,9 +132,11 @@ function AppShell() {
       )}
 
       <div
+        className="min-h-screen transition-[padding-left] duration-[250ms] ease-in-out"
         style={
           {
             "--sidebar-width": `${location === "/" ? 0 : sidebarWidth}px`,
+            paddingLeft: location === "/" ? 0 : sidebarWidth,
           } as React.CSSProperties
         }
       >

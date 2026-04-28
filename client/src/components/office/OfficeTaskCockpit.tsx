@@ -26,13 +26,11 @@ import { toast } from "sonner";
 
 import { ExecutorStatusPanel } from "@/components/ExecutorStatusPanel";
 import { ExecutorTerminalPanel } from "@/components/ExecutorTerminalPanel";
-import { LaunchPanelShell } from "@/components/launch/LaunchPanelShell";
-import type { UnifiedWorkflowResolution } from "@/components/launch/UnifiedLaunchComposer";
+import { UnifiedLaunchComposer } from "@/components/launch/UnifiedLaunchComposer";
 import { ClarificationPanel } from "@/components/nl-command/ClarificationPanel";
 import { ArtifactListBlock } from "@/components/tasks/ArtifactListBlock";
 import { ArtifactPreviewDialog } from "@/components/tasks/ArtifactPreviewDialog";
 import { CreateMissionDialog } from "@/components/tasks/CreateMissionDialog";
-import { TaskDetailCardsView } from "@/components/tasks/TaskDetailCardsView";
 import { TasksCockpitDetail } from "@/components/tasks/TasksCockpitDetail";
 import { TasksQueueRail } from "@/components/tasks/TasksQueueRail";
 import {
@@ -84,6 +82,7 @@ import type {
 } from "./office-task-cockpit-types";
 import {
   buildOfficeCockpitAvailability,
+  resolveOfficeCenterStageMode,
   resolveOfficeCockpitTab,
   resolveWorkflowForSelectedTask,
 } from "./office-task-cockpit-utils";
@@ -102,12 +101,12 @@ function CockpitContextShell({
   children: ReactNode;
 }) {
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-[16px] border border-stone-200/75 bg-white/82 shadow-[0_10px_24px_rgba(99,73,45,0.06)]">
-      <div className="shrink-0 border-b border-stone-200/70 px-2.5 py-2">
-        <div className="text-[8px] font-semibold uppercase tracking-[0.1em] text-stone-500">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-[16px] border border-slate-200/75 bg-white/82 shadow-[0_10px_24px_rgba(15,23,42,0.06)]">
+      <div className="shrink-0 border-b border-slate-200/70 px-2.5 py-2">
+        <div className="text-[8px] font-semibold uppercase tracking-[0.1em] text-slate-500">
           {title}
         </div>
-        <div className="mt-0.5 line-clamp-2 text-[10px] leading-4 text-stone-500">
+        <div className="mt-0.5 line-clamp-2 text-[10px] leading-4 text-slate-500">
           {description}
         </div>
       </div>
@@ -208,7 +207,6 @@ export function OfficeTaskCockpit({
   const [pendingLaunch, setPendingLaunch] =
     useState<OfficeLaunchResolution | null>(null);
   const [launcherContextExpanded, setLauncherContextExpanded] = useState(false);
-  const [launchPanelOpen, setLaunchPanelOpen] = useState(false);
   const [runtimeDockTab, setRuntimeDockTab] = useState<
     "support" | "logs" | "artifacts" | "runtime"
   >("support");
@@ -572,11 +570,11 @@ export function OfficeTaskCockpit({
           "Best for fast previews and front-end validation"
         );
   const floatingGlassClass = resizeActive
-    ? "border-stone-200/85 bg-[#fff9f2]/96 shadow-[0_10px_24px_rgba(98,73,48,0.06)]"
-    : "border-white/30 bg-[linear-gradient(180deg,rgba(255,252,248,0.36),rgba(246,238,229,0.28))] shadow-[0_14px_34px_rgba(98,73,48,0.1)] backdrop-blur-md transition-all hover:bg-[linear-gradient(180deg,rgba(255,252,248,0.62),rgba(246,238,229,0.52))]";
+    ? "border-slate-200/85 bg-white/94 shadow-[0_10px_24px_rgba(15,23,42,0.06)]"
+    : "border-white/45 bg-white/60 shadow-[0_16px_38px_rgba(15,23,42,0.1)] backdrop-blur-md transition-all hover:bg-white/74";
   const sideShellClass = resizeActive
-    ? "border-stone-200/85 bg-[#fff9f2]/96 shadow-[0_14px_30px_rgba(99,73,45,0.08)]"
-    : "border-white/35 bg-[linear-gradient(180deg,rgba(255,252,248,0.48),rgba(244,236,227,0.32))] shadow-[0_22px_48px_rgba(99,73,45,0.12)] backdrop-blur-md transition-all hover:bg-[linear-gradient(180deg,rgba(255,252,248,0.7),rgba(246,238,229,0.5))]";
+    ? "border-slate-200/85 bg-white/94 shadow-[0_14px_30px_rgba(15,23,42,0.07)]"
+    : "border-white/45 bg-white/60 shadow-[0_22px_48px_rgba(15,23,42,0.1)] backdrop-blur-md transition-all hover:bg-white/74";
   const hasPendingDecision =
     Boolean(selectedDetail) &&
     (selectedDetail?.decision != null ||
@@ -664,6 +662,11 @@ export function OfficeTaskCockpit({
   const showLauncherContextDock = true;
   const showClarificationDock = Boolean(hasActiveClarification && currentDialog);
   const launcherContextDockMaxHeight = "clamp(240px, 32vh, 420px)";
+  const centerStageMode = resolveOfficeCenterStageMode({
+    surface: "home",
+    selectedTaskId: activeTaskId,
+    hasSelectedDetail: Boolean(selectedDetail),
+  });
 
   useEffect(() => {
     if (supportTabHasContext) {
@@ -807,15 +810,15 @@ export function OfficeTaskCockpit({
   const launcherDock = (
     <div
       className={cn(
-        "pointer-events-auto mx-auto flex w-full max-w-[700px] flex-col overflow-hidden rounded-[13px] border",
+        "pointer-events-auto mx-auto flex w-full max-w-[700px] flex-col overflow-hidden rounded-[14px] border",
         floatingGlassClass
       )}
     >
-      <div className="shrink-0 border-b border-stone-200/50 px-1 py-0.5">
+      <div className="shrink-0 border-b border-slate-200/60 px-2.5 py-2">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex flex-wrap items-center gap-1.5">
-            <div className="flex rounded-[10px] border border-white/65 bg-white/78 p-0.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]">
-              <span className="inline-flex items-center gap-1 rounded-[8px] bg-[#d07a4f] px-1.5 py-0.5 text-[8px] font-semibold text-white shadow-[0_10px_24px_rgba(184,111,69,0.18)]">
+            <div className="flex rounded-[10px] border border-slate-200/70 bg-white/78 p-0.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]">
+              <span className="inline-flex items-center gap-1 rounded-[8px] bg-sky-600 px-1.5 py-0.5 text-[8px] font-semibold text-white shadow-[0_10px_24px_rgba(2,132,199,0.16)]">
                 {t(locale, "任务自动驾驶", "Task Autopilot")}
               </span>
               <button
@@ -824,8 +827,8 @@ export function OfficeTaskCockpit({
                 className={cn(
                   "inline-flex items-center gap-1 rounded-[8px] px-1.5 py-0.5 text-[8px] font-semibold transition-colors",
                   telemetryDashboardOpen
-                    ? "bg-[#d07a4f] text-white shadow-[0_10px_24px_rgba(184,111,69,0.18)]"
-                    : "text-stone-600 hover:bg-white"
+                    ? "bg-emerald-600 text-white shadow-[0_10px_24px_rgba(5,150,105,0.16)]"
+                    : "text-slate-600 hover:bg-white"
                 )}
               >
                 <Activity className="size-3.5" />
@@ -1028,39 +1031,55 @@ export function OfficeTaskCockpit({
             )}
           </span>
         </div>
-
-        <div className="overflow-hidden px-0.5 pb-0.5 pt-0.5">
-          <button
-            type="button"
-            onClick={() => setLaunchPanelOpen(true)}
-            className="flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors"
-            style={{
-              backgroundColor: "var(--primary, #0f172a)",
-              color: "var(--primary-foreground, #ffffff)",
-            }}
-            data-testid="launch-panel-trigger"
-          >
-            <Plus className="size-4" />
-            {t(locale, "新建任务", "New Task")}
-          </button>
-        </div>
       </div>
 
+      <div className="bg-white/46 p-2">
+        <UnifiedLaunchComposer
+          createMission={createMission}
+          activeTaskTitle={selectedDetail?.title || selectedTaskSummary?.title}
+          activeTaskDetail={selectedDetail}
+          operatorActionLoading={
+            activeTaskId
+              ? (operatorActionLoadingByMissionId[activeTaskId] ?? {})
+              : {}
+          }
+          onSubmitOperatorAction={handleSubmitOperatorAction}
+          onTaskResolved={handleTaskHubResolved}
+          onWorkflowResolved={resolution => {
+            setPendingLaunch({
+              workflowId: resolution.workflowId,
+              directive: resolution.directive,
+              attachmentCount: resolution.attachmentCount,
+              requestedAt: resolution.requestedAt,
+              missionId: resolution.missionId,
+            });
+            setActiveTab("flow");
+          }}
+          onOpenCreateDialog={() => setCreateDialogOpen(true)}
+          onRefresh={refreshCurrent}
+          refreshing={loading && ready}
+          compact
+          bare
+          dense
+          hideHeader
+          hideClarificationPanel
+        />
+      </div>
     </div>
   );
 
   const clarificationDock = currentDialog ? (
-    <div className="pointer-events-auto mx-auto w-full max-w-[700px] overflow-hidden rounded-[18px] border border-[#f0dfcb] bg-[linear-gradient(180deg,rgba(255,251,246,0.98),rgba(248,243,237,0.96))] shadow-[0_18px_40px_rgba(184,111,69,0.08)] backdrop-blur-md">
-      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-[#ead8c3] px-3 py-2.5">
+    <div className="pointer-events-auto mx-auto w-full max-w-[700px] overflow-hidden rounded-[18px] border border-sky-200/70 bg-white/94 shadow-[0_18px_40px_rgba(15,23,42,0.08)] backdrop-blur-md">
+      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-sky-100/80 px-3 py-2.5">
         <div className="min-w-0 flex-1">
-          <div className="flex flex-nowrap items-center gap-2 overflow-x-auto whitespace-nowrap text-[11px] leading-5 text-stone-600">
-            <span className="inline-flex shrink-0 items-center rounded-full bg-[#f6e4cf] px-2.5 py-1 text-[10px] font-semibold text-[#b16f44]">
+          <div className="flex flex-nowrap items-center gap-2 overflow-x-auto whitespace-nowrap text-[11px] leading-5 text-slate-600">
+            <span className="inline-flex shrink-0 items-center rounded-full bg-sky-50 px-2.5 py-1 text-[10px] font-semibold text-sky-700">
               {t(locale, "补问进行中", "Clarification active")}
             </span>
             <span className="workspace-status workspace-tone-neutral !shrink-0 !px-2 !py-0.5 !text-[9px] font-semibold">
               {t(locale, "先完成澄清，再继续主执行流", "Finish clarification before continuing the main flow")}
             </span>
-            <span className="inline-flex shrink-0 items-center rounded-full bg-[#f7e6d2] px-2 py-0.5 text-[10px] font-semibold text-[#b67447]">
+            <span className="inline-flex shrink-0 items-center rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
               {t(
                 locale,
                 `待补充 ${currentDialog.questions.filter(question =>
@@ -1091,7 +1110,7 @@ export function OfficeTaskCockpit({
   ) : null;
 
   const launcherContextDock = (
-    <div className="pointer-events-auto mx-auto w-full max-w-[700px] overflow-hidden rounded-[16px] border border-white/34 bg-[linear-gradient(180deg,rgba(255,252,248,0.62),rgba(246,238,229,0.5))] shadow-[0_16px_36px_rgba(98,73,48,0.12)] backdrop-blur-md">
+    <div className="pointer-events-auto mx-auto w-full max-w-[700px] overflow-hidden rounded-[16px] border border-white/45 bg-white/64 shadow-[0_16px_36px_rgba(15,23,42,0.1)] backdrop-blur-md">
       <Tabs
         value={runtimeDockTab}
         onValueChange={value =>
@@ -1533,6 +1552,61 @@ export function OfficeTaskCockpit({
     </div>
   );
 
+  const sceneHud = (
+    <div
+      className="pointer-events-none flex h-full min-h-0 flex-col justify-between py-4"
+      data-center-stage-mode={centerStageMode}
+      data-testid="office-scene-hud"
+    >
+      <div className="flex justify-center">
+        <div className="pointer-events-auto max-w-[560px] rounded-[16px] border border-white/50 bg-white/48 px-3 py-2 text-slate-700 shadow-[0_14px_34px_rgba(15,23,42,0.08)] backdrop-blur-md">
+          <div className="flex items-center gap-2">
+            <span
+              className={cn(
+                "size-2 rounded-full",
+                selectedDetail?.status === "failed"
+                  ? "bg-rose-500"
+                  : selectedDetail?.status === "waiting" || hasPendingDecision
+                    ? "bg-sky-500"
+                    : selectedDetail
+                      ? "bg-emerald-500"
+                      : "bg-slate-400"
+              )}
+            />
+            <div className="min-w-0">
+              <div className="text-[9px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                {t(locale, "Scene HUD", "Scene HUD")}
+              </div>
+              <div className="truncate text-[12px] font-semibold text-slate-900">
+                {stepFocus.title}
+              </div>
+            </div>
+            <span className="ml-2 shrink-0 rounded-full border border-slate-200/80 bg-white/70 px-2 py-0.5 text-[10px] font-semibold text-slate-600">
+              {stepFocus.progress}%
+            </span>
+          </div>
+          <div className="mt-1 flex flex-wrap gap-1 text-[9px] font-semibold text-slate-600">
+            <span className="rounded-full bg-sky-50/90 px-2 py-0.5 text-sky-700">
+              {stepFocus.stageLabel}
+            </span>
+            <span className="rounded-full bg-emerald-50/90 px-2 py-0.5 text-emerald-700">
+              {selectedDetail
+                ? missionStatusLabel(selectedDetail.status, locale)
+                : t(locale, "场景待命", "Scene ready")}
+            </span>
+            <span className="rounded-full bg-white/72 px-2 py-0.5">
+              {t(locale, `队列 ${queuedCount}`, `Queue ${queuedCount}`)}
+            </span>
+            <span className="rounded-full bg-white/72 px-2 py-0.5">
+              {t(locale, `运行 ${runningCount}`, `Running ${runningCount}`)}
+            </span>
+          </div>
+        </div>
+      </div>
+      <div className="h-[32vh] min-h-[180px]" aria-hidden="true" />
+    </div>
+  );
+
   return (
     <div
       className={cn(
@@ -1542,8 +1616,9 @@ export function OfficeTaskCockpit({
     >
       <Splitter className="office-cockpit-splitter pointer-events-auto relative z-10 h-full min-h-0">
         <Splitter.Panel
+          className="office-cockpit-left-rail"
           defaultSize={0}
-          min={320}
+          min={0}
           max={460}
           resizable={false}
           collapsible={{ end: true, showCollapsibleIcon: true }}
@@ -1573,42 +1648,24 @@ export function OfficeTaskCockpit({
         </Splitter.Panel>
 
         <Splitter.Panel
+          className="office-cockpit-center-stage"
           defaultSize="56%"
           min="28%"
           style={{ overflow: "visible" }}
         >
-          <div className="h-full min-h-0 relative">
-            {activeTaskId && selectedDetail ? (
-              <div className="absolute inset-0 transition-opacity duration-200 ease-in-out opacity-100">
-                <TaskDetailCardsView
-                  taskId={activeTaskId}
-                  detail={selectedDetail}
-                  autopilotSummary={selectedDetail.autopilotSummary ?? null}
-                  locale={locale}
-                  onSubmitOperatorAction={handleSubmitOperatorAction}
-                  onLaunchDecision={handleLaunchDecision}
-                  onSetDecisionNote={setDecisionNote}
-                  decisionNote={decisionNote}
-                  operatorActionLoading={
-                    activeTaskId
-                      ? (operatorActionLoadingByMissionId[activeTaskId] ?? false)
-                      : false
-                  }
-                />
-              </div>
-            ) : null}
-          </div>
+          <div className="relative h-full min-h-0">{sceneHud}</div>
         </Splitter.Panel>
 
         <Splitter.Panel
-          defaultSize={0}
+          className="office-cockpit-right-drawer"
+          defaultSize={360}
           min={320}
           max={460}
           resizable={false}
           collapsible={{ start: true, showCollapsibleIcon: true }}
           style={{ overflow: "hidden" }}
         >
-          <aside className="min-h-0 h-full pl-2">
+          <aside className="office-cockpit-right-drawer-shell min-h-0 h-full pl-2">
             <Tabs
               value={activeTab}
               onValueChange={value => setActiveTab(value as OfficeCockpitTab)}
@@ -1619,40 +1676,40 @@ export function OfficeTaskCockpit({
             >
               <TabsList className="grid h-auto w-full grid-cols-6 gap-1 overflow-hidden rounded-[14px] bg-white/82 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)]">
                 <TabsTrigger
-                  className="min-h-[30px] rounded-[10px] border border-transparent px-1 py-0.5 text-[10px] font-semibold whitespace-nowrap text-stone-600 transition disabled:opacity-45 data-[state=active]:border-white/80 data-[state=active]:bg-[#fff8ef] data-[state=active]:text-stone-900 data-[state=active]:shadow-[0_10px_22px_rgba(184,111,69,0.14)]"
+                  className="min-h-[30px] rounded-[10px] border border-transparent px-1 py-0.5 text-[10px] font-semibold whitespace-nowrap text-slate-600 transition disabled:opacity-45 data-[state=active]:border-sky-100 data-[state=active]:bg-sky-50 data-[state=active]:text-slate-900 data-[state=active]:shadow-[0_10px_22px_rgba(2,132,199,0.12)]"
                   value="launch"
                 >
                   {t(locale, "发起", "Launch")}
                 </TabsTrigger>
                 <TabsTrigger
-                  className="min-h-[30px] rounded-[10px] border border-transparent px-1 py-0.5 text-[10px] font-semibold whitespace-nowrap text-stone-600 transition disabled:opacity-45 data-[state=active]:border-white/80 data-[state=active]:bg-[#fff8ef] data-[state=active]:text-stone-900 data-[state=active]:shadow-[0_10px_22px_rgba(184,111,69,0.14)]"
+                  className="min-h-[30px] rounded-[10px] border border-transparent px-1 py-0.5 text-[10px] font-semibold whitespace-nowrap text-slate-600 transition disabled:opacity-45 data-[state=active]:border-sky-100 data-[state=active]:bg-sky-50 data-[state=active]:text-slate-900 data-[state=active]:shadow-[0_10px_22px_rgba(2,132,199,0.12)]"
                   value="task"
                 >
                   {t(locale, "任务", "Task")}
                 </TabsTrigger>
                 <TabsTrigger
-                  className="min-h-[30px] rounded-[10px] border border-transparent px-1 py-0.5 text-[10px] font-semibold whitespace-nowrap text-stone-600 transition disabled:opacity-45 data-[state=active]:border-white/80 data-[state=active]:bg-[#fff8ef] data-[state=active]:text-stone-900 data-[state=active]:shadow-[0_10px_22px_rgba(184,111,69,0.14)]"
+                  className="min-h-[30px] rounded-[10px] border border-transparent px-1 py-0.5 text-[10px] font-semibold whitespace-nowrap text-slate-600 transition disabled:opacity-45 data-[state=active]:border-sky-100 data-[state=active]:bg-sky-50 data-[state=active]:text-slate-900 data-[state=active]:shadow-[0_10px_22px_rgba(2,132,199,0.12)]"
                   value="flow"
                   disabled={!availability.flow}
                 >
                   {t(locale, "团队流", "Flow")}
                 </TabsTrigger>
                 <TabsTrigger
-                  className="min-h-[30px] rounded-[10px] border border-transparent px-1 py-0.5 text-[10px] font-semibold whitespace-nowrap text-stone-600 transition disabled:opacity-45 data-[state=active]:border-white/80 data-[state=active]:bg-[#fff8ef] data-[state=active]:text-stone-900 data-[state=active]:shadow-[0_10px_22px_rgba(184,111,69,0.14)]"
+                  className="min-h-[30px] rounded-[10px] border border-transparent px-1 py-0.5 text-[10px] font-semibold whitespace-nowrap text-slate-600 transition disabled:opacity-45 data-[state=active]:border-sky-100 data-[state=active]:bg-sky-50 data-[state=active]:text-slate-900 data-[state=active]:shadow-[0_10px_22px_rgba(2,132,199,0.12)]"
                   value="agent"
                   disabled={!availability.agent}
                 >
                   Agent
                 </TabsTrigger>
                 <TabsTrigger
-                  className="min-h-[30px] rounded-[10px] border border-transparent px-1 py-0.5 text-[10px] font-semibold whitespace-nowrap text-stone-600 transition disabled:opacity-45 data-[state=active]:border-white/80 data-[state=active]:bg-[#fff8ef] data-[state=active]:text-stone-900 data-[state=active]:shadow-[0_10px_22px_rgba(184,111,69,0.14)]"
+                  className="min-h-[30px] rounded-[10px] border border-transparent px-1 py-0.5 text-[10px] font-semibold whitespace-nowrap text-slate-600 transition disabled:opacity-45 data-[state=active]:border-sky-100 data-[state=active]:bg-sky-50 data-[state=active]:text-slate-900 data-[state=active]:shadow-[0_10px_22px_rgba(2,132,199,0.12)]"
                   value="memory"
                   disabled={!availability.memory}
                 >
                   {t(locale, "记忆", "Memory")}
                 </TabsTrigger>
                 <TabsTrigger
-                  className="min-h-[30px] rounded-[10px] border border-transparent px-1 py-0.5 text-[10px] font-semibold whitespace-nowrap text-stone-600 transition disabled:opacity-45 data-[state=active]:border-white/80 data-[state=active]:bg-[#fff8ef] data-[state=active]:text-stone-900 data-[state=active]:shadow-[0_10px_22px_rgba(184,111,69,0.14)]"
+                  className="min-h-[30px] rounded-[10px] border border-transparent px-1 py-0.5 text-[10px] font-semibold whitespace-nowrap text-slate-600 transition disabled:opacity-45 data-[state=active]:border-sky-100 data-[state=active]:bg-sky-50 data-[state=active]:text-slate-900 data-[state=active]:shadow-[0_10px_22px_rgba(2,132,199,0.12)]"
                   value="history"
                   disabled={!availability.history}
                 >
@@ -1674,7 +1731,7 @@ export function OfficeTaskCockpit({
                   <div className="h-full overflow-y-auto pr-1">
                     <div className="space-y-3">
                       {hasActiveClarification && currentDialog ? (
-                        <div className="rounded-[16px] border border-stone-200/70 bg-white/76 px-3 py-2.5 text-[11px] leading-5 text-stone-600 shadow-[0_10px_24px_rgba(98,73,48,0.05)]">
+                        <div className="rounded-[16px] border border-slate-200/70 bg-white/76 px-3 py-2.5 text-[11px] leading-5 text-slate-600 shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
                           {t(
                             locale,
                             "当前有补问信息待处理，中央上方会弹出独立澄清面板。",
@@ -1682,11 +1739,11 @@ export function OfficeTaskCockpit({
                           )}
                         </div>
                       ) : (
-                        <div className="rounded-[18px] border border-stone-200/75 bg-white/76 p-3 shadow-[0_10px_24px_rgba(98,73,48,0.06)]">
-                          <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-stone-500">
+                        <div className="rounded-[18px] border border-slate-200/75 bg-white/76 p-3 shadow-[0_10px_24px_rgba(15,23,42,0.06)]">
+                          <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
                             {t(locale, "发起说明", "Launch guidance")}
                           </div>
-                          <div className="mt-2 space-y-2 text-[11px] leading-5 text-stone-600">
+                          <div className="mt-2 space-y-2 text-[11px] leading-5 text-slate-600">
                             {pendingLaunch ? (
                               <div className="rounded-[14px] border border-amber-200/80 bg-amber-50/78 px-3 py-2 text-stone-700">
                                 {t(
@@ -1869,26 +1926,6 @@ export function OfficeTaskCockpit({
         />
       ) : null}
 
-      <LaunchPanelShell
-        open={launchPanelOpen}
-        onClose={() => setLaunchPanelOpen(false)}
-        createMission={createMission}
-        onTaskResolved={result => {
-          handleTaskHubResolved(result);
-          setLaunchPanelOpen(false);
-        }}
-        onWorkflowResolved={resolution => {
-          setPendingLaunch({
-            workflowId: resolution.workflowId,
-            directive: resolution.directive,
-            attachmentCount: resolution.attachmentCount,
-            requestedAt: resolution.requestedAt,
-            missionId: resolution.missionId,
-          });
-          setActiveTab("flow");
-          setLaunchPanelOpen(false);
-        }}
-      />
     </div>
   );
 }

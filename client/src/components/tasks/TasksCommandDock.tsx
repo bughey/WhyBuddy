@@ -335,7 +335,10 @@ export function TasksCommandDock({
 
   if (isBare && isDense) {
     return (
-      <section className={cn("grid h-full min-h-0 gap-2", className)}>
+      <section
+        className={cn("grid min-h-0 gap-2", className)}
+        data-visual-role="cockpit-command-float"
+      >
         {error ? (
           <div
             className={workspaceCalloutClass(
@@ -360,7 +363,7 @@ export function TasksCommandDock({
         ) : null}
 
         <div className="grid min-h-0 gap-2">
-          <div className="min-h-0 rounded-[10px] border border-stone-200/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(248,244,237,0.92))] p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.62)]">
+          <div className="min-h-0 rounded-[10px] border border-white/45 bg-white/58 p-1 shadow-[0_10px_24px_rgba(15,23,42,0.06)] backdrop-blur-md">
             <div className="flex flex-wrap gap-1">
               <span
                 className={workspaceStatusClass(

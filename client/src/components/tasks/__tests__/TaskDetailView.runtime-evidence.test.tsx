@@ -171,6 +171,24 @@ describe("TaskDetailView runtime evidence consolidation", () => {
     expect(markup).not.toContain("Failure");
     expect(markup).toContain("安全策略");
   });
+  it("keeps cockpit variant in a lightweight auxiliary detail stack", () => {
+    const markup = renderToStaticMarkup(
+      <TaskDetailView
+        detail={makeDetail()}
+        decisionNote=""
+        onDecisionNoteChange={() => {}}
+        onLaunchDecision={() => {}}
+        variant="cockpit"
+        autoHeight
+      />
+    );
+
+    expect(markup).toContain('data-visual-role="cockpit-detail-stack"');
+    expect(markup).toContain("gap-2.5");
+    expect(markup).toContain("bg-white/45");
+    expect(markup).not.toContain("shadow-[0_24px_60px_rgba(112,84,51,0.06)]");
+  });
+
   it("removes the standalone artifacts tab when runtime evidence is deferred", () => {
     const markup = renderToStaticMarkup(
       <TaskDetailView

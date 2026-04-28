@@ -20,24 +20,41 @@ export type { StatusMapping } from "./sidebar-status-utils";
 
 export interface SidebarStatusBlockProps {
   collapsed: boolean;
+  tone?: "light" | "glass";
 }
 
-export function SidebarStatusBlock({ collapsed }: SidebarStatusBlockProps) {
-  const { locale, copy } = useI18n();
+const STATUS_CARD_STYLE = {
+  borderColor: "rgba(203,213,225,0.78)",
+  backgroundColor: "rgba(248,250,252,0.88)",
+};
 
-  // Derive driveState from tasks-store
+const STATUS_TITLE_STYLE = { color: "#1e293b" };
+const STATUS_META_STYLE = { color: "#475569" };
+const STATUS_ICON_STYLE = { color: "#475569" };
+
+const GLASS_STATUS_CARD_STYLE = {
+  borderColor: "rgba(255,255,255,0.42)",
+  backgroundColor: "rgba(255,255,255,0.34)",
+};
+
+export function SidebarStatusBlock({
+  collapsed,
+  tone = "light",
+}: SidebarStatusBlockProps) {
+  const { locale, copy } = useI18n();
+  const glass = tone === "glass";
+
   const driveState = useTasksStore((state) => {
     const id = state.selectedTaskId;
     if (!id) return "idle";
     const detail = state.detailsById[id];
     return (
-      detail?.autopilotSummary?.execution?.driveState ??
+      detail?.autopilotSummary?.driveState?.state ??
       detail?.status ??
       "idle"
     );
   });
 
-  // Read runtime mode from app store
   const runtimeMode = useAppStore((state) => state.runtimeMode);
 
   const statusMapping = getStatusMapping(driveState);
@@ -51,16 +68,20 @@ export function SidebarStatusBlock({ collapsed }: SidebarStatusBlockProps) {
       ? sidebarCopy.missionControlAdvanced
       : sidebarCopy.missionControlFrontend;
 
-  // ── Collapsed mode ──────────────────────────────────────────────────────
   if (collapsed) {
     return (
-      <div className="mx-auto mb-2 flex flex-col items-center gap-2">
-        {/* Autopilot Control — dot only */}
+      <div
+        className={cn(
+          "mx-auto mb-2 flex flex-col items-center gap-2",
+          glass && "rounded-[14px] bg-white/24 px-2 py-2",
+        )}
+        data-sidebar-status-tone={tone}
+      >
         <Tooltip>
           <TooltipTrigger asChild>
             <span
               className={cn(
-                "block h-2.5 w-2.5 shrink-0 rounded-full cursor-default",
+                "block h-2.5 w-2.5 shrink-0 cursor-default rounded-full",
                 statusMapping.dotClass,
               )}
               aria-label={`Autopilot Control: ${statusLabel}`}
@@ -73,22 +94,13 @@ export function SidebarStatusBlock({ collapsed }: SidebarStatusBlockProps) {
           </TooltipContent>
         </Tooltip>
 
-        {/* Mission Control — icon only */}
         <Tooltip>
           <TooltipTrigger asChild>
             <span className="cursor-default" aria-label={`Mission Control: ${modeLabel}`}>
               {runtimeMode === "advanced" ? (
-                <Server
-                  size={14}
-                  className="shrink-0"
-                  style={{ color: "var(--sidebar-foreground)" }}
-                />
+                <Server size={14} className="shrink-0" style={STATUS_ICON_STYLE} />
               ) : (
-                <Monitor
-                  size={14}
-                  className="shrink-0"
-                  style={{ color: "var(--sidebar-foreground)" }}
-                />
+                <Monitor size={14} className="shrink-0" style={STATUS_ICON_STYLE} />
               )}
             </span>
           </TooltipTrigger>
@@ -102,68 +114,47 @@ export function SidebarStatusBlock({ collapsed }: SidebarStatusBlockProps) {
     );
   }
 
-  // ── Expanded mode ───────────────────────────────────────────────────────
   return (
-    <div className="mx-3 mb-2 space-y-1.5">
-      {/* Autopilot Control */}
+    <div className="mx-3 mb-2 space-y-1.5" data-sidebar-status-tone={tone}>
       <div
-        className="flex items-center gap-2 rounded-lg border px-2.5 py-2 text-[11px]"
-        style={{
-          borderColor: "var(--sidebar-border)",
-          backgroundColor: "var(--sidebar-accent)",
-        }}
+        className={cn(
+          "flex items-center gap-2 rounded-lg border px-2.5 py-2 text-[11px]",
+          glass && "rounded-[14px] shadow-[inset_0_1px_0_rgba(255,255,255,0.36)]",
+        )}
+        data-sidebar-status-card={tone}
+        style={glass ? GLASS_STATUS_CARD_STYLE : STATUS_CARD_STYLE}
       >
         <span
           className={cn("h-2 w-2 shrink-0 rounded-full", statusMapping.dotClass)}
         />
         <div className="min-w-0">
-          <div
-            className="font-semibold"
-            style={{ color: "var(--sidebar-foreground)" }}
-          >
+          <div className="font-semibold" style={STATUS_TITLE_STYLE}>
             Autopilot Control
           </div>
-          <div
-            className="truncate opacity-60"
-            style={{ color: "var(--sidebar-foreground)" }}
-          >
+          <div className="truncate opacity-80" style={STATUS_META_STYLE}>
             {statusLabel}
           </div>
         </div>
       </div>
 
-      {/* Mission Control */}
       <div
-        className="flex items-center gap-2 rounded-lg border px-2.5 py-2 text-[11px]"
-        style={{
-          borderColor: "var(--sidebar-border)",
-          backgroundColor: "var(--sidebar-accent)",
-        }}
+        className={cn(
+          "flex items-center gap-2 rounded-lg border px-2.5 py-2 text-[11px]",
+          glass && "rounded-[14px] shadow-[inset_0_1px_0_rgba(255,255,255,0.36)]",
+        )}
+        data-sidebar-status-card={tone}
+        style={glass ? GLASS_STATUS_CARD_STYLE : STATUS_CARD_STYLE}
       >
         {runtimeMode === "advanced" ? (
-          <Server
-            size={14}
-            className="shrink-0 opacity-60"
-            style={{ color: "var(--sidebar-foreground)" }}
-          />
+          <Server size={14} className="shrink-0 opacity-70" style={STATUS_ICON_STYLE} />
         ) : (
-          <Monitor
-            size={14}
-            className="shrink-0 opacity-60"
-            style={{ color: "var(--sidebar-foreground)" }}
-          />
+          <Monitor size={14} className="shrink-0 opacity-70" style={STATUS_ICON_STYLE} />
         )}
         <div className="min-w-0">
-          <div
-            className="font-semibold"
-            style={{ color: "var(--sidebar-foreground)" }}
-          >
+          <div className="font-semibold" style={STATUS_TITLE_STYLE}>
             Mission Control
           </div>
-          <div
-            className="truncate opacity-60"
-            style={{ color: "var(--sidebar-foreground)" }}
-          >
+          <div className="truncate opacity-80" style={STATUS_META_STYLE}>
             {modeLabel}
           </div>
         </div>

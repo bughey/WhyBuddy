@@ -58,4 +58,65 @@ describe("AppSidebar overlay embedding", () => {
     expect(aside).not.toContain("fixed");
     expect(aside).not.toContain("left-0 top-0 bottom-0");
   });
+
+  it("marks embedded sidebar as a transparent glass surface for the home scene", () => {
+    const markup = renderToStaticMarkup(
+      <AppSidebar collapsed={false} onToggleCollapse={() => {}} embedded />,
+    );
+
+    const aside = markup.match(/<aside[^>]*>/)?.[0] ?? "";
+
+    expect(aside).toContain('data-sidebar-tone="glass"');
+    expect(aside).toContain('data-sidebar-mode="embedded"');
+    expect(aside).toContain("background:linear-gradient");
+    expect(aside).toContain("rgba(255, 255, 255, 0.62)");
+    expect(aside).toContain("rgba(255, 255, 255, 0.24)");
+    expect(aside).not.toContain("rgba(22, 35, 63");
+    expect(aside).not.toContain("text-white");
+  });
+
+  it("renders the embedded active item as a dark pill on the transparent rail", () => {
+    const markup = renderToStaticMarkup(
+      <AppSidebar collapsed={false} onToggleCollapse={() => {}} embedded />,
+    );
+
+    expect(markup).toContain('data-sidebar-nav-tone="glass"');
+    expect(markup).toContain('data-sidebar-nav-state="active"');
+
+    const activeButton =
+      markup.match(/<button[^>]*data-sidebar-nav-state="active"[^>]*>/)?.[0] ??
+      "";
+
+    expect(activeButton).toContain("bg-slate-900");
+    expect(activeButton).not.toContain("bg-emerald-50");
+  });
+
+  it("keeps fixed sidebar light, fixed, and expanded near 240px", () => {
+    const markup = renderToStaticMarkup(
+      <AppSidebar collapsed={false} onToggleCollapse={() => {}} />,
+    );
+
+    const aside = markup.match(/<aside[^>]*>/)?.[0] ?? "";
+
+    expect(aside).toContain('data-sidebar-tone="light"');
+    expect(aside).toContain('data-sidebar-mode="fixed"');
+    expect(aside).toContain("fixed");
+    expect(aside).toContain("width:240px");
+    expect(aside).toContain("background:rgba(255, 255, 255");
+    expect(markup).toContain('aria-current="page"');
+    expect(markup).toContain('aria-expanded="true"');
+  });
+
+  it("keeps collapsed sidebar usable and exposes collapsed aria state", () => {
+    const markup = renderToStaticMarkup(
+      <AppSidebar collapsed onToggleCollapse={() => {}} />,
+    );
+
+    const aside = markup.match(/<aside[^>]*>/)?.[0] ?? "";
+
+    expect(aside).toContain('data-sidebar-tone="light"');
+    expect(aside).toContain("width:64px");
+    expect(markup).toContain('aria-current="page"');
+    expect(markup).toContain('aria-expanded="false"');
+  });
 });

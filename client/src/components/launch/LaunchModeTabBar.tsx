@@ -64,17 +64,30 @@ export const LAUNCH_MODES: LaunchModeConfig[] = [
 export interface LaunchModeTabBarProps {
   mode: LaunchMode;
   onModeChange: (mode: LaunchMode) => void;
+  compact?: boolean;
 }
 
-export function LaunchModeTabBar({ mode, onModeChange }: LaunchModeTabBarProps) {
+export function LaunchModeTabBar({
+  mode,
+  onModeChange,
+  compact = false,
+}: LaunchModeTabBarProps) {
   const { locale } = useI18n();
 
   return (
     <div
       role="tablist"
       aria-label={t(locale, "任务模式", "Task mode")}
-      className="flex gap-1 overflow-x-auto px-4 py-2 border-b"
-      style={{ borderColor: "var(--border, #e2e8f0)" }}
+      className={
+        compact
+          ? "flex gap-1 overflow-x-auto border-b px-4 py-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          : "flex gap-1 overflow-x-auto px-4 py-2 border-b"
+      }
+      style={{
+        borderColor: compact
+          ? "rgba(226,232,240,0.78)"
+          : "var(--border, #e2e8f0)",
+      }}
       data-testid="launch-mode-tabbar"
     >
       {LAUNCH_MODES.map(modeConfig => {
@@ -86,15 +99,31 @@ export function LaunchModeTabBar({ mode, onModeChange }: LaunchModeTabBarProps) 
             role="tab"
             aria-selected={isSelected}
             onClick={() => onModeChange(modeConfig.id)}
-            className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm transition-colors whitespace-nowrap"
-            style={{
-              backgroundColor: isSelected
-                ? "var(--primary, #0f172a)"
-                : "var(--muted, #f1f5f9)",
-              color: isSelected
-                ? "var(--primary-foreground, #ffffff)"
-                : "var(--muted-foreground, #64748b)",
-            }}
+            className={
+              compact
+                ? "flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-1 text-xs font-semibold transition-colors"
+                : "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm transition-colors whitespace-nowrap"
+            }
+            style={
+              compact
+                ? {
+                    backgroundColor: isSelected
+                      ? "rgba(224,242,254,0.92)"
+                      : "rgba(248,250,252,0.78)",
+                    borderColor: isSelected
+                      ? "rgba(14,165,233,0.42)"
+                      : "rgba(226,232,240,0.84)",
+                    color: isSelected ? "#0369a1" : "#64748b",
+                  }
+                : {
+                    backgroundColor: isSelected
+                      ? "var(--primary, #0f172a)"
+                      : "var(--muted, #f1f5f9)",
+                    color: isSelected
+                      ? "var(--primary-foreground, #ffffff)"
+                      : "var(--muted-foreground, #64748b)",
+                  }
+            }
             data-testid={`launch-mode-tab-${modeConfig.id}`}
           >
             <Icon size={14} />

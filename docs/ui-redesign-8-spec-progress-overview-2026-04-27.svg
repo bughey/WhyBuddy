@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1120" viewBox="0 0 1600 1120" role="img" aria-labelledby="title desc">
-  <title id="title">UI Redesign Specs Progress and First Screen Parity Follow-up 2026-04-28</title>
-  <desc id="desc">Progress overview for the original 8 UI redesign specs and the reopened first-screen parity follow-up. The original 8 specs remain 329 of 329 subtasks complete, but current visual acceptance is reopened because the implemented first screen differs from the target mockup.</desc>
+  <title id="title">UI Redesign Specs Progress and IA Follow-up Planning 2026-04-28</title>
+  <desc id="desc">Progress overview for the original 8 UI redesign specs, the completed first-screen parity repair pass, and the new information-architecture follow-up specs. The original 8 specs remain 329 of 329 subtasks complete. The previous six UI repair workstreams are code-ready with targeted tests. Three new IA follow-up specs are now created for home cockpit shell convergence, task center workbench tabs without launch, and composer-only center input.</desc>
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="#f8fafc"/>
@@ -54,10 +54,10 @@
 
   <!-- Hero -->
   <rect x="36" y="28" width="1528" height="210" rx="28" fill="url(#hero)" filter="url(#shadow)"/>
-  <text x="60" y="78" class="hero-title">UI 改造 Specs 进度 + 首屏一致性回修总览</text>
-  <text x="60" y="108" class="hero-sub">统计时间: 2026-04-28 | 口径: 原 8 个 ui-redesign specs 保留完成记录，首屏视觉验收已重开</text>
-  <text x="60" y="138" class="hero-sub">当前状态: 原 Wave 1-6 / 329 个子任务完成；目标稿一致性未收口，需要 follow-up 回修</text>
-  <text x="60" y="170" class="hero-sub">验收提醒: 目标稿要求浅色左侧导航 + Scene3D 主视觉 + 中央 Autopilot 面板；当前实现仍有明显差距</text>
+  <text x="60" y="78" class="hero-title">UI 改造 Specs 进度 + IA Follow-up 规划总览</text>
+  <text x="60" y="108" class="hero-sub">统计时间: 2026-04-28 | 口径: 原 8 个 ui-redesign specs 保留完成记录，上一轮首屏回修代码已完成</text>
+  <text x="60" y="138" class="hero-sub">当前状态: 新增 3 个 IA follow-up specs；首页移除左任务抽屉，任务中心不显示发起，中心仅保留输入框</text>
+  <text x="60" y="170" class="hero-sub">上一轮验证: targeted 组合测试 18 files / 176 tests 通过；本轮状态: specs created / implementation pending</text>
 
   <rect x="922" y="48" width="154" height="66" rx="18" fill="rgba(255,255,255,0.11)" stroke="rgba(255,255,255,0.18)"/>
   <text x="940" y="73" class="hero-k">Original specs</text>
@@ -67,14 +67,14 @@
   <text x="1112" y="73" class="hero-k">Original tasks</text>
   <text x="1112" y="103" class="hero-v">329 / 329</text>
 
-  <rect x="1276" y="48" width="220" height="66" rx="18" fill="rgba(245,158,11,0.18)" stroke="rgba(251,191,36,0.46)"/>
-  <text x="1294" y="73" class="hero-k">Visual acceptance</text>
-  <text x="1294" y="103" class="hero-v">REOPENED</text>
+  <rect x="1276" y="48" width="220" height="66" rx="18" fill="rgba(56,189,248,0.18)" stroke="rgba(125,211,252,0.46)"/>
+  <text x="1294" y="73" class="hero-k">IA follow-up</text>
+  <text x="1294" y="103" class="hero-v">3 SPECS</text>
 
   <rect x="922" y="144" width="574" height="10" rx="5" fill="rgba(255,255,255,0.18)"/>
-  <rect x="922" y="144" width="390" height="10" rx="5" fill="url(#baseFill)"/>
-  <rect x="1312" y="144" width="184" height="10" rx="5" fill="url(#reopenFill)"/>
-  <text x="922" y="181" class="hero-sub">原规格完成记录保留；当前总验收以首屏一致性 follow-up 为准</text>
+  <rect x="922" y="144" width="500" height="10" rx="5" fill="url(#baseFill)"/>
+  <rect x="1422" y="144" width="74" height="10" rx="5" fill="url(#reopenFill)"/>
+  <text x="922" y="181" class="hero-sub">原规格完成记录保留；上一轮代码回修完成；新 IA follow-up 进入实施前规格阶段</text>
 
   <!-- Summary cards -->
   <rect x="36" y="262" width="360" height="112" rx="22" fill="#ffffff" stroke="#dbe5f1" filter="url(#shadow)"/>
@@ -82,10 +82,10 @@
   <text x="58" y="334" class="card-value">8 / 8</text>
   <text x="58" y="358" class="card-meta">requirements / design / tasks 三件套已归档</text>
 
-  <rect x="416" y="262" width="360" height="112" rx="22" fill="#fff7ed" stroke="#fed7aa" filter="url(#shadow)"/>
-  <text x="438" y="296" class="card-title">首屏一致性</text>
-  <text x="438" y="334" class="card-value">重开验收</text>
-  <text x="438" y="358" class="card-meta">当前首屏与目标稿差距过大，需要回修</text>
+  <rect x="416" y="262" width="360" height="112" rx="22" fill="#eff6ff" stroke="#bfdbfe" filter="url(#shadow)"/>
+  <text x="438" y="296" class="card-title">首屏一致性回修</text>
+  <text x="438" y="334" class="card-value">CODE READY</text>
+  <text x="438" y="358" class="card-meta">18 files / 176 tests passed，截图复核待执行</text>
 
   <rect x="796" y="262" width="360" height="112" rx="22" fill="#ffffff" stroke="#dbe5f1" filter="url(#shadow)"/>
   <text x="818" y="296" class="card-title">原子任务统计</text>
@@ -93,29 +93,29 @@
   <text x="818" y="358" class="card-meta">仅表示原 8 specs 完成，不等于视觉验收通过</text>
 
   <rect x="1176" y="262" width="388" height="112" rx="22" fill="#eff6ff" stroke="#bfdbfe" filter="url(#shadow)"/>
-  <text x="1198" y="296" class="card-title">当前交付状态</text>
-  <text x="1198" y="334" class="card-value">待实施</text>
-  <text x="1198" y="358" class="card-meta">先同步 specs / SVG，再回修代码与截图验收</text>
+  <text x="1198" y="296" class="card-title">新 IA follow-up</text>
+  <text x="1198" y="334" class="card-value">3 specs created</text>
+  <text x="1198" y="358" class="card-meta">home shell / task center tabs / composer-only input</text>
 
   <!-- Legend -->
   <circle cx="1038" cy="408" r="6" fill="#22c55e"/>
   <text x="1052" y="412" class="legend">原规格完成</text>
   <circle cx="1140" cy="408" r="6" fill="#f59e0b"/>
-  <text x="1154" y="412" class="legend">验收重开</text>
+  <text x="1154" y="412" class="legend">新 IA 待实施</text>
   <circle cx="1230" cy="408" r="6" fill="#3b82f6"/>
-  <text x="1244" y="412" class="legend">待实施回修</text>
+  <text x="1244" y="412" class="legend">上一轮代码完成</text>
   <circle cx="1334" cy="408" r="6" fill="#e8fbf2"/>
   <text x="1348" y="412" class="legend">历史完成基线</text>
 
-  <!-- Acceptance gap -->
-  <rect x="36" y="432" width="1528" height="122" rx="22" fill="#fffbeb" stroke="#fcd34d" filter="url(#shadow)"/>
-  <rect x="58" y="456" width="94" height="22" rx="11" fill="#fef3c7"/>
-  <text x="76" y="471" class="badge-reopen">验收重开</text>
-  <text x="168" y="472" class="alert-title">首屏目标稿一致性缺口</text>
-  <text x="58" y="506" class="alert-copy">当前实现: 任务详情白色卡片默认铺满首屏，3D 办公室和中央发起面板退到次要层级。</text>
-  <text x="58" y="534" class="alert-copy">目标稿: 左侧浅色固定导航、顶部轻量工具栏、Scene3D 办公室主视觉、中央 Autopilot Control 面板同时可见。</text>
-  <text x="950" y="506" class="alert-copy">需要回修: AppSidebar / Home / OfficeTaskCockpit / LaunchPanelShell / responsive screenshot parity。</text>
-  <text x="950" y="534" class="alert-copy">边界: 保留 /tasks 深层任务能力，不删除队列、详情、运行证据，只调整首页默认层级。</text>
+  <!-- Current status -->
+  <rect x="36" y="432" width="1528" height="122" rx="22" fill="#eff6ff" stroke="#bfdbfe" filter="url(#shadow)"/>
+  <rect x="58" y="456" width="94" height="22" rx="11" fill="#dbeafe"/>
+  <text x="76" y="471" class="badge-work">已建规格</text>
+  <text x="168" y="472" class="alert-title" style="fill:#1e3a8a;">新 IA follow-up 范围已拆分</text>
+  <text x="58" y="506" class="alert-copy" style="fill:#1d4ed8;">新增 specs: home cockpit shell convergence / task center workbench tabs / composer-only center input。</text>
+  <text x="58" y="534" class="alert-copy" style="fill:#1d4ed8;">明确边界: /tasks 不显示发起 tab；发起只保留在首页右抽屉与底部输入框；任务中心承接完整任务工作台。</text>
+  <text x="950" y="506" class="alert-copy" style="fill:#1d4ed8;">上一轮保留: 左侧透明栏、/tasks 固定侧栏避让、详情 100% 宽度、右抽屉恢复。</text>
+  <text x="950" y="534" class="alert-copy" style="fill:#1d4ed8;">本轮下一步: 按 3 个 spec 逐项实施并更新测试计数与截图验收。</text>
 
   <!-- Original baseline specs -->
   <text x="44" y="596" class="section-title">原 8 个 UI Redesign Specs 完成基线</text>
@@ -134,28 +134,28 @@
   <rect x="428" y="614" width="372" height="116" rx="18" fill="#fff7ed" stroke="#f59e0b"/>
   <rect x="444" y="628" width="60" height="18" rx="9" fill="#e8fbf2"/>
   <text x="456" y="641" class="badge-done">原完成</text>
-  <rect x="512" y="628" width="60" height="18" rx="9" fill="#fef3c7"/>
-  <text x="524" y="641" class="badge-reopen">需回修</text>
+  <rect x="512" y="628" width="60" height="18" rx="9" fill="#dbeafe"/>
+  <text x="524" y="641" class="badge-work">已回修</text>
   <text x="768" y="644" text-anchor="end" class="card-value" style="font-size:17px;">51/51</text>
   <text x="444" y="674" class="spec-title">#2 左侧导航 + 内容区偏移</text>
   <text x="444" y="694" class="spec-slug">ui-redesign-sidebar-navigation | Wave 2</text>
-  <text x="444" y="714" class="spec-task">回修焦点: 浅色固定侧栏、内容区不被 overlay 覆盖</text>
+  <text x="444" y="714" class="spec-task">已回修: 透明玻璃左侧栏；/tasks 内容避让固定侧栏</text>
   <rect x="444" y="720" width="324" height="6" rx="3" fill="#e5ebf3"/>
   <rect x="444" y="720" width="226" height="6" rx="3" fill="url(#baseFill)"/>
-  <rect x="670" y="720" width="98" height="6" rx="3" fill="url(#reopenFill)"/>
+  <rect x="670" y="720" width="98" height="6" rx="3" fill="url(#workFill)"/>
 
   <rect x="820" y="614" width="372" height="116" rx="18" fill="#fff7ed" stroke="#f59e0b"/>
   <rect x="836" y="628" width="60" height="18" rx="9" fill="#e8fbf2"/>
   <text x="848" y="641" class="badge-done">原完成</text>
-  <rect x="904" y="628" width="60" height="18" rx="9" fill="#fef3c7"/>
-  <text x="916" y="641" class="badge-reopen">需回修</text>
+  <rect x="904" y="628" width="60" height="18" rx="9" fill="#dbeafe"/>
+  <text x="916" y="641" class="badge-work">已回修</text>
   <text x="1160" y="644" text-anchor="end" class="card-value" style="font-size:17px;">50/50</text>
   <text x="836" y="674" class="spec-title">#3 任务详情卡片化布局</text>
   <text x="836" y="694" class="spec-slug">ui-redesign-task-detail-cards | Wave 3</text>
-  <text x="836" y="714" class="spec-task">回修焦点: 首页不由 selectedTaskId 默认切成详情页</text>
+  <text x="836" y="714" class="spec-task">已回修: 首页不由 selectedTaskId 默认切成详情页</text>
   <rect x="836" y="720" width="324" height="6" rx="3" fill="#e5ebf3"/>
   <rect x="836" y="720" width="226" height="6" rx="3" fill="url(#baseFill)"/>
-  <rect x="1062" y="720" width="98" height="6" rx="3" fill="url(#reopenFill)"/>
+  <rect x="1062" y="720" width="98" height="6" rx="3" fill="url(#workFill)"/>
 
   <rect x="1212" y="614" width="352" height="116" rx="18" fill="#ffffff" stroke="#27c281"/>
   <rect x="1228" y="628" width="60" height="18" rx="9" fill="#e8fbf2"/>
@@ -163,35 +163,35 @@
   <text x="1532" y="644" text-anchor="end" class="card-value" style="font-size:17px;">42/42</text>
   <text x="1228" y="674" class="spec-title">#4 右侧信息面板重排</text>
   <text x="1228" y="694" class="spec-slug">ui-redesign-right-info-panel | Wave 4</text>
-  <text x="1228" y="714" class="spec-task">右侧信息面板保留为辅助详情层</text>
+  <text x="1228" y="714" class="spec-task">右侧抽屉保留；/tasks 内嵌详情不再 360px</text>
   <rect x="1228" y="720" width="304" height="6" rx="3" fill="#e5ebf3"/>
   <rect x="1228" y="720" width="304" height="6" rx="3" fill="url(#baseFill)"/>
 
   <rect x="36" y="748" width="372" height="116" rx="18" fill="#fff7ed" stroke="#f59e0b"/>
   <rect x="52" y="762" width="60" height="18" rx="9" fill="#e8fbf2"/>
   <text x="64" y="775" class="badge-done">原完成</text>
-  <rect x="120" y="762" width="60" height="18" rx="9" fill="#fef3c7"/>
-  <text x="132" y="775" class="badge-reopen">需回修</text>
+  <rect x="120" y="762" width="60" height="18" rx="9" fill="#dbeafe"/>
+  <text x="132" y="775" class="badge-work">已回修</text>
   <text x="376" y="778" text-anchor="end" class="card-value" style="font-size:17px;">44/44</text>
   <text x="52" y="808" class="spec-title">#5 任务发起浮层面板</text>
   <text x="52" y="828" class="spec-slug">ui-redesign-launch-panel | Wave 3</text>
-  <text x="52" y="848" class="spec-task">回修焦点: 首页默认中台形态，非点击后黑遮罩 modal</text>
+  <text x="52" y="848" class="spec-task">已回修: 首页默认中台形态，非点击后黑遮罩 modal</text>
   <rect x="52" y="854" width="324" height="6" rx="3" fill="#e5ebf3"/>
   <rect x="52" y="854" width="226" height="6" rx="3" fill="url(#baseFill)"/>
-  <rect x="278" y="854" width="98" height="6" rx="3" fill="url(#reopenFill)"/>
+  <rect x="278" y="854" width="98" height="6" rx="3" fill="url(#workFill)"/>
 
   <rect x="428" y="748" width="372" height="116" rx="18" fill="#fff7ed" stroke="#f59e0b"/>
   <rect x="444" y="762" width="60" height="18" rx="9" fill="#e8fbf2"/>
   <text x="456" y="775" class="badge-done">原完成</text>
-  <rect x="512" y="762" width="60" height="18" rx="9" fill="#fef3c7"/>
-  <text x="524" y="775" class="badge-reopen">需回修</text>
+  <rect x="512" y="762" width="60" height="18" rx="9" fill="#dbeafe"/>
+  <text x="524" y="775" class="badge-work">已回修</text>
   <text x="768" y="778" text-anchor="end" class="card-value" style="font-size:17px;">42/42</text>
   <text x="444" y="808" class="spec-title">#6 3D 场景视口适配</text>
   <text x="444" y="828" class="spec-slug">ui-redesign-scene-adaptation | Wave 5</text>
-  <text x="444" y="848" class="spec-task">回修焦点: 首页首屏 Scene3D 必须可见且为主视觉</text>
+  <text x="444" y="848" class="spec-task">已回修: 首页首屏 Scene3D 必须可见且为主视觉</text>
   <rect x="444" y="854" width="324" height="6" rx="3" fill="#e5ebf3"/>
   <rect x="444" y="854" width="226" height="6" rx="3" fill="url(#baseFill)"/>
-  <rect x="670" y="854" width="98" height="6" rx="3" fill="url(#reopenFill)"/>
+  <rect x="670" y="854" width="98" height="6" rx="3" fill="url(#workFill)"/>
 
   <rect x="820" y="748" width="372" height="116" rx="18" fill="#ffffff" stroke="#27c281"/>
   <rect x="836" y="762" width="60" height="18" rx="9" fill="#e8fbf2"/>
@@ -199,61 +199,54 @@
   <text x="1160" y="778" text-anchor="end" class="card-value" style="font-size:17px;">17/17</text>
   <text x="836" y="808" class="spec-title">#7 状态指示器卡片</text>
   <text x="836" y="828" class="spec-slug">ui-redesign-status-indicators | Wave 2</text>
-  <text x="836" y="848" class="spec-task">左下运行态卡片保留，随浅色侧栏重排</text>
+  <text x="836" y="848" class="spec-task">左下运行态卡片保留，随透明玻璃侧栏重排</text>
   <rect x="836" y="854" width="324" height="6" rx="3" fill="#e5ebf3"/>
   <rect x="836" y="854" width="324" height="6" rx="3" fill="url(#baseFill)"/>
 
   <rect x="1212" y="748" width="352" height="116" rx="18" fill="#fff7ed" stroke="#f59e0b"/>
   <rect x="1228" y="762" width="60" height="18" rx="9" fill="#e8fbf2"/>
   <text x="1240" y="775" class="badge-done">原完成</text>
-  <rect x="1296" y="762" width="60" height="18" rx="9" fill="#fef3c7"/>
-  <text x="1308" y="775" class="badge-reopen">需回修</text>
+  <rect x="1296" y="762" width="60" height="18" rx="9" fill="#dbeafe"/>
+  <text x="1308" y="775" class="badge-work">已回修</text>
   <text x="1532" y="778" text-anchor="end" class="card-value" style="font-size:17px;">32/32</text>
   <text x="1228" y="808" class="spec-title">#8 响应式适配与回归收尾</text>
   <text x="1228" y="828" class="spec-slug">ui-redesign-responsive-regression | Wave 6</text>
-  <text x="1228" y="848" class="spec-task">回修焦点: 增加桌面首屏截图一致性验收</text>
+  <text x="1228" y="848" class="spec-task">已回修: 增加桌面首屏 smoke；截图复核待执行</text>
   <rect x="1228" y="854" width="304" height="6" rx="3" fill="#e5ebf3"/>
   <rect x="1228" y="854" width="212" height="6" rx="3" fill="url(#baseFill)"/>
-  <rect x="1440" y="854" width="92" height="6" rx="3" fill="url(#reopenFill)"/>
+  <rect x="1440" y="854" width="92" height="6" rx="3" fill="url(#workFill)"/>
 
   <!-- Follow-up scope -->
-  <text x="44" y="918" class="section-title">Follow-up: 首屏一致性回修范围</text>
-  <text x="350" y="918" class="section-meta">目标: 默认首屏接近效果图，而不是任务详情卡片默认铺满画面</text>
+  <text x="44" y="918" class="section-title">New IA Follow-up Specs</text>
+  <text x="312" y="918" class="section-meta">状态: 3 个 specs 已创建；implementation pending；/tasks 明确不显示发起 tab</text>
 
-  <rect x="36" y="936" width="292" height="118" rx="18" fill="#eff6ff" stroke="#bfdbfe"/>
-  <rect x="52" y="950" width="62" height="18" rx="9" fill="#dbeafe"/>
-  <text x="64" y="963" class="badge-work">待实施</text>
-  <text x="52" y="992" class="spec-title">1. 首页布局层级</text>
-  <text x="52" y="1014" class="spec-task">Home + App offset 让 Scene3D 成为主画面</text>
-  <text x="52" y="1035" class="spec-slug">Top toolbar 避开 sidebar，保留全屏办公场景</text>
+  <rect x="36" y="936" width="372" height="118" rx="18" fill="#fffbeb" stroke="#fcd34d"/>
+  <rect x="52" y="950" width="76" height="18" rx="9" fill="#fef3c7"/>
+  <text x="64" y="963" class="badge-reopen">待实施</text>
+  <text x="52" y="992" class="spec-title">1. Home cockpit shell</text>
+  <text x="52" y="1014" class="spec-task">移除首页左任务抽屉，右抽屉保留 6 tabs</text>
+  <text x="52" y="1035" class="spec-slug">ui-redesign-home-cockpit-shell-convergence</text>
 
-  <rect x="346" y="936" width="292" height="118" rx="18" fill="#eff6ff" stroke="#bfdbfe"/>
-  <rect x="362" y="950" width="62" height="18" rx="9" fill="#dbeafe"/>
-  <text x="374" y="963" class="badge-work">待实施</text>
-  <text x="362" y="992" class="spec-title">2. 浅色左侧导航</text>
-  <text x="362" y="1014" class="spec-task">AppSidebar 恢复目标稿固定浅色侧栏</text>
-  <text x="362" y="1035" class="spec-slug">状态卡片位于左下，不再深色 overlay</text>
+  <rect x="428" y="936" width="372" height="118" rx="18" fill="#fffbeb" stroke="#fcd34d"/>
+  <rect x="444" y="950" width="76" height="18" rx="9" fill="#fef3c7"/>
+  <text x="456" y="963" class="badge-reopen">待实施</text>
+  <text x="444" y="992" class="spec-title">2. Task center workbench</text>
+  <text x="444" y="1014" class="spec-task">/tasks 显示任务/团队流/Agent/记忆/历史</text>
+  <text x="444" y="1035" class="spec-slug">ui-redesign-task-center-workbench-tabs | no launch tab</text>
 
-  <rect x="656" y="936" width="292" height="118" rx="18" fill="#eff6ff" stroke="#bfdbfe"/>
-  <rect x="672" y="950" width="62" height="18" rx="9" fill="#dbeafe"/>
-  <text x="684" y="963" class="badge-work">待实施</text>
-  <text x="672" y="992" class="spec-title">3. 中央 Autopilot 面板</text>
-  <text x="672" y="1014" class="spec-task">LaunchPanel 支持首页默认中台模式</text>
-  <text x="672" y="1035" class="spec-slug">非阻塞、无黑遮罩、标准模式默认展示</text>
+  <rect x="820" y="936" width="372" height="118" rx="18" fill="#fffbeb" stroke="#fcd34d"/>
+  <rect x="836" y="950" width="76" height="18" rx="9" fill="#fef3c7"/>
+  <text x="848" y="963" class="badge-reopen">待实施</text>
+  <text x="836" y="992" class="spec-title">3. Composer-only center</text>
+  <text x="836" y="1014" class="spec-task">中间只保留紧凑输入框，Autopilot 移至右抽屉</text>
+  <text x="836" y="1035" class="spec-slug">ui-redesign-composer-only-center-input</text>
 
-  <rect x="966" y="936" width="292" height="118" rx="18" fill="#eff6ff" stroke="#bfdbfe"/>
-  <rect x="982" y="950" width="62" height="18" rx="9" fill="#dbeafe"/>
-  <text x="994" y="963" class="badge-work">待实施</text>
-  <text x="982" y="992" class="spec-title">4. 任务详情边界</text>
-  <text x="982" y="1014" class="spec-task">TaskDetailCards 留在 /tasks 或辅助层</text>
-  <text x="982" y="1035" class="spec-slug">不得默认替换首页 3D 主视觉</text>
+  <rect x="1212" y="936" width="352" height="118" rx="18" fill="#eff6ff" stroke="#bfdbfe"/>
+  <rect x="1228" y="950" width="90" height="18" rx="9" fill="#dbeafe"/>
+  <text x="1240" y="963" class="badge-work">上一轮完成</text>
+  <text x="1228" y="992" class="spec-title">Prior repair baseline</text>
+  <text x="1228" y="1014" class="spec-task">18 files / 176 tests passed，详情 100%</text>
+  <text x="1228" y="1035" class="spec-slug">left glass rail + right drawer + fixed-sidebar offset</text>
 
-  <rect x="1276" y="936" width="288" height="118" rx="18" fill="#eff6ff" stroke="#bfdbfe"/>
-  <rect x="1292" y="950" width="62" height="18" rx="9" fill="#dbeafe"/>
-  <text x="1304" y="963" class="badge-work">待实施</text>
-  <text x="1292" y="992" class="spec-title">5. 截图回归验收</text>
-  <text x="1292" y="1014" class="spec-task">1280 / 1440 / 1728 桌面首屏截图</text>
-  <text x="1292" y="1035" class="spec-slug">核对侧栏、场景、中央面板同时可见</text>
-
-  <text x="60" y="1094" class="foot">Source: .kiro/specs/ui-redesign-* + first-screen parity follow-up | Updated 2026-04-28 | Original baseline: 8 specs, 329/329 tasks | Current acceptance: reopened, implementation pending</text>
+  <text x="60" y="1094" class="foot">Source: .kiro/specs/ui-redesign-* + IA follow-up specs | Updated 2026-04-28 | Original baseline: 8 specs, 329/329 tasks | Prior repair: 18 files / 176 tests passed | New IA specs: 3 created, implementation pending | /tasks launch tab: explicitly excluded</text>
 </svg>

@@ -1,9 +1,58 @@
-import { describe, expect, it } from "vitest";
+import { renderToStaticMarkup } from "react-dom/server";
+import { describe, expect, it, vi } from "vitest";
 
+import { SidebarStatusBlock } from "../SidebarStatusBlock";
 import {
   getStatusMapping,
   getStatusLabel,
 } from "../sidebar-status-utils";
+
+vi.mock("@/i18n", () => ({
+  useI18n: () => ({
+    locale: "en-US",
+    copy: {
+      sidebar: {
+        missionControlAdvanced: "Advanced runtime",
+        missionControlFrontend: "Frontend runtime",
+      },
+    },
+  }),
+}));
+
+vi.mock("@/lib/store", () => ({
+  useAppStore: (selector: (state: { runtimeMode: string }) => unknown) =>
+    selector({ runtimeMode: "frontend" }),
+}));
+
+vi.mock("@/lib/tasks-store", () => ({
+  useTasksStore: (
+    selector: (state: {
+      selectedTaskId: string;
+      detailsById: Record<
+        string,
+        { autopilotSummary: { driveState: { state: string } } }
+      >;
+    }) => unknown,
+  ) =>
+    selector({
+      selectedTaskId: "task-1",
+      detailsById: {
+        "task-1": {
+          autopilotSummary: { driveState: { state: "running" } },
+        },
+      },
+    }),
+}));
+
+vi.mock("../ui/tooltip", () => ({
+  Tooltip: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
+  TooltipContent: ({ children }: { children?: React.ReactNode }) => (
+    <span>{children}</span>
+  ),
+  TooltipTrigger: ({ children }: { children?: React.ReactNode }) => (
+    <>{children}</>
+  ),
+}));
 
 // ---------------------------------------------------------------------------
 // Unit: getStatusMapping — covers all driveState values
@@ -103,6 +152,40 @@ describe("getStatusMapping", () => {
 // ---------------------------------------------------------------------------
 // Unit: getStatusLabel — locale-aware label resolution
 // ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// Component: SidebarStatusBlock light sidebar treatment
+// ---------------------------------------------------------------------------
+
+describe("SidebarStatusBlock", () => {
+  it("renders expanded status cards as light-sidebar surfaces", () => {
+    const markup = renderToStaticMarkup(<SidebarStatusBlock collapsed={false} />);
+
+    expect(markup).toContain('data-sidebar-status-tone="light"');
+    expect(markup).toContain("border-color:rgba(203,213,225");
+    expect(markup).toContain("background-color:rgba(248,250,252");
+    expect(markup).not.toContain("var(--sidebar-accent)");
+  });
+
+  it("renders expanded status cards as transparent glass surfaces when embedded", () => {
+    const markup = renderToStaticMarkup(
+      <SidebarStatusBlock collapsed={false} tone="glass" />,
+    );
+
+    expect(markup).toContain('data-sidebar-status-tone="glass"');
+    expect(markup).toContain('data-sidebar-status-card="glass"');
+    expect(markup).toContain("background-color:rgba(255,255,255,0.34)");
+    expect(markup).toContain("border-color:rgba(255,255,255,0.42)");
+  });
+
+  it("renders collapsed status indicators with light-sidebar icon color", () => {
+    const markup = renderToStaticMarkup(<SidebarStatusBlock collapsed />);
+
+    expect(markup).toContain('data-sidebar-status-tone="light"');
+    expect(markup).toContain("color:#475569");
+    expect(markup).not.toContain("var(--sidebar-foreground)");
+  });
+});
 
 describe("getStatusLabel", () => {
   it("returns English label for en locale", () => {

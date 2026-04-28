@@ -66,9 +66,14 @@ export function TasksQueueRail({
   return (
     <aside
       className={cn(
-        "workspace-panel flex min-h-0 flex-col overflow-hidden rounded-[14px] border border-white/30 bg-[linear-gradient(180deg,rgba(255,252,248,0.35),rgba(246,238,229,0.25))] backdrop-blur-md transition-all hover:bg-[linear-gradient(180deg,rgba(255,252,248,0.58),rgba(246,238,229,0.48))]",
+        "workspace-panel flex min-h-0 flex-col overflow-hidden rounded-[14px] border backdrop-blur-md transition-all",
+        isCompact
+          ? "border-white/45 bg-white/42 shadow-[0_10px_24px_rgba(15,23,42,0.06)] hover:bg-white/58"
+          : "border-white/30 bg-[linear-gradient(180deg,rgba(255,252,248,0.35),rgba(246,238,229,0.25))] hover:bg-[linear-gradient(180deg,rgba(255,252,248,0.58),rgba(246,238,229,0.48))]",
         className
       )}
+      data-density={density}
+      data-visual-role="cockpit-queue-rail"
     >
       <div
         className={cn(
@@ -160,7 +165,7 @@ export function TasksQueueRail({
                       : "rounded-[12px] px-2.5 py-1.75",
                     active
                       ? isCompact
-                        ? "border-primary/30 bg-[rgba(255,247,234,0.95)] shadow-[0_10px_24px_rgba(15,23,42,0.1)]"
+                        ? "border-primary/25 bg-white/62 shadow-[0_8px_18px_rgba(15,23,42,0.06)]"
                         : "border-primary/30 bg-accent shadow-[0_16px_40px_rgba(15,23,42,0.14)]"
                       : "border-[var(--workspace-panel-border)] bg-[rgba(255,255,255,0.58)] hover:border-border hover:bg-[rgba(255,255,255,0.76)]",
                     task.id === highlightedTaskId &&

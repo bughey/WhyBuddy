@@ -60,13 +60,26 @@ export function TasksCockpitDetail({
 
   return (
     <>
-      <RightInfoPanel
-        detail={detail}
-        autopilotSummary={detail.autopilotSummary}
-        locale={locale}
-        onExpandDetail={() => setShowFullDetail(true)}
-        className={cn("h-full", className)}
-      />
+      <div
+        className={cn(
+          "h-full min-h-0 overflow-hidden rounded-[16px] border border-white/45 bg-white/45",
+          "shadow-[0_10px_24px_rgba(15,23,42,0.06)] backdrop-blur-md",
+          "[&_[data-testid='right-info-panel']]:bg-transparent",
+          "[&_[data-testid='task-overview-section']]:border-white/45 [&_[data-testid='task-overview-section']]:bg-white/54 [&_[data-testid='task-overview-section']]:shadow-none",
+          "[&_[data-testid='live-progress-section']]:border-white/45 [&_[data-testid='live-progress-section']]:bg-white/54 [&_[data-testid='live-progress-section']]:shadow-none",
+          "[&_[data-testid='recent-activity-section']]:border-white/45 [&_[data-testid='recent-activity-section']]:bg-white/54 [&_[data-testid='recent-activity-section']]:shadow-none",
+          className
+        )}
+        data-visual-role="cockpit-side-detail"
+      >
+        <RightInfoPanel
+          detail={detail}
+          autopilotSummary={detail.autopilotSummary}
+          locale={locale}
+          onExpandDetail={() => setShowFullDetail(true)}
+          className="h-full !bg-transparent"
+        />
+      </div>
       <Dialog open={showFullDetail} onOpenChange={setShowFullDetail}>
         <DialogContent
           className="max-h-[85vh] max-w-3xl overflow-y-auto"

@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
+import { isDesktopViewportWidth } from "@/hooks/useViewportTier";
 
 import { useHUDPositionSync } from "./hud-sync";
 import { OverlayContainer } from "./OverlayContainer";
@@ -29,7 +30,7 @@ export function UEOverlayChrome({
   viewportWidth = 1280,
   className,
 }: UEOverlayChromeProps) {
-  const layout = viewportWidth >= 1280 ? "desktop" : "narrow";
+  const layout = isDesktopViewportWidth(viewportWidth) ? "desktop" : "narrow";
   const syncedHUDElements = useHUDPositionSync(hudDefinitions);
 
   return (

@@ -272,25 +272,36 @@ function SnapshotTile({ label, value }: { label: string; value: string }) {
 function DetailTabViewport({
   isDesktop,
   autoHeight = false,
+  compact = false,
   children,
 }: {
   isDesktop: boolean;
   autoHeight?: boolean;
+  compact?: boolean;
   children: ReactNode;
 }) {
   if (!isDesktop || autoHeight) {
-    return <div className="space-y-4">{children}</div>;
+    return (
+      <div className={compact ? "space-y-2.5" : "space-y-4"}>
+        {children}
+      </div>
+    );
   }
 
   return (
     <div
       className={cn(
         DETAIL_CARD_CLASS,
-        "h-full min-h-0 overflow-hidden p-2 shadow-[0_24px_60px_rgba(112,84,51,0.06)]"
+        "h-full min-h-0 overflow-hidden",
+        compact
+          ? "p-1.5 shadow-[0_12px_28px_rgba(15,23,42,0.05)]"
+          : "p-2 shadow-[0_24px_60px_rgba(112,84,51,0.06)]"
       )}
     >
       <ScrollArea className="h-full w-full">
-        <div className="space-y-4 p-1 pr-3">{children}</div>
+        <div className={compact ? "space-y-2.5 p-1 pr-2" : "space-y-4 p-1 pr-3"}>
+          {children}
+        </div>
       </ScrollArea>
     </div>
   );
@@ -1139,12 +1150,20 @@ export function TaskDetailView({
     return (
       <div
         className={cn(
-          "flex min-h-0 flex-col gap-4",
+          "flex min-h-0 flex-col gap-2.5 rounded-[16px] border border-white/45 bg-white/45 p-2",
+          "shadow-[0_10px_24px_rgba(15,23,42,0.06)] backdrop-blur-md",
+          "[&_[data-slot='card']]:border-white/45 [&_[data-slot='card']]:bg-white/54 [&_[data-slot='card']]:py-4 [&_[data-slot='card']]:shadow-none",
+          "[&_[data-slot='card-header']]:px-4 [&_[data-slot='card-content']]:px-4",
           isDesktop && !autoHeight && "h-full",
           className
         )}
+        data-visual-role="cockpit-detail-stack"
       >
-        <DetailTabViewport isDesktop={isDesktop} autoHeight={autoHeight}>
+        <DetailTabViewport
+          isDesktop={isDesktop}
+          autoHeight={autoHeight}
+          compact
+        >
           {showCockpitDecisionSection ? decisionsWorkspace : null}
           <TaskPlanetInterior detail={detail} compact />
           <section data-testid="task-detail-cockpit-autopilot-three-column">

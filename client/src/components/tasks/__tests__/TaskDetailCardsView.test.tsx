@@ -396,9 +396,26 @@ describe("TaskDetailCardsView", () => {
       expect(markup).toContain("overflow-y-auto");
     });
 
-    it("uses bg-background for the container", () => {
+    it("does not use the full page background as its cockpit surface", () => {
       const markup = render(makeProps());
-      expect(markup).toContain("bg-background");
+      expect(markup).toMatch(
+        /^<div class="[^"]*bg-white\/38/
+      );
+    });
+
+    it("marks the cards surface as a lightweight cockpit auxiliary layer", () => {
+      const markup = render(makeProps());
+      expect(markup).toContain('data-visual-role="cockpit-auxiliary-detail"');
+      expect(markup).toContain("bg-white/38");
+      expect(markup).toContain("shadow-[0_12px_28px_rgba(15,23,42,0.06)]");
+    });
+
+    it("keeps the command bar compact and translucent in the cockpit auxiliary layer", () => {
+      const markup = render(makeProps());
+      expect(markup).toContain('data-visual-role="cockpit-auxiliary-command"');
+      expect(markup).toContain("bg-white/58");
+      expect(markup).toContain("[&amp;_input]:!h-8");
+      expect(markup).toContain("[&amp;_button]:!h-8");
     });
   });
 

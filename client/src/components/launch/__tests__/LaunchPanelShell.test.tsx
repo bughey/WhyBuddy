@@ -96,7 +96,7 @@ vi.mock("framer-motion", () => ({
 import { LaunchPanelShell } from "../LaunchPanelShell";
 
 describe("LaunchPanelShell", () => {
-  it("renders panel and backdrop when open=true", () => {
+  it("renders a non-blocking center panel by default when open=true", () => {
     const markup = renderToStaticMarkup(
       createElement(LaunchPanelShell, {
         open: true,
@@ -105,10 +105,29 @@ describe("LaunchPanelShell", () => {
       })
     );
 
-    expect(markup).toContain('data-testid="launch-panel-backdrop"');
+    expect(markup).not.toContain('data-testid="launch-panel-backdrop"');
+    expect(markup).toContain('data-variant="center"');
+    expect(markup).toContain('aria-modal="false"');
     expect(markup).toContain('data-testid="launch-panel-shell"');
     expect(markup).toContain('role="dialog"');
+    expect(markup).toContain("bg-white");
+    expect(markup).not.toContain("bg-black/40");
+    expect(markup).toContain('aria-labelledby="launch-panel-title"');
+  });
+
+  it("keeps the modal backdrop available for modal usage", () => {
+    const markup = renderToStaticMarkup(
+      createElement(LaunchPanelShell, {
+        open: true,
+        onClose: () => {},
+        createMission: async () => null,
+        variant: "modal",
+      })
+    );
+
+    expect(markup).toContain('data-testid="launch-panel-backdrop"');
     expect(markup).toContain('aria-modal="true"');
+    expect(markup).toContain('data-variant="modal"');
     expect(markup).toContain('aria-labelledby="launch-panel-title"');
   });
 
@@ -166,7 +185,7 @@ describe("LaunchPanelShell", () => {
     expect(markup).toContain('data-testid="launch-panel-action-bar"');
   });
 
-  it("does not render advanced sections in quick mode by default", () => {
+  it("renders standard Autopilot sections by default", () => {
     const markup = renderToStaticMarkup(
       createElement(LaunchPanelShell, {
         open: true,
@@ -175,9 +194,11 @@ describe("LaunchPanelShell", () => {
       })
     );
 
-    expect(markup).not.toContain('data-testid="launch-route-planning-flow"');
-    expect(markup).not.toContain('data-testid="launch-cockpit-grid"');
-    expect(markup).not.toContain('data-testid="launch-output-chips"');
+    expect(markup).toContain('data-testid="launch-route-planning-flow"');
+    expect(markup).toContain('data-testid="launch-cockpit-grid"');
+    expect(markup).toContain('data-testid="launch-output-chips"');
+    expect(markup).toContain('data-testid="launch-mode-tab-standard"');
+    expect(markup).toContain('aria-selected="true"');
   });
 
   it("renders the submit button as disabled when input is empty", () => {

@@ -75,7 +75,7 @@ vi.mock("@/lib/nl-command-store", () => ({
 }));
 
 vi.mock("@/i18n", () => ({
-  useI18n: () => ({ locale: "en" }),
+  useI18n: () => ({ locale: "en-US" }),
 }));
 
 vi.mock("@/components/launch/UnifiedLaunchComposer", () => ({
@@ -126,7 +126,9 @@ vi.mock("@/components/tasks/CreateMissionDialog", () => ({
 }));
 
 vi.mock("@/components/tasks/TasksCockpitDetail", () => ({
-  TasksCockpitDetail: () => <div>mocked task detail</div>,
+  TasksCockpitDetail: () => (
+    <div data-testid="right-task-detail">mocked task detail</div>
+  ),
 }));
 
 vi.mock("@/components/tasks/TasksQueueRail", () => ({
@@ -167,7 +169,7 @@ function makeMockDetail(
     kind: "general",
     sourceText: "test source",
     status: "running",
-    operatorState: "idle",
+    operatorState: "active",
     workflowStatus: "running",
     progress: 50,
     currentStageKey: "execution",
@@ -230,7 +232,7 @@ function makeMockTaskSummary(id: string) {
     kind: "general",
     sourceText: "",
     status: "running" as const,
-    operatorState: "idle" as const,
+    operatorState: "active" as const,
     workflowStatus: "running" as const,
     progress: 50,
     currentStageKey: null,
@@ -262,7 +264,7 @@ beforeEach(() => {
   capturedProps.length = 0;
 
   useAppStore.setState({
-    locale: "en",
+    locale: "en-US",
     runtimeMode: "frontend",
     selectedPet: null,
     toggleConfig: noopToggle,
@@ -309,21 +311,17 @@ beforeEach(() => {
 
 /* ─── tests ─── */
 
-describe("OfficeTaskCockpit center panel view switching", () => {
-  it("does not render TaskDetailCardsView when no task is selected", () => {
+describe("OfficeTaskCockpit home center hierarchy", () => {
+  it("renders the scene HUD and keeps detail cards out of the empty home center", () => {
     const markup = renderToStaticMarkup(<OfficeTaskCockpit />);
 
+    expect(markup).toContain('data-testid="office-scene-hud"');
     expect(markup).not.toContain('data-testid="task-detail-cards-view"');
     expect(capturedProps).toHaveLength(0);
   });
 
-  it("renders TaskDetailCardsView when a task is selected with detail available", () => {
+  it("keeps selected task detail in the auxiliary column instead of the home center", () => {
     const detail = makeMockDetail("mission-1");
-
-    // Set state before rendering - Zustand SSR may not pick up setState
-    // called after store creation, so we verify the import path is correct
-    // and the conditional rendering logic is wired up by checking the
-    // component source code integration.
     useTasksStore.setState({
       tasks: [makeMockTaskSummary("mission-1")],
       detailsById: { "mission-1": detail },
@@ -355,16 +353,15 @@ describe("OfficeTaskCockpit center panel view switching", () => {
     // Verify the autopilotSummary access pattern
     expect(selectedDetail?.autopilotSummary ?? null).toBeNull();
 
-    // Note: renderToStaticMarkup with Zustand has SSR limitations where
-    // individual selectors may not reflect setState called before render.
-    // The implementation is verified through:
-    // 1. The store logic above proves activeTaskId && selectedDetail is truthy
-    // 2. The import of TaskDetailCardsView is present in OfficeTaskCockpit
-    // 3. The conditional rendering JSX is wired to activeTaskId && selectedDetail
-    // 4. The "no task selected" test proves the conditional branch works
+    const markup = renderToStaticMarkup(<OfficeTaskCockpit />);
+
+    expect(markup).toContain('data-testid="office-scene-hud"');
+    expect(markup).toContain('data-testid="right-task-detail"');
+    expect(markup).not.toContain('data-testid="task-detail-cards-view"');
+    expect(capturedProps).toHaveLength(0);
   });
 
-  it("passes autopilotSummary as null when not available on detail", () => {
+  it("does not pass autopilotSummary into central detail cards on the home surface", () => {
     const detail = makeMockDetail("mission-2");
 
     useTasksStore.setState({
@@ -375,14 +372,10 @@ describe("OfficeTaskCockpit center panel view switching", () => {
 
     renderToStaticMarkup(<OfficeTaskCockpit />);
 
-    // autopilotSummary should be null since detail doesn't have it
-    const cardsCall = capturedProps.find((p) => p.taskId === "mission-2");
-    if (cardsCall) {
-      expect(cardsCall.autopilotSummary).toBeNull();
-    }
+    expect(capturedProps).toHaveLength(0);
   });
 
-  it("does not render TaskDetailCardsView when selectedTaskId has no matching detail", () => {
+  it("still avoids central detail cards when selectedTaskId has no matching detail", () => {
     useTasksStore.setState({
       tasks: [makeMockTaskSummary("mission-3")],
       detailsById: {},
@@ -391,8 +384,7 @@ describe("OfficeTaskCockpit center panel view switching", () => {
 
     const markup = renderToStaticMarkup(<OfficeTaskCockpit />);
 
-    // No detail available for mission-3, so activeTaskId falls back to first task
-    // but detailsById is empty, so selectedDetail is null
+    expect(markup).toContain('data-testid="office-scene-hud"');
     expect(markup).not.toContain('data-testid="task-detail-cards-view"');
   });
 });

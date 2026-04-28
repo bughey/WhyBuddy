@@ -197,13 +197,14 @@ describe("RightInfoPanel", () => {
   });
 
   describe("panel width constraints", () => {
-    it("applies min-width and max-width styles", () => {
+    it("fills the available parent width", () => {
       const detail = makeDetail();
       const markup = renderToStaticMarkup(
         <RightInfoPanel detail={detail} locale="en-US" />
       );
-      expect(markup).toContain("min-width:300px");
-      expect(markup).toContain("max-width:360px");
+      expect(markup).toContain("width:100%");
+      expect(markup).toContain("min-width:0");
+      expect(markup).toContain("max-width:none");
     });
 
     it("applies overflow-y auto", () => {

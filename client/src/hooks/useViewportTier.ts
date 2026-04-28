@@ -19,6 +19,10 @@ export function getViewportTier(width: number): ViewportTier {
   return "desktop";
 }
 
+export function isDesktopViewportWidth(width: number): boolean {
+  return getViewportTier(width) === "desktop";
+}
+
 type TierSnapshot = {
   tier: ViewportTier;
   width: number;

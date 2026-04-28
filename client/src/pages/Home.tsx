@@ -29,6 +29,51 @@ import { useTasksStore } from "@/lib/tasks-store";
 import { cn } from "@/lib/utils";
 import { useWorkflowStore } from "@/lib/workflow-store";
 
+const HOME_DESKTOP_CHROME_CSS = `
+.home-desktop-sidebar-shell aside[data-sidebar-tone="glass"] {
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.46) 0%, rgba(255, 255, 255, 0.30) 74%, rgba(255, 255, 255, 0.14) 100%) !important;
+  border-color: rgba(255, 255, 255, 0.36) !important;
+  color: #334155 !important;
+  box-shadow: 18px 0 48px rgba(15, 23, 42, 0.08);
+  backdrop-filter: blur(24px);
+}
+
+.home-desktop-sidebar-shell aside[data-sidebar-tone="glass"] * {
+  color: #475569 !important;
+}
+
+.home-desktop-sidebar-shell aside[data-sidebar-tone="glass"] button {
+  border-color: transparent !important;
+}
+
+.home-desktop-sidebar-shell aside[data-sidebar-tone="glass"] button:hover {
+  background: rgba(255, 255, 255, 0.42) !important;
+  color: #0f172a !important;
+}
+
+.home-desktop-sidebar-shell aside[data-sidebar-tone="glass"] button[aria-current="page"] {
+  background: #0f172a !important;
+  border-color: rgba(15, 23, 42, 0.12) !important;
+  box-shadow: 0 16px 32px rgba(15, 23, 42, 0.18);
+  color: #ffffff !important;
+}
+
+.home-desktop-sidebar-shell aside[data-sidebar-tone="glass"] button[aria-current="page"] *,
+.home-desktop-sidebar-shell aside[data-sidebar-tone="glass"] button[aria-current="page"] svg {
+  color: #ffffff !important;
+}
+
+.home-desktop-sidebar-shell aside[data-sidebar-tone="glass"] [data-sidebar-status-card="glass"] {
+  background: rgba(255, 255, 255, 0.34) !important;
+  border-color: rgba(255, 255, 255, 0.42) !important;
+}
+
+.home-first-screen-cockpit > .pointer-events-none.absolute.inset-0.z-20 > section {
+  justify-content: center;
+  padding-bottom: clamp(24px, 8vh, 96px);
+}
+`;
+
 export default function Home() {
   const isSceneReady = useAppStore(state => state.isSceneReady);
   const hydrateAIConfig = useAppStore(state => state.hydrateAIConfig);
@@ -152,8 +197,16 @@ export default function Home() {
     locale === "zh-CN" ? copy.common.englishShort : copy.common.chineseShort;
   const scenePerformanceProfile =
     resizeActive && !isMobile ? "resizing" : "balanced";
+  const desktopSidebarWidth = isMobile
+    ? 0
+    : viewportWidth >= 1280
+      ? 240
+      : 64;
   const sceneLayer = (
-    <Scene3D performanceProfile={scenePerformanceProfile} sidebarWidth={0} />
+    <Scene3D
+      performanceProfile={scenePerformanceProfile}
+      sidebarWidth={desktopSidebarWidth}
+    />
   );
   const hudDefinitions: HUDDefinition[] = useMemo(
     () =>
@@ -177,14 +230,15 @@ export default function Home() {
     [agents],
   );
   const desktopGlassClass = resizeActive
-    ? "border-stone-200/90 bg-[hsl(var(--background))]/96 shadow-[0_8px_20px_rgba(15,23,42,0.06)]"
-    : "border-white/50 bg-[hsl(var(--background) / 0.8)] shadow-[0_10px_28px_rgba(15,23,42,0.08)] backdrop-blur";
+    ? "border-slate-200/90 bg-[hsl(var(--background))]/96 shadow-[0_8px_20px_rgba(15,23,42,0.06)]"
+    : "border-white/64 bg-[rgba(248,250,252,0.78)] shadow-[0_10px_28px_rgba(15,23,42,0.08)] backdrop-blur";
   const utilityChipClass = resizeActive
-    ? "border-stone-200/90 bg-[hsl(var(--background))]/96 shadow-[0_8px_20px_rgba(15,23,42,0.06)]"
-    : "border-white/55 bg-[hsl(var(--background) / 0.82)] shadow-[0_10px_24px_rgba(15,23,42,0.08)] backdrop-blur";
+    ? "border-slate-200/90 bg-[hsl(var(--background))]/96 shadow-[0_8px_20px_rgba(15,23,42,0.06)]"
+    : "border-white/68 bg-[rgba(248,250,252,0.82)] shadow-[0_10px_24px_rgba(15,23,42,0.08)] backdrop-blur";
 
   return (
-    <div className="relative h-[100svh] w-screen overflow-hidden bg-[linear-gradient(180deg,#d8e5f0_0%,#e9dfd2_48%,#e3d2c0_100%)]">
+    <div className="relative h-[100svh] w-screen overflow-hidden bg-[linear-gradient(180deg,#eef6fb_0%,#f7fbfd_48%,#e5f1f4_100%)]">
+      <style>{HOME_DESKTOP_CHROME_CSS}</style>
       {isMobile ? (
         sceneLayer
       ) : (
@@ -194,17 +248,20 @@ export default function Home() {
           hudDefinitions={hudDefinitions}
           viewportWidth={viewportWidth}
           sidebar={
-            <AppSidebar
-              collapsed={viewportWidth < 1280}
-              onToggleCollapse={() => undefined}
-              embedded
-            />
+            <div className="home-desktop-sidebar-shell h-full">
+              <AppSidebar
+                collapsed={viewportWidth < 1280}
+                onToggleCollapse={() => undefined}
+                embedded
+              />
+            </div>
           }
         >
           {isSceneReady ? (
-            <>
+            <div className="home-desktop-workspace relative h-full min-h-0">
               <div
-                className="fixed left-0 right-0 top-0 z-[60] px-3 py-2 xl:px-4"
+                className="absolute inset-x-0 top-0 z-[60] px-3 py-2 xl:px-4"
+                data-testid="home-desktop-toolbar"
                 style={{ pointerEvents: "auto" }}
               >
                 <div className="relative flex items-center justify-between gap-2">
@@ -212,18 +269,18 @@ export default function Home() {
                     className={cn(
                       "flex min-w-0 items-center gap-2 rounded-[16px] px-2.5 py-1.5",
                       resizeActive
-                        ? "border border-stone-200/90 bg-[hsl(var(--background))]/96 shadow-[0_8px_20px_rgba(15,23,42,0.06)]"
-                        : "border border-white/55 bg-[linear-gradient(180deg,hsl(var(--card) / 0.84),hsl(var(--muted) / 0.74))] shadow-[0_14px_36px_rgba(15,23,42,0.1)] backdrop-blur"
+                        ? "border border-slate-200/90 bg-[hsl(var(--background))]/96 shadow-[0_8px_20px_rgba(15,23,42,0.06)]"
+                        : "border border-white/68 bg-[linear-gradient(180deg,rgba(248,250,252,0.9),rgba(226,242,246,0.76))] shadow-[0_14px_36px_rgba(15,23,42,0.1)] backdrop-blur"
                     )}
                   >
-                    <div className="flex h-7 w-7 items-center justify-center rounded-[10px] bg-[linear-gradient(180deg,#d69871,#c98257)] text-white shadow-[0_10px_24px_rgba(201,130,87,0.22)]">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-[10px] bg-[linear-gradient(180deg,#0ea5e9,#0f766e)] text-white shadow-[0_10px_24px_rgba(14,165,233,0.18)]">
                       <span className="text-xs font-semibold">CP</span>
                     </div>
                     <div className="min-w-0">
-                      <div className="text-[9px] font-semibold uppercase tracking-[0.2em] text-[#A08972]">
+                      <div className="text-[9px] font-semibold uppercase tracking-normal text-slate-500">
                         {copy.home.desktopOfficeLabel}
                       </div>
-                      <div className="truncate text-xs font-semibold text-[#3A2A1A]">
+                      <div className="truncate text-xs font-semibold text-slate-950">
                         {copy.home.officeTitle}
                       </div>
                     </div>
@@ -241,8 +298,8 @@ export default function Home() {
                           onClick={() => void setRuntimeMode("frontend")}
                           className={`rounded-full px-3 py-1 text-[11px] font-semibold transition-all ${
                             runtimeMode === "frontend"
-                              ? "bg-[#F8F3ED] text-[#3A2A1A] shadow-sm"
-                              : "text-[#8B7355] hover:text-[#5A4A3A]"
+                              ? "bg-sky-50 text-slate-950 shadow-sm"
+                              : "text-slate-500 hover:text-slate-950"
                           }`}
                         >
                           Frontend
@@ -252,8 +309,8 @@ export default function Home() {
                             onClick={() => void setRuntimeMode("advanced")}
                             className={`rounded-full px-3 py-1 text-[11px] font-semibold transition-all ${
                               runtimeMode === "advanced"
-                                ? "bg-[#C98257] text-white shadow-sm"
-                                : "text-[#8B7355] hover:text-[#5A4A3A]"
+                                ? "bg-[#0f766e] text-white shadow-sm"
+                                : "text-slate-500 hover:text-slate-950"
                             }`}
                           >
                             Advanced
@@ -269,14 +326,14 @@ export default function Home() {
                       >
                         <button
                           type="button"
-                          className="rounded-full bg-[#5E8B72] px-3 py-1 text-[11px] font-semibold text-white shadow-sm"
+                          className="rounded-full bg-[#0f766e] px-3 py-1 text-[11px] font-semibold text-white shadow-sm"
                         >
                           {copy.toolbar.primaryNav.office.label}
                         </button>
                         <button
                           type="button"
                           onClick={() => setLocation("/debug")}
-                          className="rounded-full px-3 py-1 text-[11px] font-semibold text-[#8B7355] transition-all hover:text-[#5A4A3A]"
+                          className="rounded-full px-3 py-1 text-[11px] font-semibold text-slate-500 transition-all hover:text-slate-950"
                         >
                           {copy.toolbar.primaryNav.more.label}
                         </button>
@@ -286,7 +343,7 @@ export default function Home() {
                         type="button"
                         onClick={toggleLocale}
                         className={cn(
-                          "rounded-[16px] border px-3 py-[7px] text-[11px] font-semibold text-[#8B7355] transition-colors hover:bg-white hover:text-[#5A4A3A]",
+                          "rounded-[16px] border px-3 py-[7px] text-[11px] font-semibold text-slate-500 transition-colors hover:bg-white hover:text-slate-950",
                           desktopGlassClass
                         )}
                         title={copy.app.localeSwitch}
@@ -301,7 +358,7 @@ export default function Home() {
                       type="button"
                       onClick={() => setLocation("/tasks")}
                       className={cn(
-                        "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] font-semibold text-[#5A4A3A] transition-colors hover:bg-white",
+                        "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] font-semibold text-slate-700 transition-colors hover:bg-white hover:text-slate-950",
                         utilityChipClass
                       )}
                     >
@@ -312,7 +369,7 @@ export default function Home() {
                       type="button"
                       onClick={() => openWorkflowPanel()}
                       className={cn(
-                        "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] font-semibold text-[#5A4A3A] transition-colors hover:bg-white",
+                        "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] font-semibold text-slate-700 transition-colors hover:bg-white hover:text-slate-950",
                         utilityChipClass
                       )}
                     >
@@ -323,7 +380,7 @@ export default function Home() {
                       type="button"
                       onClick={handleStartDemo}
                       className={cn(
-                        "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] font-semibold text-[#5A4A3A] transition-colors hover:bg-white",
+                        "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] font-semibold text-slate-700 transition-colors hover:bg-white hover:text-slate-950",
                         utilityChipClass
                       )}
                     >
@@ -333,7 +390,7 @@ export default function Home() {
                       type="button"
                       onClick={() => toggleConfig()}
                       className={cn(
-                        "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] font-semibold text-[#5A4A3A] transition-colors hover:bg-white",
+                        "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] font-semibold text-slate-700 transition-colors hover:bg-white hover:text-slate-950",
                         utilityChipClass
                       )}
                     >
@@ -343,7 +400,7 @@ export default function Home() {
                     {IS_GITHUB_PAGES && <GitHubRepoBadge />}
                     <div
                       className={cn(
-                        "rounded-full border px-2.5 py-1 text-[11px] font-semibold text-[#5A4A3A]",
+                        "rounded-full border px-2.5 py-1 text-[11px] font-semibold text-slate-700",
                         utilityChipClass
                       )}
                     >
@@ -357,12 +414,15 @@ export default function Home() {
                 </div>
               </div>
 
-              <OfficeTaskCockpit resizeActive={resizeActive} />
+              <OfficeTaskCockpit
+                resizeActive={resizeActive}
+                className="home-first-screen-cockpit"
+              />
 
               <ChatPanel />
               <WorkflowPanel />
               <TelemetryDashboard />
-            </>
+            </div>
           ) : null}
         </UEOverlayChrome>
       )}
@@ -370,28 +430,28 @@ export default function Home() {
       <div className="pointer-events-none absolute inset-0 z-[5]">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(228,241,252,0.72),rgba(228,241,252,0)_38%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,251,247,0.42),rgba(255,251,247,0)_30%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,rgba(157,119,83,0.09),rgba(157,119,83,0)_32%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_right,rgba(94,139,114,0.08),rgba(94,139,114,0)_24%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,rgba(59,130,246,0.07),rgba(59,130,246,0)_32%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_right,rgba(15,118,110,0.1),rgba(15,118,110,0)_24%)]" />
         <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-[#f5f9fd]/46 to-transparent" />
-        <div className="absolute inset-x-0 bottom-0 h-44 bg-gradient-to-t from-[#ddc8b2]/34 to-transparent" />
-        <div className="absolute inset-0 shadow-[inset_0_0_160px_rgba(79,58,38,0.12)]" />
+        <div className="absolute inset-x-0 bottom-0 h-44 bg-gradient-to-t from-[#dbeafe]/32 to-transparent" />
+        <div className="absolute inset-0 shadow-[inset_0_0_160px_rgba(15,23,42,0.08)]" />
       </div>
 
       {isSceneReady && isMobile ? (
         <div className="pointer-events-none absolute inset-x-0 z-[18] flex justify-center px-3 top-[calc(env(safe-area-inset-top)+108px)]">
           <div className="pointer-events-auto w-full max-w-none rounded-[28px] studio-shell px-4 py-4 shadow-[0_18px_45px_rgba(15,23,42,0.12)]">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#A08972]">
+            <p className="text-[11px] font-semibold uppercase tracking-normal text-slate-500">
               {copy.home.officeEyebrow}
             </p>
             <div className="mt-3 space-y-3">
               <div className="min-w-0">
                 <h1
-                  className="text-xl font-semibold tracking-tight text-[#3A2A1A]"
+                  className="text-xl font-semibold tracking-tight text-slate-950"
                   style={{ fontFamily: "'Playfair Display', serif" }}
                 >
                   {copy.home.officeTitle}
                 </h1>
-                <p className="mt-2 max-w-2xl text-sm leading-6 text-[#5C4A39]">
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
                   {copy.home.mobileHint}
                 </p>
               </div>
@@ -400,7 +460,7 @@ export default function Home() {
                 <button
                   type="button"
                   onClick={() => setLocation("/tasks")}
-                  className="inline-flex items-center justify-center gap-2 rounded-full bg-[#d07a4f] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#bf6c43]"
+                  className="inline-flex items-center justify-center gap-2 rounded-full bg-[#0f766e] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#115e59]"
                 >
                   {copy.home.enterTasks}
                   <ArrowRight className="h-4 w-4" />
@@ -408,14 +468,14 @@ export default function Home() {
                 <button
                   type="button"
                   onClick={() => toggleWorkflowPanel()}
-                  className="inline-flex items-center justify-center rounded-full border border-stone-200/80 bg-white/85 px-4 py-2.5 text-sm font-semibold text-[#5A4A3A] transition-colors hover:bg-white"
+                  className="inline-flex items-center justify-center rounded-full border border-slate-200/80 bg-white/85 px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-white hover:text-slate-950"
                 >
                   {copy.home.openWorkflow}
                 </button>
                 <button
                   type="button"
                   onClick={() => toggleConfig()}
-                  className="inline-flex items-center justify-center rounded-full border border-stone-200/80 bg-white/85 px-4 py-2.5 text-sm font-semibold text-[#5A4A3A] transition-colors hover:bg-white"
+                  className="inline-flex items-center justify-center rounded-full border border-slate-200/80 bg-white/85 px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-white hover:text-slate-950"
                 >
                   {copy.home.openConfig}
                 </button>
@@ -423,17 +483,17 @@ export default function Home() {
             </div>
 
             <div className="mt-4 flex flex-wrap gap-2">
-              <span className="rounded-full bg-white/70 px-3 py-1 text-xs font-medium text-[#5C4A39]">
+              <span className="rounded-full bg-white/70 px-3 py-1 text-xs font-medium text-slate-600">
                 {copy.home.runtimeChip(
                   copy.toolbar.runtimeLabels[
                     runtimeMode === "advanced" ? "advanced" : "frontend"
                   ]
                 )}
               </span>
-              <span className="rounded-full bg-white/70 px-3 py-1 text-xs font-medium text-[#5C4A39]">
+              <span className="rounded-full bg-white/70 px-3 py-1 text-xs font-medium text-slate-600">
                 {copy.home.agentChip(agentCount)}
               </span>
-              <span className="rounded-full bg-white/70 px-3 py-1 text-xs font-medium text-[#5C4A39]">
+              <span className="rounded-full bg-white/70 px-3 py-1 text-xs font-medium text-slate-600">
                 {copy.home.workflowChip(activeWorkflows)}
               </span>
             </div>

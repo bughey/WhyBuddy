@@ -40,8 +40,29 @@ import { useTelemetryStore } from "@/lib/telemetry-store";
 import { useWorkflowStore } from "@/lib/workflow-store";
 
 vi.mock("antd", () => {
-  function Panel({ children }: { children?: React.ReactNode }) {
-    return <div>{children}</div>;
+  function Panel({
+    children,
+    className,
+    defaultSize,
+    min,
+    max,
+  }: {
+    children?: React.ReactNode;
+    className?: string;
+    defaultSize?: number | string;
+    min?: number | string;
+    max?: number | string;
+  }) {
+    return (
+      <div
+        className={className}
+        data-default-size={String(defaultSize ?? "")}
+        data-max={String(max ?? "")}
+        data-min={String(min ?? "")}
+      >
+        {children}
+      </div>
+    );
   }
 
   function Splitter({
@@ -129,11 +150,23 @@ vi.mock("@/components/tasks/CreateMissionDialog", () => ({
 }));
 
 vi.mock("@/components/tasks/TasksCockpitDetail", () => ({
-  TasksCockpitDetail: () => <div>mocked task detail</div>,
+  TasksCockpitDetail: () => (
+    <div data-testid="right-task-detail">mocked task detail</div>
+  ),
 }));
 
 vi.mock("@/components/tasks/TasksQueueRail", () => ({
   TasksQueueRail: () => <div>mocked task queue</div>,
+}));
+
+vi.mock("@/components/tasks/TaskDetailCardsView", () => ({
+  TaskDetailCardsView: () => (
+    <div data-testid="task-detail-cards-view">mocked task cards</div>
+  ),
+}));
+
+vi.mock("@/components/launch/LaunchPanelShell", () => ({
+  LaunchPanelShell: () => null,
 }));
 
 vi.mock("./OfficeAgentInspectorPanel", () => ({
@@ -149,6 +182,96 @@ vi.mock("./OfficeWorkflowContextPanels", () => ({
 const noopAsync = async () => {};
 const noopAsyncNullable = async () => null;
 const noopToggle = () => {};
+
+const missionDetail = {
+  id: "mission-1",
+  title: "Ship office cockpit",
+  kind: "general",
+  sourceText: "Keep the scene visible",
+  status: "running",
+  operatorState: "idle",
+  workflowStatus: "running",
+  progress: 42,
+  currentStageKey: "execution",
+  currentStageLabel: "Execution",
+  summary: "Selected task should stay lightweight on home.",
+  waitingFor: null,
+  blocker: null,
+  attempt: 1,
+  latestOperatorAction: null,
+  createdAt: Date.now(),
+  updatedAt: Date.now(),
+  startedAt: Date.now(),
+  completedAt: null,
+  departmentLabels: ["Engineering"],
+  taskCount: 3,
+  completedTaskCount: 1,
+  messageCount: 2,
+  activeAgentCount: 2,
+  attachmentCount: 0,
+  issueCount: 0,
+  hasWarnings: false,
+  lastSignal: null,
+  workflow: {
+    id: "wf-1",
+    status: "running",
+    currentStage: "execution",
+    stages: [],
+    results: {},
+  },
+  tasks: [],
+  messages: [],
+  report: null,
+  organization: null,
+  stages: [],
+  agents: [],
+  timeline: [],
+  artifacts: [],
+  failureReasons: [],
+  decisionPresets: [],
+  decisionPrompt: null,
+  decisionAllowsFreeText: false,
+  decision: null,
+  instanceInfo: [],
+  logSummary: [],
+  runtimeChannels: {
+    socket: { status: "connected", label: "Socket", detail: "OK" },
+    callback: { status: "idle", label: "Callback", detail: "Idle" },
+  },
+  decisionHistory: [],
+  operatorActions: [],
+} as any;
+
+const missionSummary = {
+  id: "mission-1",
+  title: "Ship office cockpit",
+  kind: "general",
+  sourceText: "Keep the scene visible",
+  status: "running",
+  operatorState: "idle",
+  workflowStatus: "running",
+  progress: 42,
+  currentStageKey: "execution",
+  currentStageLabel: "Execution",
+  summary: "Selected task should stay lightweight on home.",
+  waitingFor: null,
+  blocker: null,
+  attempt: 1,
+  latestOperatorAction: null,
+  createdAt: Date.now(),
+  updatedAt: Date.now(),
+  startedAt: Date.now(),
+  completedAt: null,
+  departmentLabels: ["Engineering"],
+  taskCount: 3,
+  completedTaskCount: 1,
+  messageCount: 2,
+  activeAgentCount: 2,
+  attachmentCount: 0,
+  issueCount: 0,
+  hasWarnings: false,
+  lastSignal: null,
+} as any;
 
 beforeEach(() => {
   useAppStore.setState({
@@ -198,14 +321,17 @@ beforeEach(() => {
 });
 
 describe("OfficeTaskCockpit", () => {
-  it("renders a single central launch trigger and keeps launch guidance informational", () => {
+  it("renders a single center-bottom composer and keeps launch guidance informational", () => {
     const markup = renderToStaticMarkup(<OfficeTaskCockpit />);
 
-    expect(markup).toContain('data-testid="launch-panel-trigger"');
+    expect(markup).not.toContain('data-testid="launch-panel-trigger"');
+    expect(markup).toContain('data-testid="unified-launch-composer"');
     expect(
-      markup.match(/data-testid="launch-panel-trigger"/g)?.length
+      markup.match(/data-testid="unified-launch-composer"/g)?.length
     ).toBe(1);
-    expect(markup).not.toContain('data-testid="unified-launch-composer"');
+    expect(markup).toContain('data-bare="true"');
+    expect(markup).toContain('data-hide-header="true"');
+    expect(markup).toContain('data-hide-clarification="true"');
     expect(markup).not.toContain('data-testid="office-clarification-panel"');
     expect(markup).toContain("独立弹层");
   });
@@ -247,5 +373,35 @@ describe("OfficeTaskCockpit", () => {
     expect(markup).toContain("待补充 1 项");
     expect(markup).toContain("当前有补问信息待处理");
     expect(markup).toContain("展开辅助信息");
+  });
+});
+
+describe("OfficeTaskCockpit home hierarchy", () => {
+  it("keeps selected task detail out of the home center stage", () => {
+    useTasksStore.setState({
+      tasks: [missionSummary],
+      detailsById: { "mission-1": missionDetail },
+      selectedTaskId: "mission-1",
+    });
+
+    const markup = renderToStaticMarkup(<OfficeTaskCockpit />);
+
+    expect(markup).toContain('data-testid="office-scene-hud"');
+    expect(markup).toContain('data-testid="right-task-detail"');
+    expect(markup).not.toContain('data-testid="task-detail-cards-view"');
+  });
+
+  it("keeps the right drawer visibly allocated on the first screen", () => {
+    useTasksStore.setState({
+      tasks: [missionSummary],
+      detailsById: { "mission-1": missionDetail },
+      selectedTaskId: "mission-1",
+    });
+
+    const markup = renderToStaticMarkup(<OfficeTaskCockpit />);
+
+    expect(markup).toContain("office-cockpit-right-drawer");
+    expect(markup).toContain('data-default-size="360"');
+    expect(markup).toContain('data-min="320"');
   });
 });

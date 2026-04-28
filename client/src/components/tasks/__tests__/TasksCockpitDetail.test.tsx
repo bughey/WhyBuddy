@@ -172,6 +172,24 @@ describe("TasksCockpitDetail integration with RightInfoPanel", () => {
     expect(markup).toContain('data-testid="expand-detail-button"');
   });
 
+  it("wraps the side detail in a lightweight cockpit auxiliary shell", () => {
+    const detail = makeDetail();
+    const markup = renderToStaticMarkup(
+      <TasksCockpitDetail
+        detail={detail}
+        decisionNote=""
+        onDecisionNoteChange={() => {}}
+        onLaunchDecision={() => {}}
+        onSubmitOperatorAction={() => Promise.resolve()}
+      />
+    );
+
+    expect(markup).toContain('data-visual-role="cockpit-side-detail"');
+    expect(markup).toContain("bg-white/45");
+    expect(markup).toContain("shadow-[0_10px_24px_rgba(15,23,42,0.06)]");
+    expect(markup).not.toContain("bg-[var(--background)]");
+  });
+
   it("renders task overview section with meta information", () => {
     const detail = makeDetail();
     const markup = renderToStaticMarkup(
@@ -316,5 +334,23 @@ describe("TasksCockpitDetail integration with RightInfoPanel", () => {
     );
 
     expect(markup).toContain("custom-class");
+  });
+
+  it("lets the embedded detail panel fill the available task workspace width", () => {
+    const detail = makeDetail();
+    const markup = renderToStaticMarkup(
+      <TasksCockpitDetail
+        detail={detail}
+        decisionNote=""
+        onDecisionNoteChange={() => {}}
+        onLaunchDecision={() => {}}
+        className="min-h-0 flex-1"
+      />
+    );
+
+    expect(markup).toContain('data-testid="right-info-panel"');
+    expect(markup).toContain("width:100%");
+    expect(markup).toContain("max-width:none");
+    expect(markup).not.toContain("max-width:360px");
   });
 });

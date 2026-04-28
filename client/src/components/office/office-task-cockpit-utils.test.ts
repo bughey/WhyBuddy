@@ -5,6 +5,7 @@ import type { AgentInfo, WorkflowInfo } from "@/lib/workflow-store";
 
 import {
   buildOfficeCockpitAvailability,
+  resolveOfficeCenterStageMode,
   resolveOfficeCockpitTab,
   resolveWorkflowForSelectedTask,
 } from "./office-task-cockpit-utils";
@@ -83,6 +84,26 @@ describe("office-task-cockpit-utils", () => {
         history: false,
       })
     ).toBe("launch");
+  });
+
+  it("keeps the home center stage in scene HUD mode even when a selected task has detail", () => {
+    expect(
+      resolveOfficeCenterStageMode({
+        surface: "home",
+        selectedTaskId: "mission-1",
+        hasSelectedDetail: true,
+      })
+    ).toBe("scene-hud");
+  });
+
+  it("allows task detail stage only for the deep task surface", () => {
+    expect(
+      resolveOfficeCenterStageMode({
+        surface: "deep-task",
+        selectedTaskId: "mission-1",
+        hasSelectedDetail: true,
+      })
+    ).toBe("task-detail");
   });
 
   it("keeps the current workflow when it already matches the selected mission", () => {

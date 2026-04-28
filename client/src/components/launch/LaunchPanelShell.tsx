@@ -9,7 +9,6 @@ import { useI18n } from "@/i18n";
 import { useAppStore } from "@/lib/store";
 import {
   buildLaunchRoutePlan,
-  type LaunchRouteCandidateId,
 } from "@/lib/launch-router";
 import {
   selectTaskHubLaunchSession,
@@ -42,6 +41,7 @@ export interface LaunchPanelShellProps {
   open: boolean;
   onClose: () => void;
   createMission: TaskHubCreateMission;
+  variant?: "modal" | "center" | "dock";
   onTaskResolved?: (result: TaskHubCommandSubmissionResult) => void;
   onWorkflowResolved?: (result: UnifiedWorkflowResolution) => void;
 }
@@ -50,9 +50,12 @@ export function LaunchPanelShell({
   open,
   onClose,
   createMission,
+  variant = "center",
   onTaskResolved,
   onWorkflowResolved,
 }: LaunchPanelShellProps) {
+  void createMission;
+
   const { locale } = useI18n();
   const runtimeMode = useAppStore(state => state.runtimeMode);
   const taskHubSession = useNLCommandStore(
@@ -62,7 +65,7 @@ export function LaunchPanelShell({
   const loadingCommand = taskHubSession.loading;
   const loadingWorkflow = useWorkflowStore(state => state.isSubmitting);
 
-  const [launchMode, setLaunchMode] = useState<LaunchMode>("quick");
+  const [launchMode, setLaunchMode] = useState<LaunchMode>("standard");
   const [attachments, setAttachments] = useState<WorkflowInputAttachment[]>([]);
   const [isPreparingFiles, setIsPreparingFiles] = useState(false);
   const [selectedOutputTypes, setSelectedOutputTypes] = useState<Set<string>>(
@@ -76,6 +79,8 @@ export function LaunchPanelShell({
 
   const submitting = loadingCommand || loadingWorkflow || isPreparingFiles;
   const draftText = taskHubSession.draftText;
+  const isModal = variant === "modal";
+  const isCenterVariant = variant === "center";
 
   const routePlan = useMemo(
     () =>
@@ -93,23 +98,19 @@ export function LaunchPanelShell({
   const modeConfig = LAUNCH_MODES.find(m => m.id === launchMode);
   const showAdvanced = modeConfig?.showAdvancedSections ?? false;
 
-  // Focus trap: focus textarea on open
   useEffect(() => {
     if (open) {
       triggerRef.current = document.activeElement as HTMLElement;
-      // Small delay to let animation start
       const timer = setTimeout(() => {
         textareaRef.current?.focus();
       }, 50);
       return () => clearTimeout(timer);
-    } else {
-      // Restore focus on close
-      triggerRef.current?.focus();
-      triggerRef.current = null;
     }
+
+    triggerRef.current?.focus();
+    triggerRef.current = null;
   }, [open]);
 
-  // Escape key handler
   useEffect(() => {
     if (!open) return;
     function handleKeyDown(e: KeyboardEvent) {
@@ -122,9 +123,8 @@ export function LaunchPanelShell({
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [open, onClose]);
 
-  // Focus trap: Tab cycling within panel
   useEffect(() => {
-    if (!open) return;
+    if (!open || !isModal) return;
     function handleTab(e: KeyboardEvent) {
       if (e.key !== "Tab" || !panelRef.current) return;
       const focusable = panelRef.current.querySelectorAll<HTMLElement>(
@@ -138,16 +138,14 @@ export function LaunchPanelShell({
           e.preventDefault();
           last.focus();
         }
-      } else {
-        if (document.activeElement === last) {
-          e.preventDefault();
-          first.focus();
-        }
+      } else if (document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
       }
     }
     document.addEventListener("keydown", handleTab);
     return () => document.removeEventListener("keydown", handleTab);
-  }, [open]);
+  }, [open, isModal]);
 
   const handleSubmit = useCallback(async () => {
     if (!hasDraftDestination || submitting) return;
@@ -227,11 +225,21 @@ export function LaunchPanelShell({
       if (!files || files.length === 0) return;
       setIsPreparingFiles(true);
       try {
-        const prepared = await prepareWorkflowAttachments(
-          Array.from(files),
-          attachments
-        );
-        setAttachments(prepared);
+        const prepared = await prepareWorkflowAttachments(Array.from(files));
+        setAttachments(current => {
+          const seen = new Set(
+            current.map(item => `${item.name}:${item.size}:${item.mimeType}`)
+          );
+          const next = [...current];
+          for (const item of prepared) {
+            const key = `${item.name}:${item.size}:${item.mimeType}`;
+            if (!seen.has(key)) {
+              next.push(item);
+              seen.add(key);
+            }
+          }
+          return next;
+        });
       } catch {
         toast.error(
           t(locale, "附件处理失败。", "Failed to process attachments.")
@@ -243,7 +251,7 @@ export function LaunchPanelShell({
         }
       }
     },
-    [attachments, locale]
+    [locale]
   );
 
   const handleToggleOutput = useCallback((id: string) => {
@@ -259,66 +267,83 @@ export function LaunchPanelShell({
   }, []);
 
   const portalTarget = typeof document !== "undefined" ? document.body : null;
+  const panelStyle = isModal
+    ? {
+        backgroundColor: "var(--card, #ffffff)",
+        color: "var(--card-foreground, #0f172a)",
+        borderColor: "var(--border, #e2e8f0)",
+        boxShadow:
+          "0 22px 56px rgba(15,23,42,0.12), inset 0 1px 0 rgba(255,255,255,0.48)",
+      }
+    : {
+        color: "var(--card-foreground, #0f172a)",
+        borderColor: "rgba(203,213,225,0.72)",
+        boxShadow:
+          "0 24px 58px rgba(15,23,42,0.16), inset 0 1px 0 rgba(255,255,255,0.86)",
+      };
 
   const content = (
     <AnimatePresence>
       {open && (
         <>
-          {/* Backdrop */}
-          <motion.div
-            key="launch-panel-backdrop"
-            className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            onClick={onClose}
-            aria-hidden="true"
-            data-testid="launch-panel-backdrop"
-          />
+          {isModal ? (
+            <motion.div
+              key="launch-panel-backdrop"
+              className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              onClick={onClose}
+              aria-hidden="true"
+              data-testid="launch-panel-backdrop"
+            />
+          ) : null}
 
-          {/* Panel container */}
           <div
-            className="fixed inset-0 z-[60] flex items-center justify-center p-4 max-md:items-end max-md:p-0"
+            className={cn(
+              "fixed z-[60] flex",
+              isModal
+                ? "inset-0 items-center justify-center p-4 max-md:items-end max-md:p-0"
+                : "pointer-events-none inset-x-0 px-3 max-md:px-2",
+              isCenterVariant
+                ? "top-[clamp(4.75rem,10vh,7rem)] justify-center max-md:top-auto max-md:bottom-3"
+                : !isModal && "bottom-4 justify-center max-md:bottom-2"
+            )}
             data-testid="launch-panel-container"
+            data-variant={variant}
           >
             <motion.div
               ref={panelRef}
               role="dialog"
-              aria-modal="true"
+              aria-modal={isModal}
               aria-labelledby="launch-panel-title"
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
               transition={{ duration: 0.25, ease: "easeOut" }}
               className={cn(
-                "flex w-full flex-col overflow-hidden border shadow-lg",
-                // Desktop: centered, max 760px
-                "md:max-w-[760px] md:max-h-[calc(100vh-120px)] md:rounded-xl",
-                // Tablet: centered, max 90vw
-                "max-md:max-w-[90vw]",
-                // Mobile: bottom sheet
-                "max-md:max-w-full max-md:max-h-[90vh] max-md:rounded-t-xl max-md:rounded-b-none"
+                "pointer-events-auto flex w-full flex-col overflow-hidden border",
+                isModal
+                  ? "bg-white shadow-lg md:max-h-[calc(100vh-120px)] md:max-w-[760px] md:rounded-xl max-md:max-h-[90vh] max-md:max-w-full max-md:rounded-t-xl max-md:rounded-b-none"
+                  : "max-h-[min(74vh,650px)] max-w-[min(92vw,700px)] rounded-[18px] bg-white/90 shadow-lg backdrop-blur-xl max-md:max-h-[min(72svh,560px)]",
+                variant === "dock" && "max-w-[min(94vw,760px)]"
               )}
-              style={{
-                backgroundColor: "var(--card, #ffffff)",
-                color: "var(--card-foreground, #0f172a)",
-                borderColor: "var(--border, #e2e8f0)",
-                borderRadius: undefined,
-                boxShadow:
-                  "0 22px 56px rgba(15,23,42,0.12), inset 0 1px 0 rgba(255,255,255,0.48)",
-              }}
+              style={panelStyle}
               data-testid="launch-panel-shell"
+              data-variant={variant}
             >
-              {/* Header */}
               <div
-                className="flex items-center justify-between border-b px-4 py-3"
-                style={{ borderColor: "var(--border, #e2e8f0)" }}
+                className="flex items-center justify-between gap-3 border-b px-4 py-2.5"
+                style={{ borderColor: "rgba(226,232,240,0.78)" }}
               >
-                <div>
+                <div className="min-w-0">
+                  <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-sky-700">
+                    Autopilot Control
+                  </div>
                   <h2
                     id="launch-panel-title"
-                    className="text-sm font-semibold"
+                    className="mt-0.5 text-sm font-semibold leading-5"
                     style={{ color: "var(--card-foreground, #0f172a)" }}
                   >
                     {t(locale, "任务自动驾驶", "Task Autopilot")}
@@ -330,7 +355,7 @@ export function LaunchPanelShell({
                     </span>
                   </h2>
                   <p
-                    className="mt-0.5 text-xs"
+                    className="truncate text-xs"
                     style={{ color: "var(--muted-foreground, #64748b)" }}
                   >
                     {t(
@@ -340,7 +365,7 @@ export function LaunchPanelShell({
                     )}
                   </p>
                 </div>
-                <div className="flex items-center gap-1">
+                <div className="flex shrink-0 items-center gap-1">
                   <button
                     type="button"
                     className="flex items-center gap-1 rounded-md border px-2 py-1 text-xs transition-colors hover:bg-black/5"
@@ -376,31 +401,32 @@ export function LaunchPanelShell({
                 </div>
               </div>
 
-              {/* Mode Tab Bar */}
               <LaunchModeTabBar
                 mode={launchMode}
                 onModeChange={setLaunchMode}
+                compact={!isModal}
               />
 
-              {/* Scrollable body */}
-              <div className="flex-1 overflow-y-auto">
-                {/* Goal Input */}
+              <div className="flex-1 overflow-y-auto overscroll-contain">
                 <LaunchGoalInput
                   ref={textareaRef}
                   value={draftText}
                   onChange={setDraftText}
                   maxLength={2000}
                   autoFocus
+                  compact={!isModal}
                 />
 
-                {/* Advanced sections - only in non-quick modes */}
                 {showAdvanced && (
-                  <div className="space-y-3 px-4 pb-3">
+                  <div className="space-y-2 px-4 pb-3">
                     <LaunchRoutePlanningFlow
                       hasDraftDestination={hasDraftDestination}
                       routePlan={routePlan}
                     />
-                    <LaunchCockpitGrid runtimeMode={runtimeMode} />
+                    <LaunchCockpitGrid
+                      runtimeMode={runtimeMode}
+                      compact={!isModal}
+                    />
                     <LaunchOutputChips
                       selectedTypes={selectedOutputTypes}
                       onToggle={handleToggleOutput}
@@ -409,7 +435,6 @@ export function LaunchPanelShell({
                 )}
               </div>
 
-              {/* Action Bar */}
               <LaunchPanelActionBar
                 mode={launchMode}
                 onSubmit={handleSubmit}
@@ -417,9 +442,9 @@ export function LaunchPanelShell({
                 submitting={submitting}
                 disabled={!hasDraftDestination}
                 attachmentCount={attachments.length}
+                compact={!isModal}
               />
 
-              {/* Hidden file input */}
               <input
                 ref={fileInputRef}
                 type="file"

@@ -123,9 +123,11 @@ describe("LaunchPanel Integration", () => {
     );
 
     // Panel structure
-    expect(markup).toContain('data-testid="launch-panel-backdrop"');
+    expect(markup).not.toContain('data-testid="launch-panel-backdrop"');
+    expect(markup).toContain('data-variant="center"');
     expect(markup).toContain('data-testid="launch-panel-shell"');
     expect(markup).toContain('role="dialog"');
+    expect(markup).toContain('aria-modal="false"');
 
     // Header
     expect(markup).toContain("Task Autopilot");
@@ -158,7 +160,7 @@ describe("LaunchPanel Integration", () => {
     expect(markup).toContain("29 / 2000");
   });
 
-  it("does not render advanced sections in quick mode", () => {
+  it("renders standard route, cockpit, and output sections by default", () => {
     const markup = renderToStaticMarkup(
       createElement(LaunchPanelShell, {
         open: true,
@@ -167,10 +169,10 @@ describe("LaunchPanel Integration", () => {
       })
     );
 
-    // Quick mode is default - no advanced sections
-    expect(markup).not.toContain('data-testid="launch-route-planning-flow"');
-    expect(markup).not.toContain('data-testid="launch-cockpit-grid"');
-    expect(markup).not.toContain('data-testid="launch-output-chips"');
+    expect(markup).toContain('data-testid="launch-route-planning-flow"');
+    expect(markup).toContain('data-testid="launch-cockpit-grid"');
+    expect(markup).toContain('data-testid="launch-output-chips"');
+    expect(markup).toContain('data-testid="launch-mode-tab-standard"');
   });
 
   it("renders nothing when open=false", () => {

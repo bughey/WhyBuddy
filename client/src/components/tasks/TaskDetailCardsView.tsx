@@ -94,9 +94,17 @@ export function TaskDetailCardsView({
   const takeoverData = buildTakeoverProps(detail, autopilotSummary, locale);
 
   return (
-    <div className={cn("flex h-full flex-col bg-background")}>
+    <div
+      className={cn(
+        "flex h-full min-h-0 flex-col overflow-hidden rounded-[16px] border border-white/45 bg-white/38",
+        "shadow-[0_12px_28px_rgba(15,23,42,0.06)] backdrop-blur-md",
+        "[&_.bg-card]:bg-white/58 [&_.bg-muted]:bg-white/46 [&_.rounded-lg]:rounded-[12px]",
+        "[&_.border]:border-white/45 [&_.p-4]:p-3"
+      )}
+      data-visual-role="cockpit-auxiliary-detail"
+    >
       {/* Header card - does not scroll */}
-      <div className="px-4 pt-3">
+      <div className="px-3 pt-3">
         <CardErrorBoundary locale={locale} cardName="Header">
           <TaskHeaderCard
             {...headerProps}
@@ -106,7 +114,7 @@ export function TaskDetailCardsView({
       </div>
 
       {/* Scrollable cards area */}
-      <div className="flex-1 overflow-y-auto space-y-3 px-4 py-3">
+      <div className="flex-1 overflow-y-auto space-y-2.5 px-3 py-2.5">
         <CardErrorBoundary locale={locale} cardName="Goal">
           <GoalCard
             title={goalData.title}
@@ -151,7 +159,17 @@ export function TaskDetailCardsView({
       </div>
 
       {/* Bottom command input bar - does not scroll */}
-      <CommandInputBar taskId={taskId} locale={locale} />
+      <div
+        className={cn(
+          "border-t border-white/45 bg-white/58 px-3 py-2 backdrop-blur",
+          "[&>div]:border-0 [&>div]:bg-transparent [&>div]:p-0",
+          "[&_input]:!h-8 [&_input]:!rounded-[10px] [&_input]:!border-white/55 [&_input]:!bg-white/70 [&_input]:!py-1.5 [&_input]:!text-xs [&_input]:focus:!ring-ring/40 [&_input]:focus:!ring-offset-0",
+          "[&_button]:!h-8 [&_button]:!w-8 [&_button]:!rounded-[10px]"
+        )}
+        data-visual-role="cockpit-auxiliary-command"
+      >
+        <CommandInputBar taskId={taskId} locale={locale} />
+      </div>
     </div>
   );
 }

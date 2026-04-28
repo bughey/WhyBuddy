@@ -12,6 +12,9 @@ export interface OfficeCockpitAvailability {
   history: boolean;
 }
 
+export type OfficeCenterStageSurface = "home" | "deep-task";
+export type OfficeCenterStageMode = "scene-hud" | "task-detail";
+
 export function buildOfficeCockpitAvailability(input: {
   detail: MissionTaskDetail | null;
   workflow: WorkflowInfo | null;
@@ -63,6 +66,22 @@ export function resolveOfficeCockpitTab(
   }
 
   return "task";
+}
+
+export function resolveOfficeCenterStageMode(input: {
+  surface: OfficeCenterStageSurface;
+  selectedTaskId: string | null;
+  hasSelectedDetail: boolean;
+}): OfficeCenterStageMode {
+  if (
+    input.surface === "deep-task" &&
+    input.selectedTaskId &&
+    input.hasSelectedDetail
+  ) {
+    return "task-detail";
+  }
+
+  return "scene-hud";
 }
 
 export function resolveWorkflowForSelectedTask(input: {
