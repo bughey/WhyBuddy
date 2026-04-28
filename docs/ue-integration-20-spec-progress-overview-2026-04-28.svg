@@ -1,0 +1,314 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1680" viewBox="0 0 1600 1680" role="img" aria-labelledby="title desc">
+  <title id="title">Unreal Engine 集成 20 个 Specs 实施进度总览 2026-04-28</title>
+  <desc id="desc">Progress overview for 20 Unreal Engine integration specs. Current implementation progress is 0 of 471 tasks, 0 percent complete. P0 is 0 of 157, P1 is 0 of 140, P2 is 0 of 110, P3 is 0 of 64.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f6f8fc"/>
+      <stop offset="100%" stop-color="#eef3f8"/>
+    </linearGradient>
+    <linearGradient id="hero" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#16233f"/>
+      <stop offset="55%" stop-color="#243f84"/>
+      <stop offset="100%" stop-color="#0f8f87"/>
+    </linearGradient>
+    <linearGradient id="heroBar" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#8fd3ff"/>
+      <stop offset="100%" stop-color="#7ce3cb"/>
+    </linearGradient>
+    <linearGradient id="readyFill" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#27c281"/>
+      <stop offset="100%" stop-color="#169b67"/>
+    </linearGradient>
+    <linearGradient id="todoFill" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#d97706"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="14" stdDeviation="18" flood-color="#0f172a" flood-opacity="0.10"/>
+    </filter>
+    <style>
+      .title { font: 700 32px "Segoe UI", "Microsoft YaHei", sans-serif; fill: #ffffff; }
+      .subtitle { font: 500 15px "Segoe UI", "Microsoft YaHei", sans-serif; fill: rgba(255,255,255,0.86); }
+      .hero-k { font: 600 12px "Segoe UI", "Microsoft YaHei", sans-serif; fill: rgba(255,255,255,0.72); }
+      .hero-v { font: 700 29px "Segoe UI", "Microsoft YaHei", sans-serif; fill: #ffffff; }
+      .card-title { font: 700 15px "Segoe UI", "Microsoft YaHei", sans-serif; fill: #0f172a; }
+      .card-value { font: 700 21px "Segoe UI", "Microsoft YaHei", sans-serif; fill: #0f172a; }
+      .card-meta { font: 500 12px "Segoe UI", "Microsoft YaHei", sans-serif; fill: #64748b; }
+      .section-title { font: 700 18px "Segoe UI", "Microsoft YaHei", sans-serif; fill: #0f172a; }
+      .section-meta { font: 500 12px "Segoe UI", "Microsoft YaHei", sans-serif; fill: #64748b; }
+      .spec-title { font: 700 14px "Segoe UI", "Microsoft YaHei", sans-serif; fill: #0f172a; }
+      .spec-slug { font: 500 10px "Segoe UI", "Microsoft YaHei", sans-serif; fill: #64748b; }
+      .spec-task { font: 500 11px "Segoe UI", "Microsoft YaHei", sans-serif; fill: #475569; }
+      .spec-badge-ready { font: 700 10px "Segoe UI", "Microsoft YaHei", sans-serif; fill: #15996a; }
+      .spec-badge-todo { font: 700 10px "Segoe UI", "Microsoft YaHei", sans-serif; fill: #a16207; }
+      .legend { font: 500 11px "Segoe UI", "Microsoft YaHei", sans-serif; fill: #64748b; }
+      .foot { font: 500 12px "Segoe UI", "Microsoft YaHei", sans-serif; fill: #64748b; }
+    </style>
+  </defs>
+
+  <rect x="0" y="0" width="1600" height="1680" fill="url(#bg)"/>
+
+  <!-- ═══════════════════ HERO BANNER ═══════════════════ -->
+  <rect x="36" y="28" width="1528" height="194" rx="28" fill="url(#hero)" filter="url(#shadow)"/>
+  <text x="60" y="78" class="title">Unreal Engine 集成 20 个 Specs 实施进度总览</text>
+  <text x="60" y="108" class="subtitle">统计时间: 2026-04-28 | 口径: 20 个 UE 集成 specs, requirements/design/tasks 与 tasks.md 顶层任务</text>
+  <text x="60" y="138" class="subtitle">当前状态: 20 个 UE 集成 specs 文档就绪, 待实施; 架构: 本地 GPU + LLM 导演 + UE 实时渲染 + 预渲染兜底</text>
+  <text x="60" y="176" class="subtitle">口径提醒: specs 20 / 20, Markdown 80 / 80; 子任务 0 / 471; P0 先做 6 个生死验证</text>
+
+  <rect x="954" y="46" width="142" height="66" rx="18" fill="rgba(255,255,255,0.11)" stroke="rgba(255,255,255,0.18)"/>
+  <text x="972" y="71" class="hero-k">UE 集成 specs</text>
+  <text x="972" y="101" class="hero-v">20 / 20</text>
+
+  <rect x="1114" y="46" width="142" height="66" rx="18" fill="rgba(255,255,255,0.11)" stroke="rgba(255,255,255,0.18)"/>
+  <text x="1132" y="71" class="hero-k">文档文件</text>
+  <text x="1132" y="101" class="hero-v">80 / 80</text>
+
+  <rect x="1274" y="46" width="220" height="66" rx="18" fill="rgba(255,255,255,0.11)" stroke="rgba(255,255,255,0.18)"/>
+  <text x="1292" y="71" class="hero-k">子任务完成</text>
+  <text x="1292" y="101" class="hero-v">0 / 471</text>
+
+  <rect x="954" y="138" width="540" height="10" rx="5" fill="rgba(255,255,255,0.18)"/>
+  <text x="954" y="174" class="subtitle">文档完整率 100% | 实施完成率 0% | P0 0/157, P1 0/140, P2 0/110, P3 0/64</text>
+
+  <!-- ═══════════════════ SUMMARY CARDS ═══════════════════ -->
+  <rect x="36" y="244" width="360" height="112" rx="22" fill="#ffffff" stroke="#dbe5f1" filter="url(#shadow)"/>
+  <text x="58" y="278" class="card-title">UE 集成 specs</text>
+  <text x="58" y="316" class="card-value">20 / 20</text>
+  <text x="58" y="340" class="card-meta">全部包含 requirements / design / tasks 三件套</text>
+
+  <rect x="416" y="244" width="360" height="112" rx="22" fill="#ffffff" stroke="#dbe5f1" filter="url(#shadow)"/>
+  <text x="438" y="278" class="card-title">文档文件</text>
+  <text x="438" y="316" class="card-value">80 / 80</text>
+  <text x="438" y="340" class="card-meta">20 个目录 × 4 个文件</text>
+
+  <rect x="796" y="244" width="360" height="112" rx="22" fill="#ffffff" stroke="#dbe5f1" filter="url(#shadow)"/>
+  <text x="818" y="278" class="card-title">子任务完成</text>
+  <text x="818" y="316" class="card-value">0 / 471</text>
+  <text x="818" y="340" class="card-meta">整体完成率 0%, 按 tasks.md 顶层任务行统计</text>
+
+  <rect x="1176" y="244" width="388" height="112" rx="22" fill="#ffffff" stroke="#dbe5f1" filter="url(#shadow)"/>
+  <text x="1198" y="278" class="card-title">架构路线</text>
+  <text x="1198" y="316" class="card-value">本地 GPU + LLM 导演</text>
+  <text x="1198" y="340" class="card-meta">UE5 Pixel Streaming + WebRTC + 预渲染兜底</text>
+
+  <!-- ═══════════════════ LEGEND ═══════════════════ -->
+  <circle cx="1192" cy="390" r="6" fill="#27c281"/>
+  <text x="1206" y="394" class="legend">文档就绪</text>
+  <circle cx="1294" cy="390" r="6" fill="#f59e0b"/>
+  <text x="1308" y="394" class="legend">待实施</text>
+  <circle cx="1388" cy="390" r="6" fill="#3b82f6"/>
+  <text x="1402" y="394" class="legend">边界已声明</text>
+
+
+  <!-- ═══════════════════ P0 生死验证 (6 specs, 157 tasks) ═══════════════════ -->
+  <text x="44" y="424" class="section-title">P0 生死验证</text>
+  <text x="200" y="424" class="section-meta">6 specs | 文档 24 / 24 | 子任务 0 / 157 | 当前 0%</text>
+
+  <!-- P0 Row 1: 3 specs -->
+  <rect x="36" y="442" width="496" height="126" rx="18" fill="#ffffff" stroke="#cfdceb"/>
+  <rect x="52" y="454" width="58" height="18" rx="9" fill="#e8fbf2"/><text x="64" y="467" class="spec-badge-ready">文档就绪</text>
+  <rect x="118" y="454" width="50" height="18" rx="9" fill="#fef3c7"/><text x="131" y="467" class="spec-badge-todo">待实施</text>
+  <text x="500" y="470" text-anchor="end" class="card-value" style="font-size:18px;">0%</text>
+  <text x="52" y="500" class="spec-title">本地渲染运行时</text>
+  <text x="52" y="520" class="spec-slug">ue-local-streaming-runtime</text>
+  <text x="52" y="540" class="spec-task">子任务 0 / 24 | UE5 进程管理、Pixel Streaming 本地模式、健康检查</text>
+  <rect x="52" y="548" width="424" height="6" rx="3" fill="#e5ebf3"/>
+
+  <rect x="552" y="442" width="496" height="126" rx="18" fill="#ffffff" stroke="#cfdceb"/>
+  <rect x="568" y="454" width="58" height="18" rx="9" fill="#e8fbf2"/><text x="580" y="467" class="spec-badge-ready">文档就绪</text>
+  <rect x="634" y="454" width="50" height="18" rx="9" fill="#fef3c7"/><text x="647" y="467" class="spec-badge-todo">待实施</text>
+  <text x="1016" y="470" text-anchor="end" class="card-value" style="font-size:18px;">0%</text>
+  <text x="568" y="500" class="spec-title">前端视频流播放器</text>
+  <text x="568" y="520" class="spec-slug">ue-video-stream-player</text>
+  <text x="568" y="540" class="spec-task">子任务 0 / 27 | WebRTC 播放器、降级状态机、画质自适应</text>
+  <rect x="568" y="548" width="424" height="6" rx="3" fill="#e5ebf3"/>
+
+  <rect x="1068" y="442" width="496" height="126" rx="18" fill="#ffffff" stroke="#cfdceb"/>
+  <rect x="1084" y="454" width="58" height="18" rx="9" fill="#e8fbf2"/><text x="1096" y="467" class="spec-badge-ready">文档就绪</text>
+  <rect x="1150" y="454" width="50" height="18" rx="9" fill="#fef3c7"/><text x="1163" y="467" class="spec-badge-todo">待实施</text>
+  <text x="1532" y="470" text-anchor="end" class="card-value" style="font-size:18px;">0%</text>
+  <text x="1084" y="500" class="spec-title">场景指令协议</text>
+  <text x="1084" y="520" class="spec-slug">ue-scene-command-protocol</text>
+  <text x="1084" y="540" class="spec-task">子任务 0 / 26 | JSON-RPC 2.0 over WebSocket、指令队列、错误码</text>
+  <rect x="1084" y="548" width="424" height="6" rx="3" fill="#e5ebf3"/>
+
+  <!-- P0 Row 2: 3 specs -->
+  <rect x="36" y="586" width="496" height="126" rx="18" fill="#ffffff" stroke="#cfdceb"/>
+  <rect x="52" y="598" width="58" height="18" rx="9" fill="#e8fbf2"/><text x="64" y="611" class="spec-badge-ready">文档就绪</text>
+  <rect x="118" y="598" width="50" height="18" rx="9" fill="#fef3c7"/><text x="131" y="611" class="spec-badge-todo">待实施</text>
+  <text x="500" y="614" text-anchor="end" class="card-value" style="font-size:18px;">0%</text>
+  <text x="52" y="644" class="spec-title">UE 办公室场景</text>
+  <text x="52" y="664" class="spec-slug">ue-office-scene-build</text>
+  <text x="52" y="684" class="spec-task">子任务 0 / 26 | 场景布局还原、Lumen 灯光、PBR 材质、LOD</text>
+  <rect x="52" y="692" width="424" height="6" rx="3" fill="#e5ebf3"/>
+
+  <rect x="552" y="586" width="496" height="126" rx="18" fill="#ffffff" stroke="#cfdceb"/>
+  <rect x="568" y="598" width="58" height="18" rx="9" fill="#e8fbf2"/><text x="580" y="611" class="spec-badge-ready">文档就绪</text>
+  <rect x="634" y="598" width="50" height="18" rx="9" fill="#fef3c7"/><text x="647" y="611" class="spec-badge-todo">待实施</text>
+  <text x="1016" y="614" text-anchor="end" class="card-value" style="font-size:18px;">0%</text>
+  <text x="568" y="644" class="spec-title">宠物角色系统</text>
+  <text x="568" y="664" class="spec-slug">ue-pet-character-system</text>
+  <text x="568" y="684" class="spec-task">子任务 0 / 27 | 统一骨骼、6 种动作状态机、表情、Agent 映射</text>
+  <rect x="568" y="692" width="424" height="6" rx="3" fill="#e5ebf3"/>
+
+  <rect x="1068" y="586" width="496" height="126" rx="18" fill="#ffffff" stroke="#cfdceb"/>
+  <rect x="1084" y="598" width="58" height="18" rx="9" fill="#e8fbf2"/><text x="1096" y="611" class="spec-badge-ready">文档就绪</text>
+  <rect x="1150" y="598" width="50" height="18" rx="9" fill="#fef3c7"/><text x="1163" y="611" class="spec-badge-todo">待实施</text>
+  <text x="1532" y="614" text-anchor="end" class="card-value" style="font-size:18px;">0%</text>
+  <text x="1084" y="644" class="spec-title">UI 浮层叠加</text>
+  <text x="1084" y="664" class="spec-slug">ue-overlay-ui-integration</text>
+  <text x="1084" y="684" class="spec-task">子任务 0 / 27 | 三层 z-index、pointer-events 穿透、HUD 坐标</text>
+  <rect x="1084" y="692" width="424" height="6" rx="3" fill="#e5ebf3"/>
+
+
+  <!-- ═══════════════════ P1 可演示主链路 (6 specs, 140 tasks) ═══════════════════ -->
+  <text x="44" y="756" class="section-title">P1 可演示主链路</text>
+  <text x="230" y="756" class="section-meta">6 specs | 文档 24 / 24 | 子任务 0 / 140 | 当前 0%</text>
+
+  <!-- P1 Row 1: 3 specs -->
+  <rect x="36" y="774" width="496" height="126" rx="18" fill="#ffffff" stroke="#cfdceb"/>
+  <rect x="52" y="786" width="58" height="18" rx="9" fill="#e8fbf2"/><text x="64" y="799" class="spec-badge-ready">文档就绪</text>
+  <rect x="118" y="786" width="50" height="18" rx="9" fill="#fef3c7"/><text x="131" y="799" class="spec-badge-todo">待实施</text>
+  <text x="500" y="802" text-anchor="end" class="card-value" style="font-size:18px;">0%</text>
+  <text x="52" y="832" class="spec-title">镜头系统</text>
+  <text x="52" y="852" class="spec-slug">ue-camera-system</text>
+  <text x="52" y="872" class="spec-task">子任务 0 / 27 | 5 种预设机位、4 种过渡动画、自动构图</text>
+  <rect x="52" y="880" width="424" height="6" rx="3" fill="#e5ebf3"/>
+
+  <rect x="552" y="774" width="496" height="126" rx="18" fill="#ffffff" stroke="#cfdceb"/>
+  <rect x="568" y="786" width="58" height="18" rx="9" fill="#e8fbf2"/><text x="580" y="799" class="spec-badge-ready">文档就绪</text>
+  <rect x="634" y="786" width="50" height="18" rx="9" fill="#fef3c7"/><text x="647" y="799" class="spec-badge-todo">待实施</text>
+  <text x="1016" y="802" text-anchor="end" class="card-value" style="font-size:18px;">0%</text>
+  <text x="568" y="832" class="spec-title">状态同步桥</text>
+  <text x="568" y="852" class="spec-slug">ue-state-sync-bridge</text>
+  <text x="568" y="872" class="spec-task">子任务 0 / 25 | 10fps 增量快照、版本号校验、任务映射</text>
+  <rect x="568" y="880" width="424" height="6" rx="3" fill="#e5ebf3"/>
+
+  <rect x="1068" y="774" width="496" height="126" rx="18" fill="#ffffff" stroke="#cfdceb"/>
+  <rect x="1084" y="786" width="58" height="18" rx="9" fill="#e8fbf2"/><text x="1096" y="799" class="spec-badge-ready">文档就绪</text>
+  <rect x="1150" y="786" width="50" height="18" rx="9" fill="#fef3c7"/><text x="1163" y="799" class="spec-badge-todo">待实施</text>
+  <text x="1532" y="802" text-anchor="end" class="card-value" style="font-size:18px;">0%</text>
+  <text x="1084" y="832" class="spec-title">事件回调系统</text>
+  <text x="1084" y="852" class="spec-slug">ue-event-callback-system</text>
+  <text x="1084" y="872" class="spec-task">子任务 0 / 21 | ACK 确认、事件去重、waitForEvent API</text>
+  <rect x="1084" y="880" width="424" height="6" rx="3" fill="#e5ebf3"/>
+
+  <!-- P1 Row 2: 3 specs -->
+  <rect x="36" y="918" width="496" height="126" rx="18" fill="#ffffff" stroke="#cfdceb"/>
+  <rect x="52" y="930" width="58" height="18" rx="9" fill="#e8fbf2"/><text x="64" y="943" class="spec-badge-ready">文档就绪</text>
+  <rect x="118" y="930" width="50" height="18" rx="9" fill="#fef3c7"/><text x="131" y="943" class="spec-badge-todo">待实施</text>
+  <text x="500" y="946" text-anchor="end" class="card-value" style="font-size:18px;">0%</text>
+  <text x="52" y="976" class="spec-title">LLM 导演系统</text>
+  <text x="52" y="996" class="spec-slug">ue-director-prompt-system</text>
+  <text x="52" y="1016" class="spec-task">子任务 0 / 22 | Prompt 模板、分镜脚本生成、Mission 集成</text>
+  <rect x="52" y="1024" width="424" height="6" rx="3" fill="#e5ebf3"/>
+
+  <rect x="552" y="918" width="496" height="126" rx="18" fill="#ffffff" stroke="#cfdceb"/>
+  <rect x="568" y="930" width="58" height="18" rx="9" fill="#e8fbf2"/><text x="580" y="943" class="spec-badge-ready">文档就绪</text>
+  <rect x="634" y="930" width="50" height="18" rx="9" fill="#fef3c7"/><text x="647" y="943" class="spec-badge-todo">待实施</text>
+  <text x="1016" y="946" text-anchor="end" class="card-value" style="font-size:18px;">0%</text>
+  <text x="568" y="976" class="spec-title">分镜规划器</text>
+  <text x="568" y="996" class="spec-slug">ue-shot-list-planner</text>
+  <text x="568" y="1016" class="spec-task">子任务 0 / 21 | Shot 模板库、时间线编排、指令序列化</text>
+  <rect x="568" y="1024" width="424" height="6" rx="3" fill="#e5ebf3"/>
+
+  <rect x="1068" y="918" width="496" height="126" rx="18" fill="#ffffff" stroke="#cfdceb"/>
+  <rect x="1084" y="930" width="58" height="18" rx="9" fill="#e8fbf2"/><text x="1096" y="943" class="spec-badge-ready">文档就绪</text>
+  <rect x="1150" y="930" width="50" height="18" rx="9" fill="#fef3c7"/><text x="1163" y="943" class="spec-badge-todo">待实施</text>
+  <text x="1532" y="946" text-anchor="end" class="card-value" style="font-size:18px;">0%</text>
+  <text x="1084" y="976" class="spec-title">交互事件透传</text>
+  <text x="1084" y="996" class="spec-slug">ue-interaction-passthrough</text>
+  <text x="1084" y="1016" class="spec-task">子任务 0 / 24 | DataChannel 输入、Hit Test、视角拖拽</text>
+  <rect x="1084" y="1024" width="424" height="6" rx="3" fill="#e5ebf3"/>
+
+
+  <!-- ═══════════════════ P2 产品化增强 (5 specs, 110 tasks) ═══════════════════ -->
+  <text x="44" y="1088" class="section-title">P2 产品化增强</text>
+  <text x="210" y="1088" class="section-meta">5 specs | 文档 20 / 20 | 子任务 0 / 110 | 当前 0%</text>
+
+  <!-- P2 Row 1: 3 specs -->
+  <rect x="36" y="1106" width="496" height="126" rx="18" fill="#ffffff" stroke="#cfdceb"/>
+  <rect x="52" y="1118" width="58" height="18" rx="9" fill="#e8fbf2"/><text x="64" y="1131" class="spec-badge-ready">文档就绪</text>
+  <rect x="118" y="1118" width="50" height="18" rx="9" fill="#fef3c7"/><text x="131" y="1131" class="spec-badge-todo">待实施</text>
+  <text x="500" y="1134" text-anchor="end" class="card-value" style="font-size:18px;">0%</text>
+  <text x="52" y="1164" class="spec-title">实时旁白与对话</text>
+  <text x="52" y="1184" class="spec-slug">ue-realtime-narration</text>
+  <text x="52" y="1204" class="spec-task">子任务 0 / 22 | TTS 口型同步、多角色发言、字幕降级</text>
+  <rect x="52" y="1212" width="424" height="6" rx="3" fill="#e5ebf3"/>
+
+  <rect x="552" y="1106" width="496" height="126" rx="18" fill="#ffffff" stroke="#cfdceb"/>
+  <rect x="568" y="1118" width="58" height="18" rx="9" fill="#e8fbf2"/><text x="580" y="1131" class="spec-badge-ready">文档就绪</text>
+  <rect x="634" y="1118" width="50" height="18" rx="9" fill="#fef3c7"/><text x="647" y="1131" class="spec-badge-todo">待实施</text>
+  <text x="1016" y="1134" text-anchor="end" class="card-value" style="font-size:18px;">0%</text>
+  <text x="568" y="1164" class="spec-title">场景资产管线</text>
+  <text x="568" y="1184" class="spec-slug">ue-scene-asset-pipeline</text>
+  <text x="568" y="1204" class="spec-task">子任务 0 / 20 | Git LFS、Pak 打包、增量更新、命名规范</text>
+  <rect x="568" y="1212" width="424" height="6" rx="3" fill="#e5ebf3"/>
+
+  <rect x="1068" y="1106" width="496" height="126" rx="18" fill="#ffffff" stroke="#cfdceb"/>
+  <rect x="1084" y="1118" width="58" height="18" rx="9" fill="#e8fbf2"/><text x="1096" y="1131" class="spec-badge-ready">文档就绪</text>
+  <rect x="1150" y="1118" width="50" height="18" rx="9" fill="#fef3c7"/><text x="1163" y="1131" class="spec-badge-todo">待实施</text>
+  <text x="1532" y="1134" text-anchor="end" class="card-value" style="font-size:18px;">0%</text>
+  <text x="1084" y="1164" class="spec-title">录制与回放导出</text>
+  <text x="1084" y="1184" class="spec-slug">ue-recording-and-replay-export</text>
+  <text x="1084" y="1204" class="spec-task">子任务 0 / 25 | 指令录制、回放引擎、MP4/GIF 导出</text>
+  <rect x="1084" y="1212" width="424" height="6" rx="3" fill="#e5ebf3"/>
+
+  <!-- P2 Row 2: 2 specs -->
+  <rect x="36" y="1250" width="496" height="126" rx="18" fill="#ffffff" stroke="#cfdceb"/>
+  <rect x="52" y="1262" width="58" height="18" rx="9" fill="#e8fbf2"/><text x="64" y="1275" class="spec-badge-ready">文档就绪</text>
+  <rect x="118" y="1262" width="50" height="18" rx="9" fill="#fef3c7"/><text x="131" y="1275" class="spec-badge-todo">待实施</text>
+  <text x="500" y="1278" text-anchor="end" class="card-value" style="font-size:18px;">0%</text>
+  <text x="52" y="1308" class="spec-title">性能分档与画质</text>
+  <text x="52" y="1328" class="spec-slug">ue-performance-profiling-and-quality-tier</text>
+  <text x="52" y="1348" class="spec-task">子任务 0 / 21 | 硬件检测、三档画质、评分算法</text>
+  <rect x="52" y="1356" width="424" height="6" rx="3" fill="#e5ebf3"/>
+
+  <rect x="552" y="1250" width="496" height="126" rx="18" fill="#ffffff" stroke="#cfdceb"/>
+  <rect x="568" y="1262" width="58" height="18" rx="9" fill="#e8fbf2"/><text x="580" y="1275" class="spec-badge-ready">文档就绪</text>
+  <rect x="634" y="1262" width="50" height="18" rx="9" fill="#fef3c7"/><text x="647" y="1275" class="spec-badge-todo">待实施</text>
+  <text x="1016" y="1278" text-anchor="end" class="card-value" style="font-size:18px;">0%</text>
+  <text x="568" y="1308" class="spec-title">本地资源治理</text>
+  <text x="568" y="1328" class="spec-slug">ue-local-resource-and-session-governance</text>
+  <text x="568" y="1348" class="spec-task">子任务 0 / 22 | GPU 监控、显存告警、联合成本面板</text>
+  <rect x="568" y="1356" width="424" height="6" rx="3" fill="#e5ebf3"/>
+
+
+  <!-- ═══════════════════ P3 降级与扩展 (3 specs, 64 tasks) ═══════════════════ -->
+  <text x="44" y="1420" class="section-title">P3 降级与扩展</text>
+  <text x="210" y="1420" class="section-meta">3 specs | 文档 12 / 12 | 子任务 0 / 64 | 当前 0%</text>
+
+  <!-- P3 Row 1: 3 specs -->
+  <rect x="36" y="1438" width="496" height="126" rx="18" fill="#ffffff" stroke="#cfdceb"/>
+  <rect x="52" y="1450" width="58" height="18" rx="9" fill="#e8fbf2"/><text x="64" y="1463" class="spec-badge-ready">文档就绪</text>
+  <rect x="118" y="1450" width="50" height="18" rx="9" fill="#fef3c7"/><text x="131" y="1463" class="spec-badge-todo">待实施</text>
+  <text x="500" y="1466" text-anchor="end" class="card-value" style="font-size:18px;">0%</text>
+  <text x="52" y="1496" class="spec-title">降级与兜底</text>
+  <text x="52" y="1516" class="spec-slug">ue-fallback-and-degradation</text>
+  <text x="52" y="1536" class="spec-task">子任务 0 / 25 | 多级降级状态机、Three.js 回退、UI 提示</text>
+  <rect x="52" y="1544" width="424" height="6" rx="3" fill="#e5ebf3"/>
+
+  <rect x="552" y="1438" width="496" height="126" rx="18" fill="#ffffff" stroke="#cfdceb"/>
+  <rect x="568" y="1450" width="58" height="18" rx="9" fill="#e8fbf2"/><text x="580" y="1463" class="spec-badge-ready">文档就绪</text>
+  <rect x="634" y="1450" width="50" height="18" rx="9" fill="#fef3c7"/><text x="647" y="1463" class="spec-badge-todo">待实施</text>
+  <text x="1016" y="1466" text-anchor="end" class="card-value" style="font-size:18px;">0%</text>
+  <text x="568" y="1496" class="spec-title">移动端轻量查看</text>
+  <text x="568" y="1516" class="spec-slug">ue-mobile-lite-viewer</text>
+  <text x="568" y="1536" class="spec-task">子任务 0 / 23 | 设备检测、HLS 播放、触摸手势</text>
+  <rect x="568" y="1544" width="424" height="6" rx="3" fill="#e5ebf3"/>
+
+  <rect x="1068" y="1438" width="496" height="126" rx="18" fill="#ffffff" stroke="#cfdceb"/>
+  <rect x="1084" y="1450" width="58" height="18" rx="9" fill="#e8fbf2"/><text x="1096" y="1463" class="spec-badge-ready">文档就绪</text>
+  <rect x="1150" y="1450" width="50" height="18" rx="9" fill="#fef3c7"/><text x="1163" y="1463" class="spec-badge-todo">待实施</text>
+  <text x="1532" y="1466" text-anchor="end" class="card-value" style="font-size:18px;">0%</text>
+  <text x="1084" y="1496" class="spec-title">多用户会话隔离</text>
+  <text x="1084" y="1516" class="spec-slug">ue-multi-user-session-isolation</text>
+  <text x="1084" y="1536" class="spec-task">子任务 0 / 16 | UE 实例池、会话生命周期、排队降级</text>
+  <rect x="1084" y="1544" width="424" height="6" rx="3" fill="#e5ebf3"/>
+
+  <!-- ═══════════════════ FOOTER ═══════════════════ -->
+  <rect x="36" y="1596" width="1528" height="56" rx="22" fill="#ffffff" stroke="#dbe5f1" filter="url(#shadow)"/>
+  <text x="60" y="1632" class="foot">Source: .kiro/specs/ue-* | Generated 2026-04-28 | 架构: 本地 GPU + LLM 导演 + UE 实时渲染 + 预渲染兜底 | P0 先做 6 个生死验证</text>
+
+</svg>
