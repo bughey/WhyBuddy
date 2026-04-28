@@ -1,0 +1,5 @@
+specId: a1e8f901-0213-4c4d-5e6f-7a8b9c0d1e2f
+workflowType: requirements-first
+specType: feature
+name: ue-local-resource-and-session-governance
+description: 本地资源与会话治理

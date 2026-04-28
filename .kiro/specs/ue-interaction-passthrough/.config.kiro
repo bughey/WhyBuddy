@@ -1,0 +1,5 @@
+specId: 5cf3a4b5-c6d7-4e8f-9001-a2b3c4d5e6f7
+workflowType: requirements-first
+specType: feature
+name: ue-interaction-passthrough
+description: 前端交互事件透传到 Unreal

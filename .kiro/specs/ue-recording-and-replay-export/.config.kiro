@@ -1,0 +1,5 @@
+specId: 8fc6d7e8-f901-4a2b-3c4d-5e6f7a8b9c0d
+workflowType: requirements-first
+specType: feature
+name: ue-recording-and-replay-export
+description: 实时演出录制与回放导出

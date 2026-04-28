@@ -1,0 +1,5 @@
+specId: 90d7e8f9-0102-4b3c-4d5e-6f7a8b9c0d1e
+workflowType: requirements-first
+specType: feature
+name: ue-performance-profiling-and-quality-tier
+description: 本地性能分档与画质自适应
