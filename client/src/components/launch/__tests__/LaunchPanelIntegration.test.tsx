@@ -143,6 +143,10 @@ describe("LaunchPanel Integration", () => {
 
     // Action bar
     expect(markup).toContain('data-testid="launch-panel-action-bar"');
+    expect(markup).toContain('data-testid="launch-action-attachment"');
+    expect(markup).toContain('data-testid="launch-action-create-task"');
+    expect(markup).toContain('data-testid="launch-action-advanced"');
+    expect(markup).toContain('data-testid="launch-action-more"');
     expect(markup).toContain('data-testid="launch-action-submit"');
   });
 
@@ -160,7 +164,7 @@ describe("LaunchPanel Integration", () => {
     expect(markup).toContain("29 / 2000");
   });
 
-  it("renders standard route, cockpit, and output sections by default", () => {
+  it("does not render large route, cockpit, and output sections by default", () => {
     const markup = renderToStaticMarkup(
       createElement(LaunchPanelShell, {
         open: true,
@@ -169,10 +173,10 @@ describe("LaunchPanel Integration", () => {
       })
     );
 
-    expect(markup).toContain('data-testid="launch-route-planning-flow"');
-    expect(markup).toContain('data-testid="launch-cockpit-grid"');
-    expect(markup).toContain('data-testid="launch-output-chips"');
-    expect(markup).toContain('data-testid="launch-mode-tab-standard"');
+    expect(markup).not.toContain('data-testid="launch-route-planning-flow"');
+    expect(markup).not.toContain('data-testid="launch-cockpit-grid"');
+    expect(markup).not.toContain('data-testid="launch-output-chips"');
+    expect(markup).toContain('data-testid="launch-mode-tab-quick"');
   });
 
   it("renders nothing when open=false", () => {
@@ -199,7 +203,7 @@ describe("LaunchPanel Integration", () => {
 
     // The submit button should exist and not be disabled
     expect(markup).toContain('data-testid="launch-action-submit"');
-    expect(markup).toContain("Launch Task");
+    expect(markup).toContain("Launch");
   });
 
   it("has submit button disabled when draft text is empty", () => {

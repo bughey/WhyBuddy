@@ -54,8 +54,6 @@ export function LaunchPanelShell({
   onTaskResolved,
   onWorkflowResolved,
 }: LaunchPanelShellProps) {
-  void createMission;
-
   const { locale } = useI18n();
   const runtimeMode = useAppStore(state => state.runtimeMode);
   const taskHubSession = useNLCommandStore(
@@ -65,7 +63,7 @@ export function LaunchPanelShell({
   const loadingCommand = taskHubSession.loading;
   const loadingWorkflow = useWorkflowStore(state => state.isSubmitting);
 
-  const [launchMode, setLaunchMode] = useState<LaunchMode>("standard");
+  const [launchMode, setLaunchMode] = useState<LaunchMode>("quick");
   const [attachments, setAttachments] = useState<WorkflowInputAttachment[]>([]);
   const [isPreparingFiles, setIsPreparingFiles] = useState(false);
   const [selectedOutputTypes, setSelectedOutputTypes] = useState<Set<string>>(
@@ -218,6 +216,51 @@ export function LaunchPanelShell({
   const handleAddAttachment = useCallback(() => {
     fileInputRef.current?.click();
   }, []);
+
+  const handleCreateTask = useCallback(async () => {
+    if (submitting) return;
+
+    const sourceText = draftText.trim();
+    const fallbackTitle = t(locale, "新的发起任务", "New launch task");
+    const title = sourceText || fallbackTitle;
+
+    try {
+      const missionId = await createMission({
+        kind: launchMode,
+        title,
+        sourceText: sourceText || undefined,
+        autoDispatch: false,
+      });
+
+      if (missionId) {
+        onTaskResolved?.({
+          commandId: `manual-${Date.now()}`,
+          commandText: title,
+          missionId,
+          relatedMissionIds: [missionId],
+          autoSelectedMissionId: missionId,
+          status: "created",
+          createdAt: Date.now(),
+        });
+        toast.success(
+          t(locale, "任务已创建并落入队列。", "Task created and added to the queue.")
+        );
+      }
+    } catch (err) {
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : t(locale, "创建任务失败。", "Failed to create task.")
+      );
+    }
+  }, [
+    createMission,
+    draftText,
+    launchMode,
+    locale,
+    onTaskResolved,
+    submitting,
+  ]);
 
   const handleFileChange = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -439,6 +482,7 @@ export function LaunchPanelShell({
                 mode={launchMode}
                 onSubmit={handleSubmit}
                 onAddAttachment={handleAddAttachment}
+                onCreateTask={handleCreateTask}
                 submitting={submitting}
                 disabled={!hasDraftDestination}
                 attachmentCount={attachments.length}

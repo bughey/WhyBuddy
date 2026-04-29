@@ -156,6 +156,47 @@ describe("UnifiedLaunchComposer helper logic", () => {
     ]);
   });
 
+  it("renders a compact empty composer without the large onboarding panel", () => {
+    appState.locale = "en-US";
+    appState.runtimeMode = "frontend";
+    nlCommandState.commands = [];
+    nlCommandState.currentCommand = null;
+    nlCommandState.currentAnalysis = null;
+    nlCommandState.currentDialog = null;
+    nlCommandState.currentPlan = null;
+    nlCommandState.draftText = "";
+    nlCommandState.lastSubmission = null;
+    nlCommandState.loading = false;
+    nlCommandState.error = null;
+
+    const markup = renderToStaticMarkup(
+      createElement(UnifiedLaunchComposer, {
+        createMission: async () => null,
+        onOpenCreateDialog: () => {},
+        compact: true,
+        bare: true,
+        dense: true,
+        hideHeader: true,
+        hideInputLabel: true,
+      })
+    );
+
+    expect(markup).toContain(
+      'data-testid="unified-launch-compact-composer"'
+    );
+    expect(markup).not.toContain('data-testid="autopilot-launch-empty-state"');
+    expect(markup).not.toContain(
+      'data-testid="autopilot-first-entry-cockpit-guide"'
+    );
+    expect(markup).toContain('data-testid="launch-compact-examples"');
+    expect(markup).toContain('data-testid="launch-action-create-task"');
+    expect(markup).toContain('data-testid="launch-action-advanced"');
+    expect(markup).toContain('data-testid="launch-compact-send"');
+    expect(markup).toContain("Add files");
+    expect(markup).toContain("New task");
+    expect(markup).toContain("Advanced");
+  });
+
   it("shows route planning and fleet execution previews when a destination is typed", () => {
     resetComposerStores();
 

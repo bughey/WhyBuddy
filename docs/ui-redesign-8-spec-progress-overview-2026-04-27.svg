@@ -57,7 +57,7 @@
   <text x="60" y="78" class="hero-title">UI 改造 Specs 进度 + IA Follow-up 规划总览</text>
   <text x="60" y="108" class="hero-sub">统计时间: 2026-04-28 | 口径: 原 8 个 ui-redesign specs 保留完成记录，上一轮首屏回修代码已完成</text>
   <text x="60" y="138" class="hero-sub">当前状态: 新增 3 个 IA follow-up specs；首页移除左任务抽屉，任务中心不显示发起，中心仅保留输入框</text>
-  <text x="60" y="170" class="hero-sub">上一轮验证: targeted 组合测试 18 files / 176 tests 通过；本轮状态: specs created / implementation pending</text>
+  <text x="60" y="170" class="hero-sub">上一轮验证: targeted 组合测试 18 files / 176 tests 通过；New IA 单独统计: 0/14 phases, 0/63 subtasks, 0/77 checklist items</text>
 
   <rect x="922" y="48" width="154" height="66" rx="18" fill="rgba(255,255,255,0.11)" stroke="rgba(255,255,255,0.18)"/>
   <text x="940" y="73" class="hero-k">Original specs</text>
@@ -68,13 +68,13 @@
   <text x="1112" y="103" class="hero-v">329 / 329</text>
 
   <rect x="1276" y="48" width="220" height="66" rx="18" fill="rgba(56,189,248,0.18)" stroke="rgba(125,211,252,0.46)"/>
-  <text x="1294" y="73" class="hero-k">IA follow-up</text>
-  <text x="1294" y="103" class="hero-v">3 SPECS</text>
+  <text x="1294" y="73" class="hero-k">IA checklist</text>
+  <text id="ia-hero-value" x="1294" y="103" class="hero-v">67 / 77</text>
 
   <rect x="922" y="144" width="574" height="10" rx="5" fill="rgba(255,255,255,0.18)"/>
   <rect x="922" y="144" width="500" height="10" rx="5" fill="url(#baseFill)"/>
   <rect x="1422" y="144" width="74" height="10" rx="5" fill="url(#reopenFill)"/>
-  <text x="922" y="181" class="hero-sub">原规格完成记录保留；上一轮代码回修完成；新 IA follow-up 进入实施前规格阶段</text>
+  <text x="922" y="181" class="hero-sub">原规格完成记录保留；上一轮代码回修完成；New IA follow-up 按 task checklist 单独收口</text>
 
   <!-- Summary cards -->
   <rect x="36" y="262" width="360" height="112" rx="22" fill="#ffffff" stroke="#dbe5f1" filter="url(#shadow)"/>
@@ -94,8 +94,8 @@
 
   <rect x="1176" y="262" width="388" height="112" rx="22" fill="#eff6ff" stroke="#bfdbfe" filter="url(#shadow)"/>
   <text x="1198" y="296" class="card-title">新 IA follow-up</text>
-  <text x="1198" y="334" class="card-value">3 specs created</text>
-  <text x="1198" y="358" class="card-meta">home shell / task center tabs / composer-only input</text>
+  <text id="ia-summary-value" x="1198" y="334" class="card-value">67 / 77 items</text>
+  <text id="ia-summary-meta" x="1198" y="358" class="card-meta">3 specs, 10/14 phases, 57/63 subtasks; excludes original 329/329</text>
 
   <!-- Legend -->
   <circle cx="1038" cy="408" r="6" fill="#22c55e"/>
@@ -110,12 +110,12 @@
   <!-- Current status -->
   <rect x="36" y="432" width="1528" height="122" rx="22" fill="#eff6ff" stroke="#bfdbfe" filter="url(#shadow)"/>
   <rect x="58" y="456" width="94" height="22" rx="11" fill="#dbeafe"/>
-  <text x="76" y="471" class="badge-work">已建规格</text>
-  <text x="168" y="472" class="alert-title" style="fill:#1e3a8a;">新 IA follow-up 范围已拆分</text>
-  <text x="58" y="506" class="alert-copy" style="fill:#1d4ed8;">新增 specs: home cockpit shell convergence / task center workbench tabs / composer-only center input。</text>
+  <text id="ia-status-badge" x="76" y="471" class="badge-work">67/77 tracked</text>
+  <text id="ia-status-title" x="168" y="472" class="alert-title" style="fill:#1e3a8a;">New IA follow-up tracked separately: 67/77 checklist items</text>
+  <text x="58" y="506" class="alert-copy" style="fill:#1d4ed8;">新增 specs: home cockpit shell convergence 0/24, task center workbench tabs 0/29, composer-only center input 0/24。</text>
   <text x="58" y="534" class="alert-copy" style="fill:#1d4ed8;">明确边界: /tasks 不显示发起 tab；发起只保留在首页右抽屉与底部输入框；任务中心承接完整任务工作台。</text>
   <text x="950" y="506" class="alert-copy" style="fill:#1d4ed8;">上一轮保留: 左侧透明栏、/tasks 固定侧栏避让、详情 100% 宽度、右抽屉恢复。</text>
-  <text x="950" y="534" class="alert-copy" style="fill:#1d4ed8;">本轮下一步: 按 3 个 spec 逐项实施并更新测试计数与截图验收。</text>
+  <text x="950" y="534" class="alert-copy" style="fill:#1d4ed8;">本轮下一步: 其他 workers 完成实现后运行 home / tasks / launch 测试，并用脚本刷新 SVG 计数。</text>
 
   <!-- Original baseline specs -->
   <text x="44" y="596" class="section-title">原 8 个 UI Redesign Specs 完成基线</text>
@@ -218,35 +218,48 @@
 
   <!-- Follow-up scope -->
   <text x="44" y="918" class="section-title">New IA Follow-up Specs</text>
-  <text x="312" y="918" class="section-meta">状态: 3 个 specs 已创建；implementation pending；/tasks 明确不显示发起 tab</text>
+  <text id="ia-section-meta" x="312" y="918" class="section-meta">Separate count: 10/14 phases, 57/63 subtasks, 67/77 checklist items</text>
 
-  <rect x="36" y="936" width="372" height="118" rx="18" fill="#fffbeb" stroke="#fcd34d"/>
-  <rect x="52" y="950" width="76" height="18" rx="9" fill="#fef3c7"/>
-  <text x="64" y="963" class="badge-reopen">待实施</text>
+  <!-- ia-progress-cards:start -->
+  <rect x="36" y="936" width="372" height="118" rx="18" fill="#eff6ff" stroke="#bfdbfe"/>
+  <rect x="52" y="950" width="86" height="18" rx="9" fill="#dbeafe"/>
+  <text x="64" y="963" class="badge-work">in progress</text>
+  <text x="376" y="964" text-anchor="end" class="card-value" style="font-size:15px;">21/24</text>
   <text x="52" y="992" class="spec-title">1. Home cockpit shell</text>
-  <text x="52" y="1014" class="spec-task">移除首页左任务抽屉，右抽屉保留 6 tabs</text>
+  <text x="52" y="1014" class="spec-task">3/4 phases | 18/20 subtasks</text>
   <text x="52" y="1035" class="spec-slug">ui-redesign-home-cockpit-shell-convergence</text>
+  <rect x="52" y="1044" width="324" height="6" rx="3" fill="#e5ebf3"/>
+  <rect x="52" y="1044" width="284" height="6" rx="3" fill="url(#workFill)"/>
 
-  <rect x="428" y="936" width="372" height="118" rx="18" fill="#fffbeb" stroke="#fcd34d"/>
-  <rect x="444" y="950" width="76" height="18" rx="9" fill="#fef3c7"/>
-  <text x="456" y="963" class="badge-reopen">待实施</text>
+  <rect x="428" y="936" width="372" height="118" rx="18" fill="#eff6ff" stroke="#bfdbfe"/>
+  <rect x="444" y="950" width="86" height="18" rx="9" fill="#dbeafe"/>
+  <text x="456" y="963" class="badge-work">in progress</text>
+  <text x="768" y="964" text-anchor="end" class="card-value" style="font-size:15px;">27/29</text>
   <text x="444" y="992" class="spec-title">2. Task center workbench</text>
-  <text x="444" y="1014" class="spec-task">/tasks 显示任务/团队流/Agent/记忆/历史</text>
-  <text x="444" y="1035" class="spec-slug">ui-redesign-task-center-workbench-tabs | no launch tab</text>
+  <text x="444" y="1014" class="spec-task">4/5 phases | 23/24 subtasks</text>
+  <text x="444" y="1035" class="spec-slug">ui-redesign-task-center-workbench-tabs</text>
+  <rect x="444" y="1044" width="324" height="6" rx="3" fill="#e5ebf3"/>
+  <rect x="444" y="1044" width="302" height="6" rx="3" fill="url(#workFill)"/>
 
-  <rect x="820" y="936" width="372" height="118" rx="18" fill="#fffbeb" stroke="#fcd34d"/>
-  <rect x="836" y="950" width="76" height="18" rx="9" fill="#fef3c7"/>
-  <text x="848" y="963" class="badge-reopen">待实施</text>
+  <rect x="820" y="936" width="372" height="118" rx="18" fill="#eff6ff" stroke="#bfdbfe"/>
+  <rect x="836" y="950" width="86" height="18" rx="9" fill="#dbeafe"/>
+  <text x="848" y="963" class="badge-work">in progress</text>
+  <text x="1160" y="964" text-anchor="end" class="card-value" style="font-size:15px;">19/24</text>
   <text x="836" y="992" class="spec-title">3. Composer-only center</text>
-  <text x="836" y="1014" class="spec-task">中间只保留紧凑输入框，Autopilot 移至右抽屉</text>
+  <text x="836" y="1014" class="spec-task">3/5 phases | 16/19 subtasks</text>
   <text x="836" y="1035" class="spec-slug">ui-redesign-composer-only-center-input</text>
+  <rect x="836" y="1044" width="324" height="6" rx="3" fill="#e5ebf3"/>
+  <rect x="836" y="1044" width="257" height="6" rx="3" fill="url(#workFill)"/>
 
   <rect x="1212" y="936" width="352" height="118" rx="18" fill="#eff6ff" stroke="#bfdbfe"/>
-  <rect x="1228" y="950" width="90" height="18" rx="9" fill="#dbeafe"/>
-  <text x="1240" y="963" class="badge-work">上一轮完成</text>
-  <text x="1228" y="992" class="spec-title">Prior repair baseline</text>
-  <text x="1228" y="1014" class="spec-task">18 files / 176 tests passed，详情 100%</text>
-  <text x="1228" y="1035" class="spec-slug">left glass rail + right drawer + fixed-sidebar offset</text>
+  <rect x="1228" y="950" width="104" height="18" rx="9" fill="#dbeafe"/>
+  <text x="1240" y="963" class="badge-work">validation</text>
+  <text x="1228" y="992" class="spec-title">Validation gates</text>
+  <text x="1228" y="1014" class="spec-task">home + /tasks + launch + SVG XML</text>
+  <text x="1228" y="1035" class="spec-slug">node scripts/ui-redesign-ia-progress.mjs --check-xml</text>
+  <rect x="1228" y="1044" width="304" height="6" rx="3" fill="#e5ebf3"/>
+  <rect x="1228" y="1044" width="304" height="6" rx="3" fill="url(#workFill)"/>
+  <!-- ia-progress-cards:end -->
 
-  <text x="60" y="1094" class="foot">Source: .kiro/specs/ui-redesign-* + IA follow-up specs | Updated 2026-04-28 | Original baseline: 8 specs, 329/329 tasks | Prior repair: 18 files / 176 tests passed | New IA specs: 3 created, implementation pending | /tasks launch tab: explicitly excluded</text>
+  <text id="ia-footer" x="60" y="1094" class="foot">Source: .kiro/specs/ui-redesign-* + IA follow-up specs | Updated 2026-04-28 | Original baseline: 8 specs, 329/329 tasks | New IA separate: 67/77 checklist, 10/14 phases, 57/63 subtasks | /tasks launch tab: explicitly excluded | Refresh: node scripts/ui-redesign-ia-progress.mjs --write</text>
 </svg>

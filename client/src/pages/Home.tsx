@@ -247,6 +247,7 @@ export default function Home() {
           mediaLayer={sceneLayer}
           hudDefinitions={hudDefinitions}
           viewportWidth={viewportWidth}
+          overlayTone="clear"
           sidebar={
             <div className="home-desktop-sidebar-shell h-full">
               <AppSidebar
@@ -266,27 +267,9 @@ export default function Home() {
               >
                 <div className="relative flex items-center justify-between gap-2">
                   <div
-                    className={cn(
-                      "flex min-w-0 items-center gap-2 rounded-[16px] px-2.5 py-1.5",
-                      resizeActive
-                        ? "border border-slate-200/90 bg-[hsl(var(--background))]/96 shadow-[0_8px_20px_rgba(15,23,42,0.06)]"
-                        : "border border-white/68 bg-[linear-gradient(180deg,rgba(248,250,252,0.9),rgba(226,242,246,0.76))] shadow-[0_14px_36px_rgba(15,23,42,0.1)] backdrop-blur"
-                    )}
+                    className="pointer-events-none fixed left-1/2 top-3 z-[70] flex -translate-x-1/2 justify-center"
+                    data-testid="home-desktop-center-controls"
                   >
-                    <div className="flex h-7 w-7 items-center justify-center rounded-[10px] bg-[linear-gradient(180deg,#0ea5e9,#0f766e)] text-white shadow-[0_10px_24px_rgba(14,165,233,0.18)]">
-                      <span className="text-xs font-semibold">CP</span>
-                    </div>
-                    <div className="min-w-0">
-                      <div className="text-[9px] font-semibold uppercase tracking-normal text-slate-500">
-                        {copy.home.desktopOfficeLabel}
-                      </div>
-                      <div className="truncate text-xs font-semibold text-slate-950">
-                        {copy.home.officeTitle}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="pointer-events-none absolute inset-x-0 top-1/2 flex -translate-y-1/2 justify-center">
                     <div className="pointer-events-auto flex items-center gap-2">
                       <div
                         className={cn(

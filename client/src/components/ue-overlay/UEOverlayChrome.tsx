@@ -17,6 +17,7 @@ export interface UEOverlayChromeProps {
   hudDefinitions?: HUDDefinition[];
   hudElements?: HUDElement[];
   viewportWidth?: number;
+  overlayTone?: OverlayContainerProps["overlayTone"];
   className?: string;
 }
 
@@ -28,6 +29,7 @@ export function UEOverlayChrome({
   hudDefinitions = EMPTY_HUD_DEFINITIONS,
   hudElements,
   viewportWidth = 1280,
+  overlayTone = "dimmed",
   className,
 }: UEOverlayChromeProps) {
   const layout = isDesktopViewportWidth(viewportWidth) ? "desktop" : "narrow";
@@ -38,6 +40,7 @@ export function UEOverlayChrome({
       videoElement={videoElement}
       mediaLayer={mediaLayer}
       hudElements={hudElements ?? syncedHUDElements}
+      overlayTone={overlayTone}
       pointerPassthrough
     >
       <div

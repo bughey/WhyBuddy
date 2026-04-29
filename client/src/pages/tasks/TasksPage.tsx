@@ -1,5 +1,6 @@
 import {
   startTransition,
+  type ReactNode,
   useDeferredValue,
   useEffect,
   useMemo,
@@ -7,6 +8,16 @@ import {
 } from "react";
 import { toast } from "sonner";
 
+import { OfficeAgentInspectorPanel } from "@/components/office/OfficeAgentInspectorPanel";
+import {
+  buildOfficeCockpitAvailability,
+  resolveWorkflowForSelectedTask,
+} from "@/components/office/office-task-cockpit-utils";
+import {
+  OfficeMemoryReportsPanel,
+  OfficeWorkflowFlowPanel,
+  OfficeWorkflowHistoryPanel,
+} from "@/components/office/OfficeWorkflowContextPanels";
 import { TasksCockpitDetail } from "@/components/tasks/TasksCockpitDetail";
 import { TasksQueueRail } from "@/components/tasks/TasksQueueRail";
 import {
@@ -16,14 +27,68 @@ import {
   missionStatusLabel,
   missionStatusTone,
 } from "@/components/tasks/task-helpers";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useViewportTier, useViewportWidth } from "@/hooks/useViewportTier";
 import { useI18n } from "@/i18n";
 import { useTasksStore } from "@/lib/tasks-store";
 import { cn } from "@/lib/utils";
+import { useWorkflowStore } from "@/lib/workflow-store";
 import type { MissionOperatorActionType } from "@shared/mission/contracts";
 
 function t(locale: string, zh: string, en: string) {
   return locale === "zh-CN" ? zh : en;
+}
+
+type TasksWorkbenchTab = "task" | "flow" | "agent" | "memory" | "history";
+
+const taskWorkbenchTriggerClassName =
+  "min-h-[36px] rounded-[14px] border border-transparent px-3 py-1.5 text-xs font-semibold whitespace-nowrap text-stone-600 transition data-[state=active]:border-sky-100 data-[state=active]:bg-sky-50 data-[state=active]:text-stone-950 data-[state=active]:shadow-[0_12px_24px_rgba(2,132,199,0.12)]";
+
+function isTasksWorkbenchTab(value: string): value is TasksWorkbenchTab {
+  return (
+    value === "task" ||
+    value === "flow" ||
+    value === "agent" ||
+    value === "memory" ||
+    value === "history"
+  );
+}
+
+function TasksWorkbenchContextShell({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description: string;
+  children: ReactNode;
+}) {
+  return (
+    <section className="flex h-full min-h-0 flex-col overflow-hidden rounded-[22px] border border-white/55 bg-white/46 p-3 shadow-[0_10px_24px_rgba(15,23,42,0.06)] backdrop-blur-md">
+      <div className="shrink-0 px-1 pb-3">
+        <div className="text-sm font-semibold text-stone-900">{title}</div>
+        <p className="mt-1 text-xs leading-5 text-stone-500">{description}</p>
+      </div>
+      <div className="min-h-0 flex-1 overflow-hidden">{children}</div>
+    </section>
+  );
+}
+
+function TasksWorkbenchEmptyState({
+  title,
+  description,
+}: {
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="flex h-full items-center justify-center rounded-[18px] border border-dashed border-stone-300/80 bg-white/62 px-6 py-8 text-center">
+      <div className="max-w-md">
+        <div className="text-base font-semibold text-stone-900">{title}</div>
+        <p className="mt-2 text-sm leading-6 text-stone-500">{description}</p>
+      </div>
+    </div>
+  );
 }
 
 export default function TasksPage({
@@ -54,6 +119,16 @@ export default function TasksPage({
   const operatorActionLoadingByMissionId = useTasksStore(
     state => state.operatorActionLoadingByMissionId
   );
+  const workflows = useWorkflowStore(state => state.workflows);
+  const agents = useWorkflowStore(state => state.agents);
+  const currentWorkflow = useWorkflowStore(state => state.currentWorkflow);
+  const currentWorkflowId = useWorkflowStore(state => state.currentWorkflowId);
+  const fetchAgents = useWorkflowStore(state => state.fetchAgents);
+  const fetchStages = useWorkflowStore(state => state.fetchStages);
+  const fetchWorkflows = useWorkflowStore(state => state.fetchWorkflows);
+  const setCurrentWorkflow = useWorkflowStore(
+    state => state.setCurrentWorkflow
+  );
 
   const [search, setSearch] = useState("");
   const [launchingPresetId, setLaunchingPresetId] = useState<string | null>(
@@ -62,6 +137,7 @@ export default function TasksPage({
   const [highlightedTaskId, setHighlightedTaskId] = useState<string | null>(
     null
   );
+  const [activeTab, setActiveTab] = useState<TasksWorkbenchTab>("task");
 
   const deferredSearch = useDeferredValue(search.trim().toLowerCase());
   const isWideDesktop = width >= 1280;
@@ -70,6 +146,12 @@ export default function TasksPage({
   useEffect(() => {
     void ensureReady();
   }, [ensureReady]);
+
+  useEffect(() => {
+    void fetchAgents();
+    void fetchStages();
+    void fetchWorkflows();
+  }, [fetchAgents, fetchStages, fetchWorkflows]);
 
   useEffect(() => {
     if (initialTaskId) {
@@ -123,6 +205,48 @@ export default function TasksPage({
   const selectedTaskSummary =
     tasks.find(task => task.id === activeTaskId) || null;
   const decisionNote = activeTaskId ? decisionNotes[activeTaskId] || "" : "";
+  const activeWorkflow = useMemo(
+    () =>
+      resolveWorkflowForSelectedTask({
+        taskId: activeTaskId,
+        workflows,
+        currentWorkflow,
+      }),
+    [activeTaskId, currentWorkflow, workflows]
+  );
+  const availability = useMemo(
+    () =>
+      buildOfficeCockpitAvailability({
+        detail: selectedDetail,
+        workflow: activeWorkflow,
+        agents,
+        workflows,
+      }),
+    [activeWorkflow, agents, selectedDetail, workflows]
+  );
+
+  useEffect(() => {
+    const workflowForTask = resolveWorkflowForSelectedTask({
+      taskId: activeTaskId,
+      workflows,
+      currentWorkflow,
+    });
+
+    if (workflowForTask && workflowForTask.id !== currentWorkflowId) {
+      setCurrentWorkflow(workflowForTask.id);
+      return;
+    }
+
+    if (!workflowForTask && activeTaskId && currentWorkflowId) {
+      setCurrentWorkflow(null);
+    }
+  }, [
+    activeTaskId,
+    currentWorkflow,
+    currentWorkflowId,
+    setCurrentWorkflow,
+    workflows,
+  ]);
 
   async function handleLaunchDecision(presetId: string) {
     if (!activeTaskId) return;
@@ -245,6 +369,165 @@ export default function TasksPage({
       </div>
     </section>
   );
+  const taskDetailPanel = (
+    <TasksCockpitDetail
+      detail={selectedDetail}
+      decisionNote={decisionNote}
+      onDecisionNoteChange={value => {
+        if (!activeTaskId) return;
+        setDecisionNote(activeTaskId, value);
+      }}
+      onLaunchDecision={handleLaunchDecision}
+      launchingPresetId={launchingPresetId}
+      onSubmitOperatorAction={handleSubmitOperatorAction}
+      operatorActionLoading={
+        activeTaskId
+          ? (operatorActionLoadingByMissionId[activeTaskId] ?? {})
+          : {}
+      }
+      onDecisionSubmitted={refreshCurrent}
+      className="h-full min-h-0"
+    />
+  );
+  const taskWorkbenchPanel = (
+    <Tabs
+      value={activeTab}
+      onValueChange={value => {
+        if (isTasksWorkbenchTab(value)) {
+          setActiveTab(value);
+        }
+      }}
+      className="min-h-0 flex-1 overflow-hidden rounded-[28px] border border-stone-200/70 bg-white/38 p-2 shadow-[0_18px_42px_rgba(99,73,45,0.08)] backdrop-blur-md"
+    >
+      <TabsList className="grid h-auto w-full grid-cols-5 gap-1 rounded-[18px] bg-white/82 p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)]">
+        <TabsTrigger className={taskWorkbenchTriggerClassName} value="task">
+          {t(locale, "任务", "Task")}
+        </TabsTrigger>
+        <TabsTrigger className={taskWorkbenchTriggerClassName} value="flow">
+          {t(locale, "团队流", "Flow")}
+        </TabsTrigger>
+        <TabsTrigger className={taskWorkbenchTriggerClassName} value="agent">
+          Agent
+        </TabsTrigger>
+        <TabsTrigger className={taskWorkbenchTriggerClassName} value="memory">
+          {t(locale, "记忆", "Memory")}
+        </TabsTrigger>
+        <TabsTrigger className={taskWorkbenchTriggerClassName} value="history">
+          {t(locale, "历史", "History")}
+        </TabsTrigger>
+      </TabsList>
+
+      <TabsContent
+        value="task"
+        className="mt-2 h-full min-h-0 flex-1 overflow-hidden"
+      >
+        {taskDetailPanel}
+      </TabsContent>
+
+      <TabsContent
+        value="flow"
+        className="mt-2 h-full min-h-0 flex-1 overflow-hidden"
+      >
+        <TasksWorkbenchContextShell
+          title={t(locale, "团队流", "Flow")}
+          description={t(
+            locale,
+            "围绕当前任务展示 workflow 阶段、组织结构、输入附件和工作包。",
+            "Inspect workflow stages, organization context, input attachments, and work packages around the selected task."
+          )}
+        >
+          <OfficeWorkflowFlowPanel
+            workflow={activeWorkflow}
+            missionDetail={selectedDetail}
+            onOpenTask={taskId => {
+              setActiveTab("task");
+              startTransition(() => {
+                selectTask(taskId);
+              });
+            }}
+          />
+        </TasksWorkbenchContextShell>
+      </TabsContent>
+
+      <TabsContent
+        value="agent"
+        className="mt-2 h-full min-h-0 flex-1 overflow-hidden"
+      >
+        <TasksWorkbenchContextShell
+          title="Agent"
+          description={t(
+            locale,
+            "查看办公室 Agent、团队站位和 heartbeat 状态，任务页不再提供发起入口。",
+            "Inspect office agents, team placement, and heartbeat state without adding a launch entry to the tasks page."
+          )}
+        >
+          {availability.agent ? (
+            <OfficeAgentInspectorPanel className="h-full" embedded />
+          ) : (
+            <TasksWorkbenchEmptyState
+              title={t(
+                locale,
+                "还没有可查看的 Agent",
+                "No agent is available yet"
+              )}
+              description={t(
+                locale,
+                "等待团队或场景 Agent 建立后，这里会显示 Agent 详情与状态。",
+                "After team or scene agents are available, this tab will show agent details and status."
+              )}
+            />
+          )}
+        </TasksWorkbenchContextShell>
+      </TabsContent>
+
+      <TabsContent
+        value="memory"
+        className="mt-2 h-full min-h-0 flex-1 overflow-hidden"
+      >
+        <TasksWorkbenchContextShell
+          title={t(locale, "记忆与报告", "Memory and reports")}
+          description={t(
+            locale,
+            "复用办公室上下文面板查看最近记忆、搜索结果和 heartbeat 报告。",
+            "Reuse the office context panel for recent memory, search results, and heartbeat reports."
+          )}
+        >
+          <OfficeMemoryReportsPanel workflow={activeWorkflow} />
+        </TasksWorkbenchContextShell>
+      </TabsContent>
+
+      <TabsContent
+        value="history"
+        className="mt-2 h-full min-h-0 flex-1 overflow-hidden"
+      >
+        <TasksWorkbenchContextShell
+          title={t(locale, "历史", "History")}
+          description={t(
+            locale,
+            "保留 workflow 连续性，选择有 mission 的历史项时同步任务队列焦点。",
+            "Keep workflow continuity visible and sync the task queue focus when a history item has a mission."
+          )}
+        >
+          <OfficeWorkflowHistoryPanel
+            workflow={activeWorkflow}
+            activeWorkflowId={activeWorkflow?.id || null}
+            onSelectWorkflow={workflowId => {
+              setCurrentWorkflow(workflowId);
+              const matched = workflows.find(
+                workflow => workflow.id === workflowId
+              );
+              if (matched?.missionId) {
+                startTransition(() => {
+                  selectTask(matched.missionId!);
+                });
+              }
+              setActiveTab("flow");
+            }}
+          />
+        </TasksWorkbenchContextShell>
+      </TabsContent>
+    </Tabs>
+  );
 
   return (
     <div
@@ -297,24 +580,7 @@ export default function TasksPage({
                 {taskOverviewPanel}
               </div>
 
-              <TasksCockpitDetail
-                detail={selectedDetail}
-                decisionNote={decisionNote}
-                onDecisionNoteChange={value => {
-                  if (!activeTaskId) return;
-                  setDecisionNote(activeTaskId, value);
-                }}
-                onLaunchDecision={handleLaunchDecision}
-                launchingPresetId={launchingPresetId}
-                onSubmitOperatorAction={handleSubmitOperatorAction}
-                operatorActionLoading={
-                  activeTaskId
-                    ? (operatorActionLoadingByMissionId[activeTaskId] ?? {})
-                    : {}
-                }
-                onDecisionSubmitted={refreshCurrent}
-                className="min-h-0 flex-1"
-              />
+              {taskWorkbenchPanel}
             </div>
           </div>
         ) : (
@@ -340,23 +606,7 @@ export default function TasksPage({
               className="min-h-[320px] max-h-[460px]"
             />
 
-            <TasksCockpitDetail
-              detail={selectedDetail}
-              decisionNote={decisionNote}
-              onDecisionNoteChange={value => {
-                if (!activeTaskId) return;
-                setDecisionNote(activeTaskId, value);
-              }}
-              onLaunchDecision={handleLaunchDecision}
-              launchingPresetId={launchingPresetId}
-              onSubmitOperatorAction={handleSubmitOperatorAction}
-              operatorActionLoading={
-                activeTaskId
-                  ? (operatorActionLoadingByMissionId[activeTaskId] ?? {})
-                  : {}
-              }
-              onDecisionSubmitted={refreshCurrent}
-            />
+            <div className="min-h-[560px]">{taskWorkbenchPanel}</div>
           </div>
         )}
       </div>

@@ -111,4 +111,10 @@ export interface OverlayContainerProps {
    * @default true
    */
   pointerPassthrough?: boolean;
+  /**
+   * Visual treatment for the UI layer. The default keeps legacy overlays
+   * readable, while the office home screen can opt into a fully clear overlay
+   * so the 3D scene is not blurred or dimmed.
+   */
+  overlayTone?: "dimmed" | "clear";
 }

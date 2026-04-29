@@ -54,10 +54,14 @@ function VideoLayer({
 function UIOverlayLayer({
   children,
   pointerPassthrough,
+  overlayTone,
 }: {
   children: React.ReactNode;
   pointerPassthrough: boolean;
+  overlayTone: NonNullable<OverlayContainerProps["overlayTone"]>;
 }) {
+  const clear = overlayTone === "clear";
+
   return (
     <div
       className={cn(
@@ -65,10 +69,11 @@ function UIOverlayLayer({
         pointerPassthrough && "pointer-events-none",
       )}
       style={{
-        background: "rgba(0, 0, 0, 0.15)",
-        backdropFilter: "blur(8px)",
-        WebkitBackdropFilter: "blur(8px)",
+        background: clear ? "transparent" : "rgba(0, 0, 0, 0.15)",
+        backdropFilter: clear ? "none" : "blur(8px)",
+        WebkitBackdropFilter: clear ? "none" : "blur(8px)",
       }}
+      data-overlay-tone={overlayTone}
       data-testid="ue-overlay-ui-layer"
     >
       {children}
@@ -190,6 +195,7 @@ export function OverlayContainer({
   hudElements = [],
   videoFrame,
   pointerPassthrough = true,
+  overlayTone = "dimmed",
 }: OverlayContainerProps) {
   return (
     <div
@@ -200,7 +206,10 @@ export function OverlayContainer({
       <VideoLayer videoRef={videoElement} mediaLayer={mediaLayer} />
 
       {/* z-20 — UI overlay */}
-      <UIOverlayLayer pointerPassthrough={pointerPassthrough}>
+      <UIOverlayLayer
+        overlayTone={overlayTone}
+        pointerPassthrough={pointerPassthrough}
+      >
         {children}
       </UIOverlayLayer>
 

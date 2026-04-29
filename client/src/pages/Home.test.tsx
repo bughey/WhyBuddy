@@ -257,6 +257,21 @@ describe("Home desktop shell", () => {
     expect(toolbarTag).not.toContain("right-0");
   });
 
+  it("pins the desktop center controls to the viewport centerline", () => {
+    const markup = renderToStaticMarkup(<Home />);
+
+    const centerControlsTag =
+      markup.match(
+        /<div[^>]*data-testid="home-desktop-center-controls"[^>]*>/
+      )?.[0] || "";
+
+    expect(centerControlsTag).toContain("fixed");
+    expect(centerControlsTag).toContain("left-1/2");
+    expect(centerControlsTag).toContain("-translate-x-1/2");
+    expect(centerControlsTag).not.toContain("inset-x-0");
+    expect(centerControlsTag).not.toContain("justify-between");
+  });
+
   it("styles the desktop sidebar shell as transparent glass instead of a solid rail", () => {
     const markup = renderToStaticMarkup(<Home />);
 

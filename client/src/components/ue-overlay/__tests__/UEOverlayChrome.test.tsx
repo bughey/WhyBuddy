@@ -68,6 +68,17 @@ describe("UEOverlayChrome", () => {
     expect(markup).toContain('data-overlay-layout="narrow"');
   });
 
+  it("forwards clear overlay tone for the office home scene", () => {
+    const markup = renderToStaticMarkup(
+      <UEOverlayChrome videoElement={makeVideoRef()} overlayTone="clear">
+        <div />
+      </UEOverlayChrome>,
+    );
+
+    expect(markup).toContain('data-overlay-tone="clear"');
+    expect(markup).toContain("backdrop-filter:none");
+  });
+
   it("uses synced HUD definitions when explicit HUD elements are not supplied", () => {
     const markup = renderToStaticMarkup(
       <UEOverlayChrome

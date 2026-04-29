@@ -1,13 +1,22 @@
 import { useMemo, useRef, useState, type ChangeEvent } from "react";
-import { Splitter } from "antd";
-import { RefreshCw, Send, Sparkles } from "lucide-react";
+import { Collapse, Splitter } from "antd";
+import {
+  ArrowUp,
+  PlusCircle,
+  RefreshCw,
+  Send,
+  SlidersHorizontal,
+  Sparkles,
+} from "lucide-react";
 import { toast } from "sonner";
 import { useShallow } from "zustand/react/shallow";
 
 import { LaunchAttachmentSection } from "@/components/launch/LaunchAttachmentSection";
-import { AutopilotLaunchEmptyState } from "@/components/launch/AutopilotLaunchEmptyState";
 import { LaunchOperatorActionRail } from "@/components/launch/LaunchOperatorActionRail";
-import { RoutePlanningOverlay } from "@/components/launch/RoutePlanningOverlay";
+import {
+  RoutePlanningOverlay,
+  getRouteCandidateTitle,
+} from "@/components/launch/RoutePlanningOverlay";
 import { LaunchRuntimeMeta } from "@/components/launch/LaunchRuntimeMeta";
 import { ClarificationPanel } from "@/components/nl-command/ClarificationPanel";
 import { CommandInput } from "@/components/nl-command/CommandInput";
@@ -23,6 +32,7 @@ import { useI18n } from "@/i18n";
 import { CAN_USE_ADVANCED_RUNTIME } from "@/lib/deploy-target";
 import {
   buildLaunchRoutePlan,
+  type LaunchRouteCandidate,
   type LaunchRouteCandidateId,
 } from "@/lib/launch-router";
 import {
@@ -290,34 +300,25 @@ function LaunchDestinationExamples({
   onSelect: (example: AutopilotLaunchExample) => void;
 }) {
   return (
-    <div className="mt-2 rounded-[18px] border border-[#ead8c3]/70 bg-[#fffaf4]/72 p-2">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#9a5d32]">
-            {t(locale, "目的地示例", "Destination examples")}
-          </div>
-          <div className="mt-0.5 text-[10px] leading-4 text-stone-600">
-            {t(
-              locale,
-              "不确定怎么输入时，先点一个示例；系统会填入目的地并立即生成路线预览。",
-              "Pick an example to fill a destination and immediately preview routes."
-            )}
-          </div>
-        </div>
-      </div>
-      <div className="mt-2 flex flex-wrap gap-1.5">
-        {AUTOPILOT_LAUNCH_EXAMPLES.map(example => (
-          <button
-            key={example.kind}
-            type="button"
-            className="group rounded-full border border-[#ead8c3]/80 bg-white/78 px-2.5 py-1 text-left text-[10px] font-semibold text-[#9a5d32] transition hover:border-[#d9a47c] hover:bg-[#fff7ed]"
-            onClick={() => onSelect(example)}
-            title={example.description}
-          >
-            {locale === "zh-CN" ? example.label : example.englishLabel}
-          </button>
-        ))}
-      </div>
+    <div
+      className="mt-2 flex flex-wrap items-center gap-1.5 text-[10px]"
+      data-testid="launch-compact-examples"
+    >
+      <span className="mr-0.5 font-semibold uppercase tracking-[0.16em] text-[#9a5d32]">
+        {t(locale, "示例", "Try")}
+      </span>
+      {AUTOPILOT_LAUNCH_EXAMPLES.slice(0, 4).map(example => (
+        <button
+          key={example.kind}
+          type="button"
+          className="rounded-full border border-[#ead8c3]/80 bg-white/68 px-2 py-0.5 text-left font-semibold text-[#9a5d32] transition hover:border-[#d9a47c] hover:bg-[#fff7ed]"
+          onClick={() => onSelect(example)}
+          title={example.description}
+          data-testid={`launch-compact-example-${example.kind}`}
+        >
+          {locale === "zh-CN" ? example.label : example.englishLabel}
+        </button>
+      ))}
     </div>
   );
 }
@@ -664,32 +665,64 @@ export function UnifiedLaunchComposer({
     }
   }
 
+  const inputRowClassName = cn(
+    "rounded-[22px] border border-[#d8e6dd]/85 bg-white/82 shadow-[0_14px_36px_rgba(75,105,85,0.10)] backdrop-blur-xl",
+    isDense ? "p-2" : "p-2.5"
+  );
+
   const composerInputShell = (
-    <div className="rounded-[16px] bg-white/82 p-2.5">
-      <CommandInput
-        onSubmit={handleSubmit}
-        loading={submitting}
-        commandHistory={commandHistory}
-        value={draftText}
-        onTextChange={setDraftText}
-        hideLabel={hideInputLabel}
-        dense={isDense}
-        rows={isCompact ? 2 : 3}
-        placeholder={t(
-          locale,
-          "输入目的地：目标、约束、交付物、截止时间；系统会自动规划路线、组队、澄清并推进...",
-          "Enter the destination: goal, constraints, deliverable, deadline. Autopilot plans the route, forms the fleet, clarifies, and drives..."
-        )}
-        submitLabel={submitLabel}
-        sendingLabel={submitLabel}
-        hideSubmitButton
-        clearOnSubmit={false}
-      />
+    <div
+      className={cn(
+        "rounded-[28px] border border-white/80 bg-[linear-gradient(135deg,rgba(255,255,255,0.78),rgba(247,253,249,0.64))] shadow-[0_18px_42px_rgba(75,105,85,0.10)] backdrop-blur-xl",
+        isDense ? "p-2" : "p-3"
+      )}
+      data-testid="unified-launch-compact-composer"
+    >
+      <div className={inputRowClassName}>
+        <div className="flex items-start gap-2">
+          <div className="mt-1 flex size-8 shrink-0 items-center justify-center rounded-full border border-[#d8e6dd]/85 bg-[#f7fdf9] text-[#267064]">
+            <Sparkles className="size-4" />
+          </div>
+          <CommandInput
+            onSubmit={handleSubmit}
+            loading={submitting}
+            commandHistory={commandHistory}
+            value={draftText}
+            onTextChange={setDraftText}
+            hideLabel={hideInputLabel}
+            dense={isDense}
+            rows={isCompact ? 1 : 2}
+            placeholder={t(
+              locale,
+              "输入目的地：目标、约束、交付物、截止时间...",
+              "Enter a destination: goal, constraints, deliverable, deadline..."
+            )}
+            submitLabel={submitLabel}
+            sendingLabel={submitLabel}
+            hideSubmitButton
+            clearOnSubmit={false}
+            className="min-w-0 flex-1"
+          />
+          <GlowButton
+            type="button"
+            disabled={!draftText.trim() || submitting}
+            aria-label={submitLabel}
+            className={cn(
+              "mt-0.5 size-9 shrink-0 rounded-full p-0 shadow-[0_12px_28px_rgba(94,139,114,0.22)]",
+              isDense ? "size-8" : "size-9"
+            )}
+            onClick={() => void handleSubmit(draftText)}
+            data-testid="launch-compact-send"
+          >
+            <ArrowUp className="size-4" />
+          </GlowButton>
+        </div>
+      </div>
 
       {!hasDraftDestination ? (
-        <AutopilotLaunchEmptyState
+        <LaunchDestinationExamples
           locale={locale}
-          onSelectExample={example => {
+          onSelect={example => {
             void handleExampleSelected(example);
           }}
         />
@@ -751,20 +784,26 @@ export function UnifiedLaunchComposer({
         submitLabel={submitLabel}
         submitDisabled={!draftText.trim() || submitting}
       />
-      <div className="mt-2 grid grid-cols-2 gap-1.5 text-[9px] leading-4 text-stone-600 sm:grid-cols-4">
-        {[
-          t(locale, "目的地解析", "Destination"),
-          t(locale, "路线规划", "Route"),
-          t(locale, "编队执行", "Fleet"),
-          t(locale, "接管/证据", "Takeover / Evidence"),
-        ].map(item => (
-          <span
-            key={item}
-            className="rounded-full border border-[#ead8c3]/80 bg-[#fff7ed]/78 px-2 py-0.5 text-center font-semibold text-[#9a5d32]"
+      <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px]">
+        {onOpenCreateDialog ? (
+          <button
+            type="button"
+            className="inline-flex h-7 items-center gap-1 rounded-full border border-[#d8e6dd]/80 bg-white/72 px-2.5 font-semibold text-[#267064] shadow-none transition hover:bg-[#f7fdf9]"
+            onClick={onOpenCreateDialog}
+            data-testid="launch-action-create-task"
           >
-            {item}
-          </span>
-        ))}
+            <PlusCircle className="size-3.5" />
+            {t(locale, "新建任务", "New task")}
+          </button>
+        ) : null}
+        <button
+          type="button"
+          className="inline-flex h-7 items-center gap-1 rounded-full border border-[#d8e6dd]/80 bg-white/72 px-2.5 font-semibold text-[#267064] shadow-none transition hover:bg-[#f7fdf9]"
+          data-testid="launch-action-advanced"
+        >
+          <SlidersHorizontal className="size-3.5" />
+          {t(locale, "高级", "Advanced")}
+        </button>
       </div>
     </div>
   );
@@ -774,7 +813,7 @@ export function UnifiedLaunchComposer({
       className={cn(
         !isBare &&
           "rounded-[24px] border border-stone-200/70 bg-[linear-gradient(180deg,rgba(255,252,248,0.96),rgba(247,240,233,0.88))] shadow-[0_18px_40px_rgba(98,73,48,0.08)]",
-        isBare ? "p-1" : isDense ? "p-3" : "p-4",
+        isBare ? "p-0" : isDense ? "p-2" : "p-4",
         className
       )}
     >

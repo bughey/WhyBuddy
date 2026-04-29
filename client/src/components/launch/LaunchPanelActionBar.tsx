@@ -1,4 +1,10 @@
-import { Paperclip, Settings, Save, Rocket } from "lucide-react";
+import {
+  MoreHorizontal,
+  Paperclip,
+  PlusCircle,
+  Rocket,
+  SlidersHorizontal,
+} from "lucide-react";
 
 import { useI18n } from "@/i18n";
 import type { LaunchMode } from "./LaunchModeTabBar";
@@ -11,6 +17,7 @@ export interface LaunchPanelActionBarProps {
   mode: LaunchMode;
   onSubmit: () => void;
   onAddAttachment: () => void;
+  onCreateTask?: () => void;
   submitting: boolean;
   disabled: boolean;
   attachmentCount: number;
@@ -21,12 +28,20 @@ export function LaunchPanelActionBar({
   mode,
   onSubmit,
   onAddAttachment,
+  onCreateTask,
   submitting,
   disabled,
   attachmentCount,
   compact = false,
 }: LaunchPanelActionBarProps) {
   const { locale } = useI18n();
+  void mode;
+  const secondaryActionClassName = compact
+    ? "flex items-center gap-1 rounded-full border border-slate-200/80 bg-white/72 px-2.5 py-1 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-50"
+    : "flex items-center gap-1 rounded-md px-2 py-1 text-sm transition-colors hover:bg-black/5";
+  const secondaryActionStyle = {
+    color: compact ? undefined : "var(--muted-foreground, #64748b)",
+  };
 
   return (
     <div
@@ -46,12 +61,8 @@ export function LaunchPanelActionBar({
         <button
           type="button"
           onClick={onAddAttachment}
-          className={
-            compact
-              ? "flex items-center gap-1 rounded-full border border-slate-200/80 bg-white/72 px-2.5 py-1 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-50"
-              : "flex items-center gap-1 rounded-md px-2 py-1 text-sm transition-colors hover:bg-black/5"
-          }
-          style={{ color: compact ? undefined : "var(--muted-foreground, #64748b)" }}
+          className={secondaryActionClassName}
+          style={secondaryActionStyle}
           data-testid="launch-action-attachment"
         >
           <Paperclip size={14} />
@@ -62,29 +73,31 @@ export function LaunchPanelActionBar({
         </button>
         <button
           type="button"
-          className={
-            compact
-              ? "flex items-center gap-1 rounded-full border border-slate-200/80 bg-white/72 px-2.5 py-1 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-50"
-              : "flex items-center gap-1 rounded-md px-2 py-1 text-sm transition-colors hover:bg-black/5"
-          }
-          style={{ color: compact ? undefined : "var(--muted-foreground, #64748b)" }}
-          data-testid="launch-action-settings"
+          onClick={onCreateTask}
+          className={secondaryActionClassName}
+          style={secondaryActionStyle}
+          data-testid="launch-action-create-task"
         >
-          <Settings size={14} />
-          {t(locale, "高级设置", "Advanced Settings")}
+          <PlusCircle size={14} />
+          {t(locale, "新建任务", "New task")}
         </button>
         <button
           type="button"
-          className={
-            compact
-              ? "flex items-center gap-1 rounded-full border border-slate-200/80 bg-white/72 px-2.5 py-1 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-50 max-sm:hidden"
-              : "flex items-center gap-1 rounded-md px-2 py-1 text-sm transition-colors hover:bg-black/5"
-          }
-          style={{ color: compact ? undefined : "var(--muted-foreground, #64748b)" }}
-          data-testid="launch-action-template"
+          className={secondaryActionClassName}
+          style={secondaryActionStyle}
+          data-testid="launch-action-advanced"
         >
-          <Save size={14} />
-          {t(locale, "保存为模板", "Save as Template")}
+          <SlidersHorizontal size={14} />
+          {t(locale, "高级", "Advanced")}
+        </button>
+        <button
+          type="button"
+          className={secondaryActionClassName}
+          style={secondaryActionStyle}
+          data-testid="launch-action-more"
+        >
+          <MoreHorizontal size={14} />
+          {t(locale, "更多", "More")}
         </button>
       </div>
       <button
@@ -121,7 +134,7 @@ export function LaunchPanelActionBar({
         <Rocket size={14} />
         {submitting
           ? t(locale, "提交中...", "Submitting...")
-          : t(locale, "启动任务", "Launch Task")}
+          : t(locale, "发起", "Launch")}
       </button>
     </div>
   );

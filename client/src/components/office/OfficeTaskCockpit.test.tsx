@@ -39,47 +39,6 @@ import { useTasksStore } from "@/lib/tasks-store";
 import { useTelemetryStore } from "@/lib/telemetry-store";
 import { useWorkflowStore } from "@/lib/workflow-store";
 
-vi.mock("antd", () => {
-  function Panel({
-    children,
-    className,
-    defaultSize,
-    min,
-    max,
-  }: {
-    children?: React.ReactNode;
-    className?: string;
-    defaultSize?: number | string;
-    min?: number | string;
-    max?: number | string;
-  }) {
-    return (
-      <div
-        className={className}
-        data-default-size={String(defaultSize ?? "")}
-        data-max={String(max ?? "")}
-        data-min={String(min ?? "")}
-      >
-        {children}
-      </div>
-    );
-  }
-
-  function Splitter({
-    children,
-    className,
-  }: {
-    children?: React.ReactNode;
-    className?: string;
-  }) {
-    return <div className={className}>{children}</div>;
-  }
-
-  Splitter.Panel = Panel;
-
-  return { Splitter };
-});
-
 vi.mock("@/lib/nl-command-store", () => ({
   selectTaskHubLaunchSession: (state: unknown) => state,
   useNLCommandStore: useNLCommandStoreMock,
@@ -156,7 +115,9 @@ vi.mock("@/components/tasks/TasksCockpitDetail", () => ({
 }));
 
 vi.mock("@/components/tasks/TasksQueueRail", () => ({
-  TasksQueueRail: () => <div>mocked task queue</div>,
+  TasksQueueRail: () => (
+    <div data-testid="tasks-queue-rail">mocked task queue</div>
+  ),
 }));
 
 vi.mock("@/components/tasks/TaskDetailCardsView", () => ({
@@ -167,16 +128,6 @@ vi.mock("@/components/tasks/TaskDetailCardsView", () => ({
 
 vi.mock("@/components/launch/LaunchPanelShell", () => ({
   LaunchPanelShell: () => null,
-}));
-
-vi.mock("./OfficeAgentInspectorPanel", () => ({
-  OfficeAgentInspectorPanel: () => null,
-}));
-
-vi.mock("./OfficeWorkflowContextPanels", () => ({
-  OfficeMemoryReportsPanel: () => null,
-  OfficeWorkflowFlowPanel: () => null,
-  OfficeWorkflowHistoryPanel: () => null,
 }));
 
 const noopAsync = async () => {};
@@ -321,19 +272,19 @@ beforeEach(() => {
 });
 
 describe("OfficeTaskCockpit", () => {
-  it("renders a single center-bottom composer and keeps launch guidance informational", () => {
+  it("renders a single center-bottom composer and keeps launch guidance in the merged console", () => {
     const markup = renderToStaticMarkup(<OfficeTaskCockpit />);
 
-    expect(markup).not.toContain('data-testid="launch-panel-trigger"');
     expect(markup).toContain('data-testid="unified-launch-composer"');
-    expect(
-      markup.match(/data-testid="unified-launch-composer"/g)?.length
-    ).toBe(1);
+    expect(markup.match(/data-testid="unified-launch-composer"/g)?.length).toBe(
+      1
+    );
     expect(markup).toContain('data-bare="true"');
     expect(markup).toContain('data-hide-header="true"');
     expect(markup).toContain('data-hide-clarification="true"');
+    expect(markup).toContain('data-testid="office-launch-guidance"');
     expect(markup).not.toContain('data-testid="office-clarification-panel"');
-    expect(markup).toContain("独立弹层");
+    expect(markup).not.toContain("office-cockpit-right-drawer");
   });
 
   it("renders clarification as a separate panel above the launcher", () => {
@@ -371,12 +322,49 @@ describe("OfficeTaskCockpit", () => {
     expect(markup).toContain("补问进行中");
     expect(markup).toContain("先完成澄清，再继续主执行流");
     expect(markup).toContain("待补充 1 项");
-    expect(markup).toContain("当前有补问信息待处理");
-    expect(markup).toContain("展开辅助信息");
   });
 });
 
 describe("OfficeTaskCockpit home hierarchy", () => {
+  it("does not render the task queue rail on the home cockpit", () => {
+    useTasksStore.setState({
+      tasks: [missionSummary],
+      detailsById: { "mission-1": missionDetail },
+      selectedTaskId: "mission-1",
+    });
+
+    const markup = renderToStaticMarkup(<OfficeTaskCockpit />);
+
+    expect(markup).not.toContain('data-testid="tasks-queue-rail"');
+  });
+
+  it("keeps runtime evidence tabs in the merged center console", () => {
+    const markup = renderToStaticMarkup(<OfficeTaskCockpit />);
+
+    for (const tab of ["support", "logs", "artifacts", "runtime"]) {
+      expect(markup).toContain(`data-value="${tab}"`);
+    }
+    expect(markup).not.toContain('data-value="launch"');
+    expect(markup).not.toContain('data-value="task"');
+  });
+
+  it("keeps the scene HUD mounted on the home cockpit", () => {
+    const markup = renderToStaticMarkup(<OfficeTaskCockpit />);
+
+    expect(markup).toContain('data-testid="office-scene-hud"');
+  });
+
+  it("centers the launch composer and scene HUD on the viewport centerline", () => {
+    const markup = renderToStaticMarkup(<OfficeTaskCockpit />);
+
+    expect(markup).toContain("fixed bottom-[24px] left-1/2");
+    expect(markup).toContain("w-[min(860px,calc(100vw-48px))]");
+    expect(markup).toContain("-translate-x-1/2");
+    expect(markup).toContain("fixed left-1/2 top-[clamp(112px,9vh,150px)]");
+    expect(markup).not.toContain("right:360px");
+    expect(markup).not.toContain("office-cockpit-right-drawer");
+  });
+
   it("keeps selected task detail out of the home center stage", () => {
     useTasksStore.setState({
       tasks: [missionSummary],
@@ -387,21 +375,7 @@ describe("OfficeTaskCockpit home hierarchy", () => {
     const markup = renderToStaticMarkup(<OfficeTaskCockpit />);
 
     expect(markup).toContain('data-testid="office-scene-hud"');
-    expect(markup).toContain('data-testid="right-task-detail"');
+    expect(markup).not.toContain('data-testid="right-task-detail"');
     expect(markup).not.toContain('data-testid="task-detail-cards-view"');
-  });
-
-  it("keeps the right drawer visibly allocated on the first screen", () => {
-    useTasksStore.setState({
-      tasks: [missionSummary],
-      detailsById: { "mission-1": missionDetail },
-      selectedTaskId: "mission-1",
-    });
-
-    const markup = renderToStaticMarkup(<OfficeTaskCockpit />);
-
-    expect(markup).toContain("office-cockpit-right-drawer");
-    expect(markup).toContain('data-default-size="360"');
-    expect(markup).toContain('data-min="320"');
   });
 });

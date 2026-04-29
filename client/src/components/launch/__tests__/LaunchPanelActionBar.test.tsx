@@ -18,7 +18,7 @@ vi.mock("@/lib/store", () => ({
 import { LaunchPanelActionBar } from "../LaunchPanelActionBar";
 
 describe("LaunchPanelActionBar", () => {
-  it("renders all four action buttons", () => {
+  it("renders compact composer actions", () => {
     const markup = renderToStaticMarkup(
       createElement(LaunchPanelActionBar, {
         mode: "quick",
@@ -31,12 +31,13 @@ describe("LaunchPanelActionBar", () => {
     );
 
     expect(markup).toContain('data-testid="launch-action-attachment"');
-    expect(markup).toContain('data-testid="launch-action-settings"');
-    expect(markup).toContain('data-testid="launch-action-template"');
+    expect(markup).toContain('data-testid="launch-action-create-task"');
+    expect(markup).toContain('data-testid="launch-action-advanced"');
+    expect(markup).toContain('data-testid="launch-action-more"');
     expect(markup).toContain('data-testid="launch-action-submit"');
   });
 
-  it("shows Launch Task text when not submitting", () => {
+  it("shows Launch text when not submitting", () => {
     appState.locale = "en-US";
     const markup = renderToStaticMarkup(
       createElement(LaunchPanelActionBar, {
@@ -49,7 +50,7 @@ describe("LaunchPanelActionBar", () => {
       })
     );
 
-    expect(markup).toContain("Launch Task");
+    expect(markup).toContain("Launch");
     expect(markup).not.toContain("Submitting...");
   });
 
@@ -67,7 +68,7 @@ describe("LaunchPanelActionBar", () => {
     );
 
     expect(markup).toContain("Submitting...");
-    expect(markup).not.toContain("Launch Task");
+    expect(markup).not.toContain("Launch</button>");
   });
 
   it("disables submit button when disabled=true", () => {
@@ -144,9 +145,10 @@ describe("LaunchPanelActionBar", () => {
     );
 
     expect(markup).toContain("添加附件");
-    expect(markup).toContain("高级设置");
-    expect(markup).toContain("保存为模板");
-    expect(markup).toContain("启动任务");
+    expect(markup).toContain("新建任务");
+    expect(markup).toContain("高级");
+    expect(markup).toContain("更多");
+    expect(markup).toContain("发起");
     appState.locale = "en-US";
   });
 });

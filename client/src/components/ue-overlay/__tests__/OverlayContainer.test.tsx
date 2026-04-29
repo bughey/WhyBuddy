@@ -175,6 +175,18 @@ describe("OverlayContainer — UI overlay styling (Task 1.3)", () => {
     expect(markup).toContain("rgba(0, 0, 0, 0.15)");
   });
 
+  it("can render a clear UI overlay without fogging the 3D scene", () => {
+    const markup = renderToStaticMarkup(
+      <OverlayContainer videoElement={makeVideoRef()} overlayTone="clear">
+        <span />
+      </OverlayContainer>,
+    );
+
+    expect(markup).toContain('data-overlay-tone="clear"');
+    expect(markup).toContain("background:transparent");
+    expect(markup).toContain("backdrop-filter:none");
+  });
+
   it("sets pointer-events-none on the UI overlay by default", () => {
     const markup = renderToStaticMarkup(
       <OverlayContainer videoElement={makeVideoRef()}>

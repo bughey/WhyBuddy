@@ -320,7 +320,7 @@ describe("OfficeTaskCockpit home center hierarchy", () => {
     expect(capturedProps).toHaveLength(0);
   });
 
-  it("keeps selected task detail in the auxiliary column instead of the home center", () => {
+  it("keeps selected task detail out of the merged home center stack", () => {
     const detail = makeMockDetail("mission-1");
     useTasksStore.setState({
       tasks: [makeMockTaskSummary("mission-1")],
@@ -356,7 +356,7 @@ describe("OfficeTaskCockpit home center hierarchy", () => {
     const markup = renderToStaticMarkup(<OfficeTaskCockpit />);
 
     expect(markup).toContain('data-testid="office-scene-hud"');
-    expect(markup).toContain('data-testid="right-task-detail"');
+    expect(markup).not.toContain('data-testid="right-task-detail"');
     expect(markup).not.toContain('data-testid="task-detail-cards-view"');
     expect(capturedProps).toHaveLength(0);
   });

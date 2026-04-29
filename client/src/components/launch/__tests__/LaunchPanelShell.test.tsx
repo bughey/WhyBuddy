@@ -185,7 +185,7 @@ describe("LaunchPanelShell", () => {
     expect(markup).toContain('data-testid="launch-panel-action-bar"');
   });
 
-  it("renders standard Autopilot sections by default", () => {
+  it("keeps large Autopilot dashboard sections hidden by default", () => {
     const markup = renderToStaticMarkup(
       createElement(LaunchPanelShell, {
         open: true,
@@ -194,11 +194,31 @@ describe("LaunchPanelShell", () => {
       })
     );
 
-    expect(markup).toContain('data-testid="launch-route-planning-flow"');
-    expect(markup).toContain('data-testid="launch-cockpit-grid"');
-    expect(markup).toContain('data-testid="launch-output-chips"');
-    expect(markup).toContain('data-testid="launch-mode-tab-standard"');
+    expect(markup).not.toContain('data-testid="launch-route-planning-flow"');
+    expect(markup).not.toContain('data-testid="launch-cockpit-grid"');
+    expect(markup).not.toContain('data-testid="launch-output-chips"');
+    expect(markup).toContain('data-testid="launch-mode-tab-quick"');
     expect(markup).toContain('aria-selected="true"');
+  });
+
+  it("keeps key composer actions visible", () => {
+    const markup = renderToStaticMarkup(
+      createElement(LaunchPanelShell, {
+        open: true,
+        onClose: () => {},
+        createMission: async () => null,
+      })
+    );
+
+    expect(markup).toContain('data-testid="launch-action-attachment"');
+    expect(markup).toContain('data-testid="launch-action-create-task"');
+    expect(markup).toContain('data-testid="launch-action-advanced"');
+    expect(markup).toContain('data-testid="launch-action-more"');
+    expect(markup).toContain('data-testid="launch-action-submit"');
+    expect(markup).toContain("Add Attachment");
+    expect(markup).toContain("New task");
+    expect(markup).toContain("Advanced");
+    expect(markup).toContain("More");
   });
 
   it("renders the submit button as disabled when input is empty", () => {
@@ -213,7 +233,7 @@ describe("LaunchPanelShell", () => {
 
     expect(markup).toContain('data-testid="launch-action-submit"');
     expect(markup).toContain("disabled");
-    expect(markup).toContain("Launch Task");
+    expect(markup).toContain("Launch");
   });
 
   it("renders the submit button when input has text", () => {
@@ -227,7 +247,7 @@ describe("LaunchPanelShell", () => {
     );
 
     expect(markup).toContain('data-testid="launch-action-submit"');
-    expect(markup).toContain("Launch Task");
+    expect(markup).toContain("Launch");
     nlCommandState.draftText = "";
   });
 
@@ -242,7 +262,7 @@ describe("LaunchPanelShell", () => {
     );
 
     expect(markup).toContain("任务自动驾驶");
-    expect(markup).toContain("启动任务");
+    expect(markup).toContain("发起");
     appState.locale = "en-US";
   });
 });

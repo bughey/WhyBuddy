@@ -48,7 +48,7 @@ describe("LoadingScreen", () => {
     expect(markup).toContain(
       "\u6b63\u5728\u540c\u6b65\u4e66\u623f\u5e03\u5c40\u4e0e\u88c5\u9970\u6570\u636e..."
     );
-    expect(markup).toContain("linear-gradient(90deg,#ef3340");
+    expect(markup).toContain("linear-gradient(90deg,#ff4d4f");
     expect(markup).toContain("CUBE PETS OFFICE");
     expect(markup).toContain("--loading-progress:67%");
   });
