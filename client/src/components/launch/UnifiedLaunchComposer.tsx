@@ -1,22 +1,11 @@
 import { useMemo, useRef, useState, type ChangeEvent } from "react";
 import { Collapse, Splitter } from "antd";
-import {
-  ArrowUp,
-  PlusCircle,
-  RefreshCw,
-  Send,
-  SlidersHorizontal,
-  Sparkles,
-} from "lucide-react";
+import { ArrowUp, RefreshCw, Send, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { useShallow } from "zustand/react/shallow";
 
 import { LaunchAttachmentSection } from "@/components/launch/LaunchAttachmentSection";
 import { LaunchOperatorActionRail } from "@/components/launch/LaunchOperatorActionRail";
-import {
-  RoutePlanningOverlay,
-  getRouteCandidateTitle,
-} from "@/components/launch/RoutePlanningOverlay";
 import { LaunchRuntimeMeta } from "@/components/launch/LaunchRuntimeMeta";
 import { ClarificationPanel } from "@/components/nl-command/ClarificationPanel";
 import { CommandInput } from "@/components/nl-command/CommandInput";
@@ -24,15 +13,12 @@ import { GlowButton } from "@/components/ui/GlowButton";
 import { Button } from "@/components/ui/button";
 import {
   AUTOPILOT_LAUNCH_EXAMPLES,
-  buildLaunchDestinationPreview,
   type AutopilotLaunchExample,
-  type LaunchDestinationPreview,
 } from "@/lib/autopilot-launch-examples";
 import { useI18n } from "@/i18n";
 import { CAN_USE_ADVANCED_RUNTIME } from "@/lib/deploy-target";
 import {
   buildLaunchRoutePlan,
-  type LaunchRouteCandidate,
   type LaunchRouteCandidateId,
 } from "@/lib/launch-router";
 import {
@@ -124,185 +110,25 @@ export interface UnifiedWorkflowResolution extends WorkflowLaunchResult {
   requestedAt: number;
 }
 
-function getPreviewConfidenceClass(
-  confidence: LaunchDestinationPreview["confidence"]
-) {
-  if (confidence === "high") {
-    return "border-emerald-200 bg-emerald-50 text-emerald-700";
-  }
-  if (confidence === "medium") {
-    return "border-amber-200 bg-amber-50 text-amber-700";
-  }
-  return "border-rose-200 bg-rose-50 text-rose-700";
-}
-
-function getPreviewConfidenceLabel(
-  locale: string,
-  confidence: LaunchDestinationPreview["confidence"]
-) {
-  if (confidence === "high") {
-    return t(locale, "高置信", "High confidence");
-  }
-  if (confidence === "medium") {
-    return t(locale, "中置信", "Medium confidence");
-  }
-  return t(locale, "需补路标", "Needs waypoints");
-}
-
-export const UNIFIED_LAUNCH_EXPLANATION_LAYER_MARKERS = [
-  "destination-preview",
-  "confidence",
-  "attachment-influence",
-  "missing-waypoints",
-  "waypoints-complete",
-] as const;
-
-function getMissingFieldLabel(
-  locale: string,
-  field: LaunchDestinationPreview["missingFields"][number]
-) {
-  switch (field) {
-    case "goal":
-      return t(locale, "目标", "Goal");
-    case "deliverable":
-      return t(locale, "交付物", "Deliverable");
-    case "constraints":
-      return t(locale, "约束", "Constraints");
-    case "timeline":
-      return t(locale, "时间线", "Timeline");
-    case "successCriteria":
-      return t(locale, "成功标准", "Success criteria");
-  }
-}
-
-function PreviewValue({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-[12px] border border-white/80 bg-white/64 px-2 py-1.5">
-      <div className="text-[8px] font-bold uppercase tracking-[0.16em] text-stone-400">
-        {label}
-      </div>
-      <div className="mt-0.5 line-clamp-2 text-[10px] font-semibold leading-4 text-stone-700">
-        {value}
-      </div>
-    </div>
-  );
-}
-
-function DestinationPreviewCard({
-  preview,
-  locale,
-}: {
-  preview: LaunchDestinationPreview;
-  locale: string;
-}) {
-  const missingLabels = preview.missingFields.map(field =>
-    getMissingFieldLabel(locale, field)
-  );
-  const constraintText =
-    preview.constraints.length > 0
-      ? preview.constraints.join(" / ")
-      : t(locale, "暂未识别", "Not detected");
-  const successText =
-    preview.successCriteria.length > 0
-      ? preview.successCriteria.join(" / ")
-      : t(locale, "暂未识别", "Not detected");
-
-  return (
-    <div
-      className="mt-2 rounded-[18px] border border-[#d8e6dd]/80 bg-[linear-gradient(135deg,rgba(247,253,249,0.94),rgba(255,248,239,0.82))] p-2 shadow-[0_12px_30px_rgba(75,105,85,0.08)] motion-reduce:transition-none"
-      data-testid="autopilot-destination-preview-card"
-      data-explanation-layer={UNIFIED_LAUNCH_EXPLANATION_LAYER_MARKERS[0]}
-    >
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#267064]">
-            {t(locale, "目的地预览", "Destination preview")}
-          </div>
-          <div className="mt-0.5 text-[10px] leading-4 text-stone-600">
-            {t(
-              locale,
-              "先看系统理解到的目标、交付物和缺口，再选择路线发车。",
-              "Review the interpreted goal, deliverable, and gaps before choosing a route."
-            )}
-          </div>
-        </div>
-        <span
-          className={cn(
-            "rounded-full border px-2 py-1 text-[9px] font-semibold",
-            getPreviewConfidenceClass(preview.confidence)
-          )}
-          data-explanation-layer={UNIFIED_LAUNCH_EXPLANATION_LAYER_MARKERS[1]}
-        >
-          {getPreviewConfidenceLabel(locale, preview.confidence)}
-        </span>
-      </div>
-
-      <div className="mt-2 grid grid-cols-1 gap-1.5 sm:grid-cols-2 xl:grid-cols-4">
-        <PreviewValue label={t(locale, "目标", "Goal")} value={preview.goal} />
-        <PreviewValue
-          label={t(locale, "交付物", "Deliverable")}
-          value={preview.deliverable}
-        />
-        <PreviewValue
-          label={t(locale, "时间线", "Timeline")}
-          value={preview.timeline ?? t(locale, "暂未识别", "Not detected")}
-        />
-        <PreviewValue
-          label={t(locale, "推荐模式", "Route mode")}
-          value={preview.route.mode}
-        />
-      </div>
-
-      <div className="mt-2 grid grid-cols-1 gap-1.5 sm:grid-cols-2">
-        <PreviewValue
-          label={t(locale, "约束", "Constraints")}
-          value={constraintText}
-        />
-        <PreviewValue
-          label={t(locale, "成功标准", "Success criteria")}
-          value={successText}
-        />
-      </div>
-
-      <div className="mt-2 flex flex-wrap gap-1.5 text-[9px] font-semibold">
-        <span
-          className="rounded-full border border-[#d8e6dd] bg-white/70 px-2 py-0.5 text-[#267064]"
-          data-explanation-layer={UNIFIED_LAUNCH_EXPLANATION_LAYER_MARKERS[2]}
-        >
-          {preview.attachmentInfluence.summary}
-        </span>
-        {missingLabels.length > 0 ? (
-          <span
-            className="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-amber-700"
-            data-explanation-layer={UNIFIED_LAUNCH_EXPLANATION_LAYER_MARKERS[3]}
-          >
-            {t(locale, "缺少：", "Missing: ")}
-            {missingLabels.join(" / ")}
-          </span>
-        ) : (
-          <span
-            className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-emerald-700"
-            data-explanation-layer={UNIFIED_LAUNCH_EXPLANATION_LAYER_MARKERS[4]}
-          >
-            {t(locale, "目的地路标完整", "Destination waypoints complete")}
-          </span>
-        )}
-      </div>
-    </div>
-  );
-}
+export { UNIFIED_LAUNCH_EXPLANATION_LAYER_MARKERS } from "@/components/launch/LaunchDestinationPreviewCard";
 
 function LaunchDestinationExamples({
   locale,
   onSelect,
+  active = false,
 }: {
   locale: string;
   onSelect: (example: AutopilotLaunchExample) => void;
+  active?: boolean;
 }) {
   return (
     <div
-      className="mt-2 flex flex-wrap items-center gap-1.5 text-[10px]"
+      className={cn(
+        "mt-2 flex flex-wrap items-center gap-1.5 text-[10px]",
+        active && "opacity-85"
+      )}
       data-testid="launch-compact-examples"
+      data-state={active ? "active-destination" : "empty-destination"}
     >
       <span className="mr-0.5 font-semibold uppercase tracking-[0.16em] text-[#9a5d32]">
         {t(locale, "示例", "Try")}
@@ -340,6 +166,7 @@ export function UnifiedLaunchComposer({
   hideHeader = false,
   hideInputLabel = false,
   hideClarificationPanel = false,
+  hideOperatorActions = false,
   className,
 }: {
   createMission: TaskHubCreateMission;
@@ -361,6 +188,7 @@ export function UnifiedLaunchComposer({
   hideHeader?: boolean;
   hideInputLabel?: boolean;
   hideClarificationPanel?: boolean;
+  hideOperatorActions?: boolean;
   className?: string;
 }) {
   const { locale } = useI18n();
@@ -410,17 +238,6 @@ export function UnifiedLaunchComposer({
     routePlan.candidates[0];
   const hasDraftDestination =
     draftText.trim().length > 0 || attachments.length > 0;
-  const destinationPreview = useMemo(
-    () =>
-      hasDraftDestination
-        ? buildLaunchDestinationPreview({
-            text: draftText,
-            attachments,
-            runtimeMode,
-          })
-        : null,
-    [attachments, draftText, hasDraftDestination, runtimeMode]
-  );
   const commandHistory = useMemo(
     () => commands.map(command => command.commandText),
     [commands]
@@ -666,14 +483,14 @@ export function UnifiedLaunchComposer({
   }
 
   const inputRowClassName = cn(
-    "rounded-[22px] border border-[#d8e6dd]/85 bg-white/82 shadow-[0_14px_36px_rgba(75,105,85,0.10)] backdrop-blur-xl",
+    "w-full rounded-[22px] border border-[#d8e6dd]/85 bg-white/82 shadow-[0_14px_36px_rgba(75,105,85,0.10)] backdrop-blur-xl",
     isDense ? "p-2" : "p-2.5"
   );
 
   const composerInputShell = (
     <div
       className={cn(
-        "rounded-[28px] border border-white/80 bg-[linear-gradient(135deg,rgba(255,255,255,0.78),rgba(247,253,249,0.64))] shadow-[0_18px_42px_rgba(75,105,85,0.10)] backdrop-blur-xl",
+        "w-full rounded-[28px] border border-white/80 bg-[linear-gradient(135deg,rgba(255,255,255,0.78),rgba(247,253,249,0.64))] shadow-[0_18px_42px_rgba(75,105,85,0.10)] backdrop-blur-xl",
         isDense ? "p-2" : "p-3"
       )}
       data-testid="unified-launch-compact-composer"
@@ -719,39 +536,13 @@ export function UnifiedLaunchComposer({
         </div>
       </div>
 
-      {!hasDraftDestination ? (
-        <LaunchDestinationExamples
-          locale={locale}
-          onSelect={example => {
-            void handleExampleSelected(example);
-          }}
-        />
-      ) : null}
-
-      {destinationPreview ? (
-        <DestinationPreviewCard preview={destinationPreview} locale={locale} />
-      ) : null}
-
-      {hasDraftDestination ? (
-        <RoutePlanningOverlay
-          routePlan={routePlan}
-          selectedRouteId={selectedCandidate?.id ?? selectedRouteId}
-          locale={locale}
-          onSelect={item => {
-            if (item.available) {
-              setSelectedRouteId(item.id);
-            }
-          }}
-          onConfirmRoute={item => {
-            if (item.available) {
-              setSelectedRouteId(item.id);
-              void handleSubmit(draftText, item.id);
-            }
-          }}
-          confirming={submitting}
-          confirmDisabled={!draftText.trim() || submitting}
-        />
-      ) : null}
+      <LaunchDestinationExamples
+        locale={locale}
+        active={hasDraftDestination}
+        onSelect={example => {
+          void handleExampleSelected(example);
+        }}
+      />
 
       <LaunchRuntimeMeta
         locale={locale}
@@ -761,7 +552,7 @@ export function UnifiedLaunchComposer({
         maxAttachments={MAX_WORKFLOW_ATTACHMENTS}
         onPickFiles={() => fileInputRef.current?.click()}
         operatorActionRail={
-          activeTaskDetail ? (
+          activeTaskDetail && !hideOperatorActions ? (
             <LaunchOperatorActionRail
               detail={activeTaskDetail}
               loadingByAction={operatorActionLoading}
@@ -784,27 +575,6 @@ export function UnifiedLaunchComposer({
         submitLabel={submitLabel}
         submitDisabled={!draftText.trim() || submitting}
       />
-      <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px]">
-        {onOpenCreateDialog ? (
-          <button
-            type="button"
-            className="inline-flex h-7 items-center gap-1 rounded-full border border-[#d8e6dd]/80 bg-white/72 px-2.5 font-semibold text-[#267064] shadow-none transition hover:bg-[#f7fdf9]"
-            onClick={onOpenCreateDialog}
-            data-testid="launch-action-create-task"
-          >
-            <PlusCircle className="size-3.5" />
-            {t(locale, "新建任务", "New task")}
-          </button>
-        ) : null}
-        <button
-          type="button"
-          className="inline-flex h-7 items-center gap-1 rounded-full border border-[#d8e6dd]/80 bg-white/72 px-2.5 font-semibold text-[#267064] shadow-none transition hover:bg-[#f7fdf9]"
-          data-testid="launch-action-advanced"
-        >
-          <SlidersHorizontal className="size-3.5" />
-          {t(locale, "高级", "Advanced")}
-        </button>
-      </div>
     </div>
   );
 

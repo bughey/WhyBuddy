@@ -2,6 +2,7 @@ import { useRef, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 
+import { FUTURE_OFFICE_COLORS } from "@/lib/scene-theme";
 import { useSwarmStore } from "@/lib/swarm-store";
 import type { CollaborationSession } from "@shared/swarm";
 
@@ -10,14 +11,14 @@ const PARTICLE_COUNT_PER_SESSION = 12;
 const CIRCLE_RADIUS = 4.5;
 const FADE_OUT_DURATION = 1.0; // seconds
 const SESSION_COLORS = [
-  "#F59E0B", // amber
-  "#3B82F6", // blue
-  "#10B981", // emerald
+  FUTURE_OFFICE_COLORS.cyan,
+  FUTURE_OFFICE_COLORS.blue,
+  FUTURE_OFFICE_COLORS.mint,
   "#EF4444", // red
-  "#8B5CF6", // violet
-  "#EC4899", // pink
-  "#06B6D4", // cyan
-  "#F97316", // orange
+  FUTURE_OFFICE_COLORS.violet,
+  FUTURE_OFFICE_COLORS.rose,
+  FUTURE_OFFICE_COLORS.cyanSoft,
+  FUTURE_OFFICE_COLORS.green,
 ];
 
 /* ── Helpers ── */
@@ -37,7 +38,7 @@ function podPosition(podId: string): THREE.Vector3 {
   return new THREE.Vector3(
     Math.cos(angle) * CIRCLE_RADIUS,
     0.5,
-    Math.sin(angle) * CIRCLE_RADIUS,
+    Math.sin(angle) * CIRCLE_RADIUS
   );
 }
 
@@ -97,7 +98,7 @@ function SessionParticleStream({
         depthWrite: false,
         blending: THREE.AdditiveBlending,
       }),
-    [color, opacity, fadeOut],
+    [color, opacity, fadeOut]
   );
 
   // Animate particles along the source→target path
@@ -137,9 +138,9 @@ function SessionParticleStream({
       new THREE.Vector3(
         (source.x + target.x) / 2,
         (source.y + target.y) / 2 + 0.4,
-        (source.z + target.z) / 2,
+        (source.z + target.z) / 2
       ),
-    [source, target],
+    [source, target]
   );
 
   return (
@@ -163,7 +164,7 @@ function SessionParticleStream({
 /* ── Main component ── */
 
 export function CrossPodParticles({ active = true }: { active?: boolean }) {
-  const activeSessions = useSwarmStore((s) => s.activeSessions);
+  const activeSessions = useSwarmStore(s => s.activeSessions);
 
   if (!active) return null;
 
@@ -175,7 +176,7 @@ export function CrossPodParticles({ active = true }: { active?: boolean }) {
   // Build render data for active + fading sessions
   const sessionRenderData = useMemo<SessionRenderData[]>(() => {
     return activeSessions
-      .filter((s) => s.status === "active" || s.status === "pending")
+      .filter(s => s.status === "active" || s.status === "pending")
       .map((session, idx) => {
         const sourcePodId = session.request.sourcePodId;
         const targetPodId =
@@ -184,9 +185,7 @@ export function CrossPodParticles({ active = true }: { active?: boolean }) {
           session,
           source: podPosition(sourcePodId),
           target: podPosition(targetPodId),
-          color: new THREE.Color(
-            SESSION_COLORS[idx % SESSION_COLORS.length],
-          ),
+          color: new THREE.Color(SESSION_COLORS[idx % SESSION_COLORS.length]),
         };
       });
   }, [activeSessions]);
@@ -197,8 +196,8 @@ export function CrossPodParticles({ active = true }: { active?: boolean }) {
 
     const currentIds = new Set(
       activeSessions
-        .filter((s) => s.status === "active" || s.status === "pending")
-        .map((s) => s.id),
+        .filter(s => s.status === "active" || s.status === "pending")
+        .map(s => s.id)
     );
 
     // Sessions that were active but are no longer → start fade
@@ -234,7 +233,7 @@ export function CrossPodParticles({ active = true }: { active?: boolean }) {
   return (
     <group>
       {/* Active sessions */}
-      {sessionRenderData.map((data) => (
+      {sessionRenderData.map(data => (
         <SessionParticleStream
           key={data.session.id}
           source={data.source}
@@ -246,7 +245,7 @@ export function CrossPodParticles({ active = true }: { active?: boolean }) {
       ))}
 
       {/* Pod glow highlights for active sessions */}
-      {sessionRenderData.map((data) => (
+      {sessionRenderData.map(data => (
         <PodGlow
           key={`glow-${data.session.id}`}
           position={data.source}

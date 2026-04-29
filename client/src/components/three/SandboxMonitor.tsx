@@ -7,6 +7,7 @@ import { useEffect, useMemo } from "react";
 
 import { useI18n } from "@/i18n";
 import { type SandboxFocusedPane, useSandboxStore } from "@/lib/sandbox-store";
+import { FUTURE_OFFICE_COLORS } from "@/lib/scene-theme";
 import { useTasksStore } from "@/lib/tasks-store";
 
 import { ScreenshotPreview } from "../sandbox/ScreenshotPreview";
@@ -37,14 +38,14 @@ function buildPaneShellStyle(active: boolean): React.CSSProperties {
     padding: 5,
     borderRadius: 16,
     background: active
-      ? "linear-gradient(180deg, rgba(24,37,58,0.92), rgba(12,20,31,0.96))"
-      : "linear-gradient(180deg, rgba(10,16,24,0.84), rgba(12,18,27,0.9))",
+      ? "linear-gradient(180deg, rgba(28,47,68,0.86), rgba(13,24,39,0.92))"
+      : "linear-gradient(180deg, rgba(248,251,255,0.18), rgba(226,236,246,0.12))",
     border: active
-      ? "1px solid rgba(96,165,250,0.28)"
-      : "1px solid rgba(71,85,105,0.28)",
+      ? "1px solid rgba(125,211,252,0.36)"
+      : "1px solid rgba(226,232,240,0.26)",
     boxShadow: active
-      ? "inset 0 0 0 1px rgba(96,165,250,0.14), 0 0 20px rgba(59,130,246,0.12)"
-      : "inset 0 1px 0 rgba(255,255,255,0.03)",
+      ? "inset 0 0 0 1px rgba(125,211,252,0.18), 0 0 22px rgba(56,189,248,0.16)"
+      : "inset 0 1px 0 rgba(255,255,255,0.16)",
   };
 }
 
@@ -63,8 +64,8 @@ function buildCenterPaneShellStyle(active: boolean): React.CSSProperties {
     height: "100%",
     overflow: "hidden",
     borderRadius: 16,
-    background: active ? "rgba(15,23,42,0.16)" : "transparent",
-    boxShadow: active ? "0 0 20px rgba(59,130,246,0.1)" : "none",
+    background: active ? "rgba(248,251,255,0.16)" : "transparent",
+    boxShadow: active ? "0 0 22px rgba(56,189,248,0.12)" : "none",
   };
 }
 
@@ -153,18 +154,17 @@ export function SandboxMonitor() {
               borderRadius: 20,
               padding: 8,
               background:
-                "linear-gradient(180deg, rgba(22,28,37,0.98), rgba(12,18,26,0.99))",
-              border: "1px solid rgba(71,85,105,0.34)",
+                "linear-gradient(180deg, rgba(248,251,255,0.82), rgba(222,235,247,0.7))",
+              border: "1px solid rgba(203,213,225,0.54)",
               boxShadow:
-                "0 22px 46px rgba(6,10,16,0.28), inset 0 1px 0 rgba(255,255,255,0.05)",
+                "0 22px 46px rgba(86,105,126,0.2), inset 0 1px 0 rgba(255,255,255,0.65)",
             }}
           >
             <div
               style={{
                 position: "absolute",
                 inset: 0,
-                background:
-                  "radial-gradient(circle at top, rgba(96,165,250,0.08), transparent 26%), radial-gradient(circle at bottom, rgba(14,165,233,0.06), transparent 30%)",
+                background: `radial-gradient(circle at top, ${FUTURE_OFFICE_COLORS.cyan}22, transparent 26%), radial-gradient(circle at bottom, ${FUTURE_OFFICE_COLORS.blue}18, transparent 30%)`,
                 pointerEvents: "none",
               }}
             />

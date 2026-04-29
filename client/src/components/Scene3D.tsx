@@ -1,23 +1,24 @@
-import { ContactShadows, useGLTF } from '@react-three/drei';
-import { Canvas } from '@react-three/fiber';
-import { Suspense, useEffect, useRef, useState } from 'react';
-import { ACESFilmicToneMapping } from 'three';
+import { ContactShadows, useGLTF } from "@react-three/drei";
+import { Canvas } from "@react-three/fiber";
+import { Suspense, useEffect, useRef, useState } from "react";
+import { ACESFilmicToneMapping } from "three";
 
-import { useContainerWidth } from '@/hooks/useContainerWidth';
-import { useIdleActivation } from '@/hooks/useIdleActivation';
-import { useViewportTier } from '@/hooks/useViewportTier';
-import { FURNITURE_MODELS, PET_MODELS } from '@/lib/assets';
-import { useTasksStore } from '@/lib/tasks-store';
+import { useContainerWidth } from "@/hooks/useContainerWidth";
+import { useIdleActivation } from "@/hooks/useIdleActivation";
+import { useViewportTier } from "@/hooks/useViewportTier";
+import { FURNITURE_MODELS, PET_MODELS } from "@/lib/assets";
+import { FUTURE_OFFICE_COLORS } from "@/lib/scene-theme";
+import { useTasksStore } from "@/lib/tasks-store";
 
-import { CameraController } from './three/CameraController';
-import { CrossFrameworkParticles } from './three/CrossFrameworkParticles';
-import { CrossPodParticles } from './three/CrossPodParticles';
-import { MissionIsland } from './three/MissionIsland';
-import { OfficeRoom } from './three/OfficeRoom';
-import { PetWorkers } from './three/PetWorkers';
-import { SandboxMonitor } from './three/SandboxMonitor';
-import { SceneStageFlow } from './three/SceneStageFlow';
-import { WaitingDecisionBubble } from './three/WaitingDecisionBubble';
+import { CameraController } from "./three/CameraController";
+import { CrossFrameworkParticles } from "./three/CrossFrameworkParticles";
+import { CrossPodParticles } from "./three/CrossPodParticles";
+import { MissionIsland } from "./three/MissionIsland";
+import { OfficeRoom } from "./three/OfficeRoom";
+import { PetWorkers } from "./three/PetWorkers";
+import { SandboxMonitor } from "./three/SandboxMonitor";
+import { SceneStageFlow } from "./three/SceneStageFlow";
+import { WaitingDecisionBubble } from "./three/WaitingDecisionBubble";
 
 const CRITICAL_FURNITURE_MODELS = [
   FURNITURE_MODELS.floorFull,
@@ -43,7 +44,7 @@ const SECONDARY_SCENE_MODELS = [
   ...Object.values(PET_MODELS),
 ];
 
-export type ScenePerformanceProfile = 'balanced' | 'resizing';
+export type ScenePerformanceProfile = "balanced" | "resizing";
 
 export interface Scene3DProps {
   performanceProfile?: ScenePerformanceProfile;
@@ -54,7 +55,7 @@ export interface Scene3DProps {
 }
 
 export function Scene3D({
-  performanceProfile = 'balanced',
+  performanceProfile = "balanced",
   sidebarWidth = 0,
   hidden = false,
 }: Scene3DProps) {
@@ -62,24 +63,30 @@ export function Scene3D({
   const { isMobile, isTablet, tier } = useViewportTier();
   const effectiveWidth = useContainerWidth(containerRef);
   const deferredDetailsReady = useIdleActivation(
-    performanceProfile === 'balanced',
+    performanceProfile === "balanced",
     600
   );
-  const reducedSceneEffects = performanceProfile === 'resizing';
+  const reducedSceneEffects = performanceProfile === "resizing";
 
   // Sandbox shield: show when the selected mission runs at strict security level.
   const isStrictSandbox = useTasksStore(state => {
-    const detail = state.selectedTaskId ? state.detailsById[state.selectedTaskId] : null;
-    return detail?.securitySummary?.level === 'strict' && detail?.status === 'running';
+    const detail = state.selectedTaskId
+      ? state.detailsById[state.selectedTaskId]
+      : null;
+    return (
+      detail?.securitySummary?.level === "strict" &&
+      detail?.status === "running"
+    );
   });
 
   const [isRecovering, setIsRecovering] = useState(false);
 
   useEffect(() => {
-    (globalThis as { __sceneSetRecovering?: (value: boolean) => void }).__sceneSetRecovering =
-      (value: boolean) => {
-        setIsRecovering(value);
-      };
+    (
+      globalThis as { __sceneSetRecovering?: (value: boolean) => void }
+    ).__sceneSetRecovering = (value: boolean) => {
+      setIsRecovering(value);
+    };
 
     return () => {
       delete (globalThis as { __sceneSetRecovering?: (value: boolean) => void })
@@ -94,7 +101,7 @@ export function Scene3D({
   }, []);
 
   useEffect(() => {
-    if (!deferredDetailsReady || typeof window === 'undefined') return;
+    if (!deferredDetailsReady || typeof window === "undefined") return;
 
     let timeoutId: number | null = null;
     let idleId: number | null = null;
@@ -105,16 +112,19 @@ export function Scene3D({
       });
     };
 
-    if (typeof window.requestIdleCallback === 'function') {
-      idleId = window.requestIdleCallback(() => {
-        preloadSecondary();
-      }, { timeout: 1200 });
+    if (typeof window.requestIdleCallback === "function") {
+      idleId = window.requestIdleCallback(
+        () => {
+          preloadSecondary();
+        },
+        { timeout: 1200 }
+      );
     } else {
       timeoutId = window.setTimeout(preloadSecondary, 900);
     }
 
     return () => {
-      if (idleId !== null && typeof window.cancelIdleCallback === 'function') {
+      if (idleId !== null && typeof window.cancelIdleCallback === "function") {
         window.cancelIdleCallback(idleId);
       }
       if (timeoutId !== null) {
@@ -124,10 +134,25 @@ export function Scene3D({
   }, [deferredDetailsReady]);
 
   const camera = isMobile
-    ? { position: [0, 8.4, 16.2] as [number, number, number], fov: 46, near: 0.1, far: 100 }
+    ? {
+        position: [0, 8.4, 16.2] as [number, number, number],
+        fov: 46,
+        near: 0.1,
+        far: 100,
+      }
     : isTablet
-      ? { position: [0, 7.8, 14.6] as [number, number, number], fov: 43, near: 0.1, far: 100 }
-      : { position: [0, 7.3, 13.8] as [number, number, number], fov: 40, near: 0.1, far: 100 };
+      ? {
+          position: [0, 7.8, 14.6] as [number, number, number],
+          fov: 43,
+          near: 0.1,
+          far: 100,
+        }
+      : {
+          position: [0, 7.3, 13.8] as [number, number, number],
+          fov: 40,
+          near: 0.1,
+          far: 100,
+        };
   const dpr: [number, number] = reducedSceneEffects
     ? [1, 1]
     : isMobile
@@ -139,31 +164,35 @@ export function Scene3D({
     <div
       ref={containerRef}
       className="absolute inset-0 z-0 h-full w-full touch-pan-y"
-      style={{ visibility: hidden ? 'hidden' : 'visible' }}
+      style={{ visibility: hidden ? "hidden" : "visible" }}
     >
       <Canvas
         shadows
         camera={camera}
         dpr={dpr}
-        frameloop={hidden ? 'demand' : 'always'}
+        frameloop={hidden ? "demand" : "always"}
         gl={{ antialias: !reducedSceneEffects, alpha: false }}
         resize={{ scroll: false, debounce: { scroll: 0, resize: 0 } }}
         onCreated={({ gl, camera: sceneCamera }) => {
-          gl.setClearColor('#BFDFFF');
+          gl.setClearColor(FUTURE_OFFICE_COLORS.sceneBackground);
           gl.toneMapping = ACESFilmicToneMapping;
-          gl.toneMappingExposure = isMobile ? 0.92 : 0.88;
+          gl.toneMappingExposure = isMobile ? 1.04 : 1;
           sceneCamera.lookAt(0, isMobile ? 1.6 : 1.35, 0);
         }}
       >
         <CameraController effectiveWidth={effectiveWidth} tier={tier} />
         <Suspense fallback={null}>
-          <ambientLight intensity={0.38} color="#F7EDE1" />
-          <hemisphereLight color="#FAEEDD" groundColor="#B28A67" intensity={0.34} />
+          <ambientLight intensity={0.48} color={FUTURE_OFFICE_COLORS.ambient} />
+          <hemisphereLight
+            color={FUTURE_OFFICE_COLORS.hemisphereSky}
+            groundColor={FUTURE_OFFICE_COLORS.hemisphereGround}
+            intensity={0.42}
+          />
 
           <directionalLight
             position={[-5.2, 7.2, 4.4]}
-            intensity={0.98}
-            color="#FBE2BC"
+            intensity={1.08}
+            color={FUTURE_OFFICE_COLORS.keyLight}
             castShadow
             shadow-mapSize-height={primaryShadowSize}
             shadow-mapSize-width={primaryShadowSize}
@@ -175,22 +204,26 @@ export function Scene3D({
             shadow-bias={-0.00025}
           />
 
-          <directionalLight position={[6.4, 4.5, 5.5]} intensity={0.24} color="#F1E4D4" />
+          <directionalLight
+            position={[6.4, 4.5, 5.5]}
+            intensity={0.32}
+            color={FUTURE_OFFICE_COLORS.fillLight}
+          />
 
           <spotLight
             position={[-7.2, 2.9, 0.3]}
             angle={0.92}
             penumbra={1}
-            intensity={0.34}
-            color="#FFF0D8"
+            intensity={0.3}
+            color={FUTURE_OFFICE_COLORS.practicalLight}
             distance={18}
             decay={2}
           />
 
           <pointLight
             position={[0.3, 2.35, -1.1]}
-            intensity={0.28}
-            color="#F6D8A9"
+            intensity={0.22}
+            color={FUTURE_OFFICE_COLORS.cyanSoft}
             distance={6.6}
             decay={2}
           />
@@ -200,7 +233,9 @@ export function Scene3D({
             reducedEffects={reducedSceneEffects}
           />
           <SceneStageFlow />
-          <PetWorkers reducedOverlays={!deferredDetailsReady || reducedSceneEffects} />
+          <PetWorkers
+            reducedOverlays={!deferredDetailsReady || reducedSceneEffects}
+          />
           <MissionIsland />
           <SandboxMonitor />
           <WaitingDecisionBubble />
@@ -214,11 +249,11 @@ export function Scene3D({
           {!reducedSceneEffects ? (
             <ContactShadows
               position={[0, 0.01, 0]}
-              opacity={0.34}
+              opacity={0.24}
               scale={15}
-              blur={2.2}
+              blur={2.6}
               far={5.5}
-              color="#665140"
+              color={FUTURE_OFFICE_COLORS.contactShadow}
             />
           ) : null}
         </Suspense>

@@ -10,6 +10,7 @@ import {
   Activity,
   Bot,
   ChevronDown,
+  ChevronUp,
   Copy,
   Ellipsis,
   FileText,
@@ -24,6 +25,8 @@ import { toast } from "sonner";
 
 import { ExecutorStatusPanel } from "@/components/ExecutorStatusPanel";
 import { ExecutorTerminalPanel } from "@/components/ExecutorTerminalPanel";
+import { LaunchDestinationPreviewCard } from "@/components/launch/LaunchDestinationPreviewCard";
+import { RoutePlanningOverlay } from "@/components/launch/RoutePlanningOverlay";
 import { UnifiedLaunchComposer } from "@/components/launch/UnifiedLaunchComposer";
 import { ClarificationPanel } from "@/components/nl-command/ClarificationPanel";
 import { ArtifactListBlock } from "@/components/tasks/ArtifactListBlock";
@@ -50,7 +53,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useI18n } from "@/i18n";
+import { buildLaunchDestinationPreview } from "@/lib/autopilot-launch-examples";
 import { CAN_USE_ADVANCED_RUNTIME } from "@/lib/deploy-target";
+import {
+  buildLaunchRoutePlan,
+  type LaunchRouteCandidateId,
+} from "@/lib/launch-router";
 import { useNLCommandStore } from "@/lib/nl-command-store";
 import type { TaskHubCommandSubmissionResult } from "@/lib/nl-command-store";
 import { useAppStore } from "@/lib/store";
@@ -148,11 +156,15 @@ export function OfficeTaskCockpit({
 
   const currentDialog = useNLCommandStore(state => state.currentDialog);
   const currentCommand = useNLCommandStore(state => state.currentCommand);
+  const launchDraftText = useNLCommandStore(state => state.draftText || "");
   const hasActiveClarification = currentDialog?.status === "active";
   const [search, setSearch] = useState("");
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [pendingLaunch, setPendingLaunch] =
     useState<OfficeLaunchResolution | null>(null);
+  const [selectedLaunchRouteId, setSelectedLaunchRouteId] =
+    useState<LaunchRouteCandidateId | null>(null);
+  const [centerControlsCollapsed, setCenterControlsCollapsed] = useState(false);
   const [runtimeDockTab, setRuntimeDockTab] = useState<
     "support" | "logs" | "artifacts" | "runtime"
   >("support");
@@ -466,26 +478,33 @@ export function OfficeTaskCockpit({
   const nextStepInsight = selectedDetail
     ? deriveNextStep(selectedDetail, locale)
     : null;
-  const showWaitingSupportCard = Boolean(
-    selectedDetail?.status === "waiting" || hasPendingDecision
-  );
-  const showSupportBlockerCard = Boolean(
-    blockerInsight &&
-    (selectedDetail?.blocker != null ||
-      selectedDetail?.operatorState === "blocked" ||
-      selectedDetail?.operatorState === "paused" ||
-      selectedDetail?.status === "failed")
-  );
-  const showSupportNextStepCard = Boolean(
-    nextStepInsight &&
-    (hasPendingDecision ||
-      selectedDetail?.status === "waiting" ||
-      selectedDetail?.status === "failed" ||
-      selectedDetail?.status === "cancelled" ||
-      selectedDetail?.operatorState === "blocked" ||
-      selectedDetail?.operatorState === "paused")
-  );
+  const hasLaunchDraftDestination = launchDraftText.trim().length > 0;
+  const showTaskSupportCards = !hasLaunchDraftDestination;
+  const showWaitingSupportCard =
+    showTaskSupportCards &&
+    Boolean(selectedDetail?.status === "waiting" || hasPendingDecision);
+  const showSupportBlockerCard =
+    showTaskSupportCards &&
+    Boolean(
+      blockerInsight &&
+      (selectedDetail?.blocker != null ||
+        selectedDetail?.operatorState === "blocked" ||
+        selectedDetail?.operatorState === "paused" ||
+        selectedDetail?.status === "failed")
+    );
+  const showSupportNextStepCard =
+    showTaskSupportCards &&
+    Boolean(
+      nextStepInsight &&
+      (hasPendingDecision ||
+        selectedDetail?.status === "waiting" ||
+        selectedDetail?.status === "failed" ||
+        selectedDetail?.status === "cancelled" ||
+        selectedDetail?.operatorState === "blocked" ||
+        selectedDetail?.operatorState === "paused")
+    );
   const supportOwnerInsight =
+    showTaskSupportCards &&
     currentOwnerInsight &&
     selectedDetail &&
     (hasPendingDecision ||
@@ -494,17 +513,47 @@ export function OfficeTaskCockpit({
       selectedDetail.status === "failed")
       ? currentOwnerInsight
       : null;
+  const launchRoutePlan = useMemo(
+    () =>
+      buildLaunchRoutePlan({
+        text: launchDraftText,
+        attachments: [],
+        runtimeMode,
+      }),
+    [launchDraftText, runtimeMode]
+  );
+  const launchDestinationPreview = useMemo(
+    () =>
+      hasLaunchDraftDestination
+        ? buildLaunchDestinationPreview({
+            text: launchDraftText,
+            attachments: [],
+            runtimeMode,
+          })
+        : null,
+    [hasLaunchDraftDestination, launchDraftText, runtimeMode]
+  );
+  const selectedLaunchCandidate =
+    launchRoutePlan.candidates.find(
+      candidate => candidate.id === selectedLaunchRouteId && candidate.available
+    ) ??
+    launchRoutePlan.candidates.find(
+      candidate => candidate.id === launchRoutePlan.recommendedRouteId
+    ) ??
+    launchRoutePlan.candidates[0];
   const showClarificationSupportCard = Boolean(
     hasActiveClarification && currentCommand
   );
-  const showPendingLaunchSupportCard = Boolean(pendingLaunch);
+  const showPendingLaunchSupportCard =
+    showTaskSupportCards && Boolean(pendingLaunch);
   const supportTabHasContext =
     showWaitingSupportCard ||
     showSupportBlockerCard ||
     showSupportNextStepCard ||
     Boolean(supportOwnerInsight) ||
     showClarificationSupportCard ||
-    showPendingLaunchSupportCard;
+    showPendingLaunchSupportCard ||
+    hasLaunchDraftDestination;
   const waitingSupportTitle = hasPendingDecision
     ? t(locale, "待处理决策", "Pending decision")
     : t(locale, "等待上下文", "Waiting context");
@@ -741,7 +790,7 @@ export function OfficeTaskCockpit({
             {t(locale, "刷新", "Refresh")}
           </Button>
 
-          <DropdownMenu>
+          <DropdownMenu modal={false}>
             <DropdownMenuTrigger asChild>
               <Button
                 type="button"
@@ -759,8 +808,9 @@ export function OfficeTaskCockpit({
             </DropdownMenuTrigger>
             <DropdownMenuContent
               align="end"
+              side="top"
               sideOffset={8}
-              className="z-[80] w-56"
+              className="z-[120] w-56"
             >
               <div className="px-2 py-1.5 text-[11px] leading-5 text-stone-500">
                 {runtimeModeHint}
@@ -784,7 +834,7 @@ export function OfficeTaskCockpit({
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <DropdownMenu>
+          <DropdownMenu modal={false}>
             <DropdownMenuTrigger asChild>
               <Button
                 type="button"
@@ -796,8 +846,9 @@ export function OfficeTaskCockpit({
             </DropdownMenuTrigger>
             <DropdownMenuContent
               align="end"
+              side="top"
               sideOffset={8}
-              className="z-[80] w-48"
+              className="z-[120] w-48"
             >
               <DropdownMenuItem
                 onSelect={event => {
@@ -906,44 +957,37 @@ export function OfficeTaskCockpit({
   );
 
   const launcherDock = (
-    <div
-      className={cn(
-        "pointer-events-auto mx-auto flex w-full max-w-[700px] flex-col overflow-hidden rounded-[14px] border",
-        floatingGlassClass
-      )}
-    >
-      <div className="bg-white/46 p-2">
-        <UnifiedLaunchComposer
-          createMission={createMission}
-          activeTaskTitle={selectedDetail?.title || selectedTaskSummary?.title}
-          activeTaskDetail={selectedDetail}
-          operatorActionLoading={
-            activeTaskId
-              ? (operatorActionLoadingByMissionId[activeTaskId] ?? {})
-              : {}
-          }
-          onSubmitOperatorAction={handleSubmitOperatorAction}
-          onTaskResolved={handleTaskHubResolved}
-          onWorkflowResolved={resolution => {
-            setPendingLaunch({
-              workflowId: resolution.workflowId,
-              directive: resolution.directive,
-              attachmentCount: resolution.attachmentCount,
-              requestedAt: resolution.requestedAt,
-              missionId: resolution.missionId,
-            });
-          }}
-          onOpenCreateDialog={() => setCreateDialogOpen(true)}
-          onRefresh={refreshCurrent}
-          refreshing={loading && ready}
-          compact
-          bare
-          dense
-          hideHeader
-          hideClarificationPanel
-        />
-      </div>
-    </div>
+    <UnifiedLaunchComposer
+      createMission={createMission}
+      activeTaskTitle={selectedDetail?.title || selectedTaskSummary?.title}
+      activeTaskDetail={selectedDetail}
+      operatorActionLoading={
+        activeTaskId
+          ? (operatorActionLoadingByMissionId[activeTaskId] ?? {})
+          : {}
+      }
+      onSubmitOperatorAction={handleSubmitOperatorAction}
+      onTaskResolved={handleTaskHubResolved}
+      onWorkflowResolved={resolution => {
+        setPendingLaunch({
+          workflowId: resolution.workflowId,
+          directive: resolution.directive,
+          attachmentCount: resolution.attachmentCount,
+          requestedAt: resolution.requestedAt,
+          missionId: resolution.missionId,
+        });
+      }}
+      onOpenCreateDialog={() => setCreateDialogOpen(true)}
+      onRefresh={refreshCurrent}
+      refreshing={loading && ready}
+      compact
+      bare
+      dense
+      className="w-full"
+      hideHeader
+      hideClarificationPanel
+      hideOperatorActions={hasLaunchDraftDestination}
+    />
   );
 
   const clarificationDock = currentDialog ? (
@@ -998,7 +1042,10 @@ export function OfficeTaskCockpit({
   ) : null;
 
   const launcherContextDock = (
-    <div className="pointer-events-auto mx-auto w-full max-w-[700px] overflow-hidden rounded-[16px] border border-white/45 bg-white/64 shadow-[0_16px_36px_rgba(15,23,42,0.1)] backdrop-blur-md">
+    <div
+      className="pointer-events-auto w-full overflow-hidden rounded-[16px] border border-white/45 bg-white/64 shadow-[0_16px_36px_rgba(15,23,42,0.1)] backdrop-blur-md"
+      data-testid="office-center-context-dock"
+    >
       <Tabs
         value={runtimeDockTab}
         onValueChange={value =>
@@ -1072,8 +1119,39 @@ export function OfficeTaskCockpit({
         >
           {supportTabHasContext ? (
             <div className="grid gap-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+              {launchDestinationPreview ? (
+                <div
+                  className="min-h-0 lg:col-span-2"
+                  data-testid="office-launch-support-preview"
+                  data-launch-planning-priority={
+                    hasLaunchDraftDestination ? "destination-draft" : undefined
+                  }
+                >
+                  <LaunchDestinationPreviewCard
+                    preview={launchDestinationPreview}
+                    locale={locale}
+                    className="mt-0"
+                  />
+                  <RoutePlanningOverlay
+                    routePlan={launchRoutePlan}
+                    selectedRouteId={
+                      selectedLaunchCandidate?.id ?? selectedLaunchRouteId
+                    }
+                    locale={locale}
+                    onSelect={candidate => {
+                      if (candidate.available) {
+                        setSelectedLaunchRouteId(candidate.id);
+                      }
+                    }}
+                  />
+                </div>
+              ) : null}
+
               {showWaitingSupportCard ? (
-                <div className="rounded-[12px] border border-sky-200/70 bg-sky-50/78 px-3 py-2 text-[9px] leading-4 text-stone-700 lg:col-span-2">
+                <div
+                  className="rounded-[12px] border border-sky-200/70 bg-sky-50/78 px-3 py-2 text-[9px] leading-4 text-stone-700 lg:col-span-2"
+                  data-testid="office-support-waiting-card"
+                >
                   <div className="text-[8px] font-semibold uppercase tracking-[0.14em] text-sky-700">
                     {waitingSupportTitle}
                   </div>
@@ -1093,7 +1171,10 @@ export function OfficeTaskCockpit({
               ) : null}
 
               {showSupportBlockerCard ? (
-                <div className="rounded-[12px] border border-white/60 bg-white/64 px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)]">
+                <div
+                  className="rounded-[12px] border border-white/60 bg-white/64 px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)]"
+                  data-testid="office-support-blocker-card"
+                >
                   <div className="text-[8px] font-semibold uppercase tracking-[0.14em] text-stone-500">
                     {blockerInsight?.label || t(locale, "阻塞", "Blocker")}
                   </div>
@@ -1116,7 +1197,10 @@ export function OfficeTaskCockpit({
               ) : null}
 
               {showSupportNextStepCard ? (
-                <div className="rounded-[12px] border border-white/60 bg-white/64 px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)]">
+                <div
+                  className="rounded-[12px] border border-white/60 bg-white/64 px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)]"
+                  data-testid="office-support-next-step-card"
+                >
                   <div className="text-[8px] font-semibold uppercase tracking-[0.14em] text-stone-500">
                     {nextStepInsight?.label || t(locale, "下一步", "Next step")}
                   </div>
@@ -1139,7 +1223,10 @@ export function OfficeTaskCockpit({
               ) : null}
 
               {supportOwnerInsight ? (
-                <div className="rounded-[12px] border border-white/60 bg-white/64 px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)] lg:col-span-2">
+                <div
+                  className="rounded-[12px] border border-white/60 bg-white/64 px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)] lg:col-span-2"
+                  data-testid="office-support-owner-card"
+                >
                   <div className="flex items-center gap-2">
                     <span className="text-[8px] font-semibold uppercase tracking-[0.14em] text-stone-500">
                       {supportOwnerInsight.label}
@@ -1164,7 +1251,7 @@ export function OfficeTaskCockpit({
                 </div>
               ) : null}
 
-              {pendingLaunch ? (
+              {showPendingLaunchSupportCard ? (
                 <div className="rounded-[12px] border border-amber-200/70 bg-amber-50/78 px-3 py-2 text-[9px] leading-4 text-stone-700 lg:col-span-2">
                   <div className="text-[8px] font-semibold uppercase tracking-[0.14em] text-amber-700">
                     {t(locale, "待启动团队", "Pending launch")}
@@ -1368,32 +1455,99 @@ export function OfficeTaskCockpit({
     </div>
   );
 
-  const launcherFloatingStack = (
-    <div className="pointer-events-none mx-auto flex w-full max-w-[720px] flex-col justify-end gap-3 overflow-visible">
-      {showClarificationDock ? (
-        <div className="pointer-events-auto overflow-visible">
-          {clarificationDock}
-        </div>
-      ) : null}
-      <div className="pointer-events-auto overflow-visible">{launcherDock}</div>
-      <div className="pointer-events-auto overflow-visible">
+  const centerControlPanel = (
+    <div
+      className="h-full min-h-0 space-y-2.5 overflow-y-auto p-2.5"
+      data-testid="office-center-control-panel"
+    >
+      {launchAutopilotGuidance}
+      {launcherContextDock}
+    </div>
+  );
+
+  const centerControlStack = (
+    <div
+      className={cn(
+        "pointer-events-none mx-auto w-full max-w-[1320px] overflow-visible"
+      )}
+      data-testid="office-center-control-stack"
+      data-collapse-control-placement="outside-composer"
+      data-center-controls-state={
+        showClarificationDock
+          ? "clarification-hidden"
+          : centerControlsCollapsed
+            ? "collapsed"
+            : "expanded"
+      }
+    >
+      {!centerControlsCollapsed && !showClarificationDock ? (
         <div
           className={cn(
-            "overflow-hidden rounded-[16px] border p-3",
+            "pointer-events-auto h-[86vh] max-h-[calc(100vh-420px)] min-h-0 overflow-y-auto rounded-[18px] border",
             floatingGlassClass
           )}
+          data-testid="office-center-workbench-shell"
         >
-          <div className="space-y-3">
-            {launchAutopilotGuidance}
-            {launcherContextDock}
-          </div>
+          {centerControlPanel}
+        </div>
+      ) : null}
+      <div
+        className="pointer-events-none relative px-2 pb-0 pt-4"
+        data-testid="office-center-composer-panel"
+      >
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          className="pointer-events-auto absolute left-1/2 top-0 z-20 h-[18px] w-[34px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-slate-200/70 bg-white/95 p-0 text-slate-600 shadow-[0_8px_18px_rgba(15,23,42,0.1)] backdrop-blur-md hover:bg-slate-50 hover:text-[var(--workspace-accent)]"
+          aria-label={
+            centerControlsCollapsed
+              ? t(locale, "展开工作台", "Expand workbench")
+              : t(locale, "收起工作台", "Collapse workbench")
+          }
+          aria-expanded={!centerControlsCollapsed}
+          data-testid="office-center-collapse-toggle"
+          onClick={() => setCenterControlsCollapsed(value => !value)}
+        >
+          {centerControlsCollapsed ? (
+            <ChevronUp className="size-3.5" />
+          ) : (
+            <ChevronDown className="size-3.5" />
+          )}
+        </Button>
+        <div
+          className="pointer-events-auto mx-auto w-full max-w-[860px] overflow-visible"
+          data-testid="office-center-composer-shell"
+        >
+          {launcherDock}
         </div>
       </div>
     </div>
   );
 
+  const launcherFloatingStack = (
+    <div className="pointer-events-none mx-auto flex w-full max-w-[1320px] flex-col justify-end gap-3 overflow-visible">
+      {centerControlStack}
+    </div>
+  );
+
+  const clarificationStage = showClarificationDock ? (
+    <div
+      className="pointer-events-none fixed left-1/2 top-[calc(env(safe-area-inset-top)+92px)] z-[74] w-[min(1048px,calc(100vw-96px))] -translate-x-1/2"
+      data-testid="office-clarification-stage"
+      data-clarification-placement="viewport-safe-top"
+    >
+      <div className="pointer-events-auto max-h-[min(42vh,420px)] overflow-y-auto rounded-[18px]">
+        {clarificationDock}
+      </div>
+    </div>
+  ) : null;
+
   const launchStage = (
-    <div className="pointer-events-none fixed bottom-[24px] left-1/2 z-[72] w-[min(860px,calc(100vw-48px))] -translate-x-1/2 2xl:bottom-[28px]">
+    <div
+      className="pointer-events-none fixed bottom-[24px] left-1/2 z-[72] w-[min(1320px,calc(100vw-96px))] -translate-x-1/2 2xl:bottom-[28px]"
+      data-testid="office-launch-stage"
+    >
       {launcherFloatingStack}
     </div>
   );
@@ -1464,6 +1618,7 @@ export function OfficeTaskCockpit({
         <div className="relative h-full min-h-0">{sceneHud}</div>
       </div>
 
+      {clarificationStage}
       {launchStage}
 
       <CreateMissionDialog

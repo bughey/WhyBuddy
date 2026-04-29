@@ -6,6 +6,7 @@ import * as THREE from "three";
 import { useAppStore } from "@/lib/store";
 import { useTasksStore } from "@/lib/tasks-store";
 import { useWorkflowStore } from "@/lib/workflow-store";
+import { FUTURE_OFFICE_COLORS } from "@/lib/scene-theme";
 import {
   getSceneStageSignal,
   getSceneZoneLabel,
@@ -47,7 +48,9 @@ function StageFlowSegment({
       if (!mesh) return;
       const t = (clock.elapsedTime * 0.12 + phase + index * 0.26) % 1;
       mesh.position.copy(curve.getPointAt(t));
-      mesh.scale.setScalar(0.7 + Math.sin(clock.elapsedTime * 5 + index) * 0.08);
+      mesh.scale.setScalar(
+        0.7 + Math.sin(clock.elapsedTime * 5 + index) * 0.08
+      );
     });
   });
 
@@ -95,7 +98,9 @@ function StageZonePulse({
   return (
     <group position={position}>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.045, 0]}>
-        <ringGeometry args={[emphasized ? 0.42 : 0.28, emphasized ? 0.62 : 0.4, 40]} />
+        <ringGeometry
+          args={[emphasized ? 0.42 : 0.28, emphasized ? 0.62 : 0.4, 40]}
+        />
         <meshStandardMaterial
           color={color}
           emissive={color}
@@ -113,8 +118,13 @@ function StageZonePulse({
         decay={2}
       />
       {emphasized ? (
-        <Html position={[0, 0.75, 0]} center distanceFactor={10} style={{ pointerEvents: "none" }}>
-          <div className="rounded-full border border-white/70 bg-white/92 px-3 py-1 text-[10px] font-semibold text-[#4C3A2A] shadow-[0_8px_22px_rgba(76,58,42,0.16)]">
+        <Html
+          position={[0, 0.75, 0]}
+          center
+          distanceFactor={10}
+          style={{ pointerEvents: "none" }}
+        >
+          <div className="rounded-full border border-sky-100/80 bg-white/92 px-3 py-1 text-[10px] font-semibold text-slate-700 shadow-[0_8px_22px_rgba(56,189,248,0.14)]">
             {label}
           </div>
         </Html>
@@ -184,23 +194,26 @@ export function SceneStageFlow() {
         distanceFactor={11}
         style={{ pointerEvents: "none" }}
       >
-        <div className="min-w-[180px] max-w-[240px] rounded-[24px] border border-white/70 bg-[rgba(255,252,247,0.95)] px-4 py-3 text-center shadow-[0_14px_34px_rgba(78,58,38,0.18)] backdrop-blur-sm">
+        <div className="min-w-[180px] max-w-[240px] rounded-[20px] border border-sky-100/80 bg-white/94 px-4 py-3 text-center shadow-[0_14px_34px_rgba(56,189,248,0.16)] backdrop-blur-sm">
           <div
             className="text-[11px] font-semibold uppercase tracking-[0.2em]"
             style={{ color: signal.color }}
           >
             {signal.statusLabel}
           </div>
-          <div className="mt-2 text-sm font-semibold text-[#3F2F22]">
+          <div className="mt-2 text-sm font-semibold text-slate-800">
             {signal.stageLabel}
           </div>
           {signal.summary ? (
-            <div className="mt-2 line-clamp-2 text-xs leading-5 text-[#7A6652]">
+            <div className="mt-2 line-clamp-2 text-xs leading-5 text-slate-500">
               {signal.summary}
             </div>
           ) : null}
           {signal.progress !== null ? (
-            <div className="mt-3 overflow-hidden rounded-full bg-[#F0E8DC]">
+            <div
+              className="mt-3 overflow-hidden rounded-full"
+              style={{ backgroundColor: FUTURE_OFFICE_COLORS.floorInset }}
+            >
               <div
                 className="h-1.5 rounded-full transition-[width] duration-500"
                 style={{

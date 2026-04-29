@@ -8,6 +8,7 @@ import {
   deriveMissionStepFocus,
   missionStatusLabel,
 } from "@/components/tasks/task-helpers";
+import { FUTURE_OFFICE_COLORS } from "@/lib/scene-theme";
 
 function t(locale: string, zh: string, en: string) {
   return locale === "zh-CN" ? zh : en;
@@ -59,7 +60,7 @@ function missionTone(status: MissionTaskSummary["status"] | null) {
       return {
         accent: "#f97373",
         accentSoft: "rgba(249,115,115,0.16)",
-        progress: "linear-gradient(90deg, #f87171, #fb923c)",
+        progress: "linear-gradient(90deg, #fb7185, #f87171)",
       };
     case "done":
       return {
@@ -75,9 +76,9 @@ function missionTone(status: MissionTaskSummary["status"] | null) {
       };
     case "running":
       return {
-        accent: "#fb923c",
-        accentSoft: "rgba(251,146,60,0.16)",
-        progress: "linear-gradient(90deg, #f97373, #fb923c, #fbbf24)",
+        accent: FUTURE_OFFICE_COLORS.cyan,
+        accentSoft: "rgba(56,189,248,0.18)",
+        progress: "linear-gradient(90deg, #60a5fa, #38bdf8, #2dd4bf)",
       };
     default:
       return {
@@ -117,7 +118,8 @@ function MissionWallTaskPanelInner({
     stepFocus.title ||
     t(locale, "办公室后墙监控屏待命中", "Office wall monitor is standing by");
   const wallSummary =
-    mission?.status === "waiting" || stepFlow.items.some(item => item.status === "waiting")
+    mission?.status === "waiting" ||
+    stepFlow.items.some(item => item.status === "waiting")
       ? t(
           locale,
           "当前任务停留在等待步骤，详细决策与补充说明统一留在辅助区。",
@@ -129,22 +131,19 @@ function MissionWallTaskPanelInner({
             "当前步骤已进入超时态，排障与后续动作统一留在辅助区与 Runtime。",
             "The current step has timed out. Troubleshooting and follow-up stay in Support and Runtime."
           )
-      : stepFlow.items.some(item => item.status === "failed")
-        ? t(
-            locale,
-            "当前步骤已进入失败态，详细失败原因与运行证据统一留在 Runtime。",
-            "The current step has failed. Detailed failure evidence stays in Runtime."
-          )
-      : t(
-          locale,
-          "当前任务正按步骤流推进，日志与运行细节统一留在 Logs / Runtime。",
-          "The mission is progressing through its step flow. Logs and runtime details stay in Logs / Runtime."
-        );
+        : stepFlow.items.some(item => item.status === "failed")
+          ? t(
+              locale,
+              "当前步骤已进入失败态，详细失败原因与运行证据统一留在 Runtime。",
+              "The current step has failed. Detailed failure evidence stays in Runtime."
+            )
+          : t(
+              locale,
+              "当前任务正按步骤流推进，日志与运行细节统一留在 Logs / Runtime。",
+              "The mission is progressing through its step flow. Logs and runtime details stay in Logs / Runtime."
+            );
   const compactWallView = !fullscreen;
-  const signalLine = compactText(
-    wallSummary,
-    compactWallView ? 72 : 96
-  );
+  const signalLine = compactText(wallSummary, compactWallView ? 72 : 96);
   const progress = stepFocus.progress;
   const needsAttention =
     mission?.status === "failed" ||
@@ -174,7 +173,7 @@ function MissionWallTaskPanelInner({
         zIndex: 9999,
         padding: 24,
         background:
-          "linear-gradient(180deg, rgba(8,12,20,0.96), rgba(13,20,30,0.98))",
+          "linear-gradient(180deg, rgba(248,251,255,0.96), rgba(226,236,246,0.96))",
       }
     : {
         position: "relative",
@@ -196,8 +195,8 @@ function MissionWallTaskPanelInner({
     borderRadius: fullscreen ? 24 : 14,
     overflow: "hidden",
     background:
-      "radial-gradient(circle at top right, rgba(96,165,250,0.08), transparent 24%), linear-gradient(180deg, rgba(20,28,42,0.98), rgba(14,21,33,0.98))",
-    border: "1px solid rgba(86, 104, 128, 0.18)",
+      "radial-gradient(circle at top right, rgba(125,211,252,0.13), transparent 24%), linear-gradient(180deg, rgba(26,38,56,0.92), rgba(14,25,41,0.94))",
+    border: "1px solid rgba(203, 213, 225, 0.24)",
     boxShadow: fullscreen
       ? "0 18px 48px rgba(3, 8, 16, 0.48)"
       : "inset 0 1px 0 rgba(255,255,255,0.03)",
@@ -254,7 +253,7 @@ function MissionWallTaskPanelInner({
               zIndex: 3,
               border: "none",
               borderRadius: 999,
-              background: "rgba(15,23,42,0.76)",
+              background: "rgba(248,251,255,0.86)",
               color: "#e2e8f0",
               padding: "6px 10px",
               cursor: "pointer",
@@ -293,8 +292,8 @@ function MissionWallTaskPanelInner({
                   width: fullscreen ? 50 : 30,
                   height: fullscreen ? 50 : 30,
                   borderRadius: fullscreen ? 12 : 9,
-                  background: "rgba(251,146,60,0.9)",
-                  color: "#1f2937",
+                  background: "rgba(125,211,252,0.92)",
+                  color: "#0f172a",
                   fontSize: fullscreen ? 17 : 13,
                   fontWeight: 700,
                   flexShrink: 0,
@@ -367,7 +366,11 @@ function MissionWallTaskPanelInner({
                   alignItems: "center",
                 }}
               >
-                {["#4ade80", "#fbbf24", "#64748b"].map(color => (
+                {[
+                  FUTURE_OFFICE_COLORS.green,
+                  FUTURE_OFFICE_COLORS.cyan,
+                  "#94a3b8",
+                ].map(color => (
                   <span
                     key={color}
                     style={{
@@ -406,7 +409,10 @@ function MissionWallTaskPanelInner({
           >
             {[
               [t(locale, "目的地", "Destination"), destinationLabel],
-              [t(locale, "路线", "Route"), compactText(routeLabel, fullscreen ? 28 : 14)],
+              [
+                t(locale, "路线", "Route"),
+                compactText(routeLabel, fullscreen ? 28 : 14),
+              ],
               [
                 t(locale, "编队", "Fleet"),
                 String(
@@ -512,17 +518,19 @@ function MissionWallTaskPanelInner({
                   ? "#4ade80"
                   : item.status === "cancelled"
                     ? "#94a3b8"
-                  : item.status === "timeout"
-                    ? "#f59e0b"
-                  : item.status === "failed"
-                    ? "#f87171"
-                    : item.status === "waiting"
-                      ? "#60a5fa"
-                      : item.status === "active"
-                        ? tone.accent
-                        : "rgba(148,163,184,0.52)";
+                    : item.status === "timeout"
+                      ? FUTURE_OFFICE_COLORS.cyanSoft
+                      : item.status === "failed"
+                        ? "#f87171"
+                        : item.status === "waiting"
+                          ? "#60a5fa"
+                          : item.status === "active"
+                            ? tone.accent
+                            : "rgba(148,163,184,0.52)";
               const barWidth =
-                item.progress <= 0 ? 0 : Math.max(8, Math.min(100, item.progress));
+                item.progress <= 0
+                  ? 0
+                  : Math.max(8, Math.min(100, item.progress));
 
               return (
                 <div
@@ -565,7 +573,7 @@ function MissionWallTaskPanelInner({
                         boxShadow: `0 0 12px ${statusColor}`,
                         flexShrink: 0,
                       }}
-                      />
+                    />
                   </div>
                   <div
                     style={{
@@ -640,7 +648,6 @@ function MissionWallTaskPanelInner({
               </span>
             </div>
           </div>
-
         </div>
       </div>
     </div>

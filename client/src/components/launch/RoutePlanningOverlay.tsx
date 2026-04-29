@@ -587,6 +587,7 @@ export function RoutePlanningOverlay({
     Boolean(selectedCandidate?.available) &&
     !confirming &&
     !confirmDisabled;
+  const showRouteActions = canRestoreRecommended || Boolean(onConfirmRoute);
   const isBottomSheet = presentation === "bottom-sheet";
 
   return (
@@ -687,7 +688,7 @@ export function RoutePlanningOverlay({
         </div>
       ) : null}
 
-      {selectedCandidate ? (
+      {selectedCandidate && showRouteActions ? (
         <div
           className={cn(
             "mt-2 flex flex-wrap items-center justify-end gap-1.5 rounded-[14px] border border-white/80 bg-white/60 px-2 py-1.5 text-[9px] text-stone-600",
@@ -697,42 +698,40 @@ export function RoutePlanningOverlay({
           data-bottom-sheet-actions={isBottomSheet ? "sticky" : undefined}
           data-testid="route-planning-actions"
         >
-          <button
-            type="button"
-            disabled={!canRestoreRecommended}
-            onClick={() => {
-              if (recommendedCandidate?.available) {
-                onSelect(recommendedCandidate);
-              }
-            }}
-            className={cn(
-              "rounded-full border px-2 py-1 text-[9px] font-bold transition",
-              canRestoreRecommended
-                ? "border-[#e6c5a7] bg-white text-[#9a5d32] hover:border-[#d07a4f]"
-                : "cursor-not-allowed border-stone-200 bg-stone-50 text-stone-400"
-            )}
-          >
-            {t(locale, "恢复系统推荐路线", "Restore recommended route")}
-          </button>
-          <button
-            type="button"
-            disabled={!canConfirm}
-            onClick={() => {
-              if (canConfirm && selectedCandidate) {
-                onConfirmRoute?.(selectedCandidate);
-              }
-            }}
-            className={cn(
-              "rounded-full px-2.5 py-1 text-[9px] font-bold shadow-[0_10px_22px_rgba(184,111,69,0.16)] transition",
-              canConfirm
-                ? "bg-[#d07a4f] text-white hover:bg-[#b8653f]"
-                : "cursor-not-allowed bg-stone-200 text-stone-500 shadow-none"
-            )}
-          >
-            {confirming
-              ? t(locale, "正在确认路线...", "Confirming route...")
-              : t(locale, "确认路线并执行", "Confirm route and execute")}
-          </button>
+          {canRestoreRecommended ? (
+            <button
+              type="button"
+              onClick={() => {
+                if (recommendedCandidate?.available) {
+                  onSelect(recommendedCandidate);
+                }
+              }}
+              className="rounded-full border border-[#e6c5a7] bg-white px-2 py-1 text-[9px] font-bold text-[#9a5d32] transition hover:border-[#d07a4f]"
+            >
+              {t(locale, "恢复系统推荐路线", "Restore recommended route")}
+            </button>
+          ) : null}
+          {onConfirmRoute ? (
+            <button
+              type="button"
+              disabled={!canConfirm}
+              onClick={() => {
+                if (canConfirm && selectedCandidate) {
+                  onConfirmRoute(selectedCandidate);
+                }
+              }}
+              className={cn(
+                "rounded-full px-2.5 py-1 text-[9px] font-bold shadow-[0_10px_22px_rgba(184,111,69,0.16)] transition",
+                canConfirm
+                  ? "bg-[#d07a4f] text-white hover:bg-[#b8653f]"
+                  : "cursor-not-allowed bg-stone-200 text-stone-500 shadow-none"
+              )}
+            >
+              {confirming
+                ? t(locale, "正在确认路线...", "Confirming route...")
+                : t(locale, "确认路线并执行", "Confirm route and execute")}
+            </button>
+          ) : null}
         </div>
       ) : null}
     </div>

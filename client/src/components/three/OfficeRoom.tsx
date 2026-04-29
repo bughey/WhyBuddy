@@ -5,6 +5,11 @@ import * as THREE from "three";
 import { useI18n } from "@/i18n";
 import { FURNITURE_MODELS } from "@/lib/assets";
 import { SCENE_FLOW_ZONES } from "@/lib/scene-stage-flow";
+import {
+  FUTURE_DEPARTMENT_COLORS,
+  FUTURE_OFFICE_COLORS,
+  rethemeFurnitureMaterial,
+} from "@/lib/scene-theme";
 import { useAppStore } from "@/lib/store";
 import { useWorkflowStore } from "@/lib/workflow-store";
 import { selectWorkflowOrganization } from "@/lib/workflow-selectors";
@@ -17,7 +22,7 @@ type SceneDepartmentInfo = {
   color: string;
 };
 
-const SCENE_DEPARTMENT_COLORS = ["#D97706", "#2563EB", "#059669", "#7C3AED"];
+const SCENE_DEPARTMENT_COLORS = FUTURE_DEPARTMENT_COLORS;
 
 function getPodLabel(index: number, locale: "zh-CN" | "en-US") {
   const suffix = String.fromCharCode(65 + index);
@@ -85,16 +90,18 @@ function FurnitureModel({
       mesh.castShadow = true;
       mesh.receiveShadow = true;
 
+      if (!mesh.material) return;
+
+      mesh.material = Array.isArray(mesh.material)
+        ? mesh.material.map(material => material.clone())
+        : mesh.material.clone();
+
       const materials = Array.isArray(mesh.material)
         ? mesh.material
         : [mesh.material];
       for (const material of materials) {
-        if (!material || !("envMapIntensity" in material)) continue;
-
-        material.envMapIntensity = 0.05;
-        if ("roughness" in material && typeof material.roughness === "number") {
-          material.roughness = Math.min(1, Math.max(material.roughness, 0.76));
-        }
+        if (!material) continue;
+        rethemeFurnitureMaterial(material, mesh.name, url);
       }
     });
     return next;
@@ -115,7 +122,11 @@ function Floor() {
     <>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
         <planeGeometry args={[18, 14]} />
-        <meshStandardMaterial color="#CBB596" roughness={0.9} metalness={0} />
+        <meshStandardMaterial
+          color={FUTURE_OFFICE_COLORS.floorBase}
+          roughness={0.84}
+          metalness={0.02}
+        />
       </mesh>
 
       <mesh
@@ -124,7 +135,11 @@ function Floor() {
         receiveShadow
       >
         <planeGeometry args={[14.8, 10.6]} />
-        <meshStandardMaterial color="#D8C2A5" roughness={0.94} metalness={0} />
+        <meshStandardMaterial
+          color={FUTURE_OFFICE_COLORS.floorInset}
+          roughness={0.82}
+          metalness={0.04}
+        />
       </mesh>
 
       <mesh
@@ -134,11 +149,11 @@ function Floor() {
       >
         <planeGeometry args={[11.8, 7.8]} />
         <meshStandardMaterial
-          color="#E4D2BA"
-          roughness={0.98}
-          metalness={0}
+          color={FUTURE_OFFICE_COLORS.floorGlass}
+          roughness={0.56}
+          metalness={0.08}
           transparent
-          opacity={0.62}
+          opacity={0.58}
         />
       </mesh>
 
@@ -148,7 +163,11 @@ function Floor() {
         receiveShadow
       >
         <planeGeometry args={[15.1, 0.85]} />
-        <meshStandardMaterial color="#8C765F" transparent opacity={0.14} />
+        <meshStandardMaterial
+          color={FUTURE_OFFICE_COLORS.floorLine}
+          transparent
+          opacity={0.1}
+        />
       </mesh>
       <mesh
         rotation={[-Math.PI / 2, Math.PI / 2, 0]}
@@ -156,7 +175,11 @@ function Floor() {
         receiveShadow
       >
         <planeGeometry args={[9.6, 0.78]} />
-        <meshStandardMaterial color="#8C765F" transparent opacity={0.1} />
+        <meshStandardMaterial
+          color={FUTURE_OFFICE_COLORS.floorLine}
+          transparent
+          opacity={0.08}
+        />
       </mesh>
       <mesh
         rotation={[-Math.PI / 2, -Math.PI / 2, 0]}
@@ -164,7 +187,11 @@ function Floor() {
         receiveShadow
       >
         <planeGeometry args={[9.6, 0.78]} />
-        <meshStandardMaterial color="#8C765F" transparent opacity={0.08} />
+        <meshStandardMaterial
+          color={FUTURE_OFFICE_COLORS.floorLine}
+          transparent
+          opacity={0.07}
+        />
       </mesh>
 
       {[
@@ -217,7 +244,10 @@ function Walls() {
     <group>
       <mesh position={[0, 1.5, -4.9]} receiveShadow>
         <boxGeometry args={[15.42, 3, 0.18]} />
-        <meshStandardMaterial color="#D8C8B7" roughness={0.98} />
+        <meshStandardMaterial
+          color={FUTURE_OFFICE_COLORS.wall}
+          roughness={0.9}
+        />
       </mesh>
       <mesh
         position={[-7.8, 1.5, 0]}
@@ -225,7 +255,10 @@ function Walls() {
         receiveShadow
       >
         <boxGeometry args={[9.98, 3, 0.18]} />
-        <meshStandardMaterial color="#D2C2B2" roughness={0.98} />
+        <meshStandardMaterial
+          color={FUTURE_OFFICE_COLORS.wallSide}
+          roughness={0.92}
+        />
       </mesh>
       <mesh
         position={[7.8, 1.5, 0]}
@@ -233,16 +266,19 @@ function Walls() {
         receiveShadow
       >
         <boxGeometry args={[9.98, 3, 0.18]} />
-        <meshStandardMaterial color="#D2C2B2" roughness={0.98} />
+        <meshStandardMaterial
+          color={FUTURE_OFFICE_COLORS.wallSide}
+          roughness={0.92}
+        />
       </mesh>
 
       <mesh position={[0, 0.42, -4.79]} receiveShadow>
         <boxGeometry args={[15.2, 0.56, 0.05]} />
         <meshStandardMaterial
-          color="#B39C83"
+          color={FUTURE_OFFICE_COLORS.wallTrim}
           roughness={1}
           transparent
-          opacity={0.72}
+          opacity={0.62}
         />
       </mesh>
       <mesh
@@ -252,10 +288,10 @@ function Walls() {
       >
         <boxGeometry args={[9.6, 0.56, 0.05]} />
         <meshStandardMaterial
-          color="#AE9881"
+          color={FUTURE_OFFICE_COLORS.wallTrim}
           roughness={1}
           transparent
-          opacity={0.64}
+          opacity={0.56}
         />
       </mesh>
       <mesh
@@ -265,10 +301,10 @@ function Walls() {
       >
         <boxGeometry args={[9.6, 0.56, 0.05]} />
         <meshStandardMaterial
-          color="#AE9881"
+          color={FUTURE_OFFICE_COLORS.wallTrim}
           roughness={1}
           transparent
-          opacity={0.64}
+          opacity={0.56}
         />
       </mesh>
 
@@ -312,8 +348,8 @@ function ArchitecturalAccents() {
 
       <pointLight
         position={[-6.15, 1.85, 0.65]}
-        intensity={0.42}
-        color="#FFE2B8"
+        intensity={0.32}
+        color={FUTURE_OFFICE_COLORS.practicalLight}
         distance={4.6}
         decay={2}
       />
@@ -325,8 +361,8 @@ function ArchitecturalAccents() {
       />
       <pointLight
         position={[0, 1.22, -4.4]}
-        intensity={0.18}
-        color="#FFDDB0"
+        intensity={0.16}
+        color={FUTURE_OFFICE_COLORS.cyanSoft}
         distance={3}
         decay={2}
       />
@@ -339,21 +375,29 @@ function CorkBoard() {
     <group position={[0, 2.02, -4.72]}>
       <mesh>
         <boxGeometry args={[2.7, 1.16, 0.06]} />
-        <meshStandardMaterial color="#C4956A" roughness={0.95} />
+        <meshStandardMaterial
+          color={FUTURE_OFFICE_COLORS.panel}
+          roughness={0.74}
+          metalness={0.04}
+        />
       </mesh>
       <mesh position={[0, 0, 0.03]}>
         <boxGeometry args={[2.86, 1.29, 0.03]} />
-        <meshStandardMaterial color="#8B6914" roughness={0.7} />
+        <meshStandardMaterial
+          color={FUTURE_OFFICE_COLORS.panelFrame}
+          roughness={0.58}
+          metalness={0.08}
+        />
       </mesh>
       {[
         {
           pos: [-0.62, 0.12, 0.05] as [number, number, number],
-          color: "#FFE4B5",
+          color: FUTURE_OFFICE_COLORS.paper,
           rot: 0.04,
         },
         {
           pos: [0.54, -0.08, 0.05] as [number, number, number],
-          color: "#E3F2FD",
+          color: FUTURE_OFFICE_COLORS.rug,
           rot: -0.04,
         },
       ].map((note, index) => (
@@ -379,10 +423,10 @@ function WallBrandPlaque() {
         style={{ pointerEvents: "none" }}
       >
         <div
-          className="whitespace-nowrap text-center text-[26px] font-bold leading-none tracking-[-0.03em] text-[#8B765F]"
+          className="whitespace-nowrap text-center text-[26px] font-bold leading-none text-slate-700"
           style={{
-            fontFamily: "'Playfair Display', serif",
-            textShadow: "0 3px 14px rgba(255,248,238,0.38)",
+            fontFamily: "'Space Grotesk', 'Noto Sans SC', sans-serif",
+            textShadow: "0 0 18px rgba(56,189,248,0.32)",
           }}
         >
           {copy.scene.brand}
@@ -417,7 +461,11 @@ function ZoneBase({
       </mesh>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.021, -1.46]}>
         <planeGeometry args={[0.92, 0.04]} />
-        <meshStandardMaterial color="#FFF8ED" transparent opacity={0.42} />
+        <meshStandardMaterial
+          color={FUTURE_OFFICE_COLORS.paper}
+          transparent
+          opacity={0.5}
+        />
       </mesh>
     </group>
   );
@@ -464,7 +512,12 @@ function PodDecor({
   if (!slot) return null;
 
   const ringRadius = 1.04 + slotIndex * 0.05;
-  const cardColors = ["#F7E7D2", "#E8F1FA", "#E6F3EA", "#EEE4F8"];
+  const cardColors = [
+    FUTURE_OFFICE_COLORS.paper,
+    FUTURE_OFFICE_COLORS.rug,
+    "#E8F8F4",
+    "#F1EDFF",
+  ];
 
   return (
     <group>
@@ -482,7 +535,11 @@ function PodDecor({
       <group position={slot.decorPosition}>
         <mesh position={[0, 0.11, 0]}>
           <boxGeometry args={[0.58, 0.16, 0.44]} />
-          <meshStandardMaterial color="#8E775F" roughness={0.82} />
+          <meshStandardMaterial
+            color={FUTURE_OFFICE_COLORS.furnitureTrim}
+            roughness={0.7}
+            metalness={0.08}
+          />
         </mesh>
         {[-0.14, 0.02, 0.18].map((x, index) => (
           <mesh
@@ -499,7 +556,7 @@ function PodDecor({
         <mesh position={[0.24, 0.28, -0.04]}>
           <cylinderGeometry args={[0.055, 0.055, 0.1, 18]} />
           <meshStandardMaterial
-            color="#FFF3DB"
+            color={FUTURE_OFFICE_COLORS.paper}
             emissive={color}
             emissiveIntensity={0.18}
             roughness={0.42}
@@ -514,9 +571,9 @@ function PodDecor({
         <mesh>
           <boxGeometry args={[0.92, 0.68, 0.05]} />
           <meshStandardMaterial
-            color="#EDF4FB"
+            color={FUTURE_OFFICE_COLORS.panel}
             transparent
-            opacity={0.28}
+            opacity={0.32}
             metalness={0.12}
             roughness={0.25}
           />
@@ -761,7 +818,11 @@ function MobileBoard({
     <group position={position} rotation={rotation}>
       <mesh position={[0, 1.02, 0]}>
         <boxGeometry args={[1.18, 0.88, 0.05]} />
-        <meshStandardMaterial color="#F9F7F2" roughness={0.92} />
+        <meshStandardMaterial
+          color={FUTURE_OFFICE_COLORS.panel}
+          roughness={0.72}
+          metalness={0.06}
+        />
       </mesh>
       <mesh position={[0, 1.48, 0.012]}>
         <boxGeometry args={[1.18, 0.08, 0.04]} />
@@ -769,20 +830,32 @@ function MobileBoard({
       </mesh>
       <mesh position={[-0.48, 0.58, 0]}>
         <boxGeometry args={[0.06, 1.12, 0.06]} />
-        <meshStandardMaterial color="#8C765F" roughness={0.84} />
+        <meshStandardMaterial
+          color={FUTURE_OFFICE_COLORS.furnitureTrim}
+          roughness={0.62}
+          metalness={0.12}
+        />
       </mesh>
       <mesh position={[0.48, 0.58, 0]}>
         <boxGeometry args={[0.06, 1.12, 0.06]} />
-        <meshStandardMaterial color="#8C765F" roughness={0.84} />
+        <meshStandardMaterial
+          color={FUTURE_OFFICE_COLORS.furnitureTrim}
+          roughness={0.62}
+          metalness={0.12}
+        />
       </mesh>
       <mesh position={[0, 0.06, 0]}>
         <boxGeometry args={[0.94, 0.05, 0.34]} />
-        <meshStandardMaterial color="#90755B" roughness={0.86} />
+        <meshStandardMaterial
+          color={FUTURE_OFFICE_COLORS.furnitureTrim}
+          roughness={0.62}
+          metalness={0.12}
+        />
       </mesh>
       <mesh position={[0, 1.18, 0.027]}>
         <planeGeometry args={[0.84, 0.28]} />
         <meshStandardMaterial
-          color="#FFFDF8"
+          color={FUTURE_OFFICE_COLORS.floorGlass}
           emissive={color}
           emissiveIntensity={0.18}
           transparent
@@ -792,7 +865,7 @@ function MobileBoard({
       <mesh position={[0, 0.96, 0.027]}>
         <planeGeometry args={[0.76, 0.16]} />
         <meshStandardMaterial
-          color="#FFFCF6"
+          color={FUTURE_OFFICE_COLORS.floorGlass}
           emissive={color}
           emissiveIntensity={0.22}
           transparent
@@ -853,26 +926,26 @@ function MobileBoard({
           <mesh key={`${x}-${z}`} position={[x, 0.02, z]}>
             <cylinderGeometry args={[0.045, 0.045, 0.04, 18]} />
             <meshStandardMaterial
-              color="#625246"
-              roughness={0.6}
-              metalness={0.12}
+              color={FUTURE_OFFICE_COLORS.furnitureTrim}
+              roughness={0.52}
+              metalness={0.18}
             />
           </mesh>
         ))}
       {[
         {
           position: [-0.24, 0.76, 0.03] as [number, number, number],
-          noteColor: "#FDE68A",
+          noteColor: FUTURE_OFFICE_COLORS.paper,
           rotationZ: -0.08,
         },
         {
           position: [0.12, 0.66, 0.03] as [number, number, number],
-          noteColor: "#BFDBFE",
+          noteColor: FUTURE_OFFICE_COLORS.rug,
           rotationZ: 0.05,
         },
         {
           position: [0.24, 0.9, 0.03] as [number, number, number],
-          noteColor: "#FBCFE8",
+          noteColor: "#F1EDFF",
           rotationZ: -0.04,
         },
       ].map((note, index) => (
@@ -902,18 +975,30 @@ function TaskCart({
     <group position={position} rotation={rotation}>
       <mesh position={[0, 0.3, 0]}>
         <boxGeometry args={[0.68, 0.08, 0.46]} />
-        <meshStandardMaterial color="#8F755D" roughness={0.82} />
+        <meshStandardMaterial
+          color={FUTURE_OFFICE_COLORS.furniture}
+          roughness={0.72}
+          metalness={0.08}
+        />
       </mesh>
       <mesh position={[0, 0.74, 0]}>
         <boxGeometry args={[0.68, 0.08, 0.46]} />
-        <meshStandardMaterial color="#9B8268" roughness={0.8} />
+        <meshStandardMaterial
+          color={FUTURE_OFFICE_COLORS.furnitureAlt}
+          roughness={0.72}
+          metalness={0.08}
+        />
       </mesh>
       {[-0.26, 0.26]
         .flatMap(x => [-0.16, 0.16].map(z => ({ x, z })))
         .map(({ x, z }) => (
           <mesh key={`${x}-${z}`} position={[x, 0.38, z]}>
             <boxGeometry args={[0.04, 0.74, 0.04]} />
-            <meshStandardMaterial color="#6F5B48" roughness={0.86} />
+            <meshStandardMaterial
+              color={FUTURE_OFFICE_COLORS.furnitureTrim}
+              roughness={0.66}
+              metalness={0.12}
+            />
           </mesh>
         ))}
       <mesh position={[0.05, 0.82, 0.04]}>
@@ -922,7 +1007,10 @@ function TaskCart({
       </mesh>
       <mesh position={[-0.17, 0.82, -0.06]}>
         <boxGeometry args={[0.12, 0.18, 0.12]} />
-        <meshStandardMaterial color="#FFF5E2" roughness={0.52} />
+        <meshStandardMaterial
+          color={FUTURE_OFFICE_COLORS.paper}
+          roughness={0.5}
+        />
       </mesh>
       <FurnitureModel
         url={FURNITURE_MODELS.books}
@@ -936,9 +1024,9 @@ function TaskCart({
           <mesh key={`wheel-${x}-${z}`} position={[x, 0.02, z]}>
             <cylinderGeometry args={[0.038, 0.038, 0.032, 18]} />
             <meshStandardMaterial
-              color="#56483D"
-              roughness={0.56}
-              metalness={0.12}
+              color={FUTURE_OFFICE_COLORS.screenSoft}
+              roughness={0.46}
+              metalness={0.18}
             />
           </mesh>
         ))}
@@ -1017,7 +1105,7 @@ export function OfficeRoom({
             locale === "zh-CN" ? "动态编组" : "Dynamic Team"
           ),
           zoneLabel: slotName,
-          color: SCENE_DEPARTMENT_COLORS[index] || "#8B5CF6",
+          color: SCENE_DEPARTMENT_COLORS[index] || FUTURE_OFFICE_COLORS.violet,
         };
       });
     }

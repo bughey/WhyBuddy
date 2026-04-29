@@ -2,23 +2,25 @@
 
 ## Introduction
 
-This follow-up spec covers the home center composer-only input treatment. The user provided a reference image showing a compact rounded composer with a single input row, send button, and action buttons below. The center of the home cockpit should no longer show a large autopilot card. It should keep only the composer surface and let the office scene remain visible.
+This follow-up spec covers the home center command treatment. The user provided a reference image showing a compact rounded composer with a single input row, send button, and action buttons below, then refined the target so the former bottom support/runtime panel moves into the central control area above that input. The center of the home cockpit should use a vertical Ant Design Splitter: support/runtime control above, composer below.
 
 This spec is separate from the home shell spec because the composer visual and interaction details need their own focused acceptance criteria.
 
 ## Requirements
 
-### Requirement 1: Center Shows Only the Composer Surface
+### Requirement 1: Center Uses a Control Splitter Above the Composer
 
-**User Story:** As a user on the home page, I want the center bottom area to show only the command input composer, so the office scene remains visible and uncluttered.
+**User Story:** As a user on the home page, I want the former bottom support panel to live directly above the command input, so the central control area is unified and the input stays immediately reachable.
 
 #### Acceptance Criteria
 
-1. WHEN the home cockpit renders THEN the center-bottom surface SHALL show one compact composer.
-2. WHEN the composer renders THEN it SHALL NOT be accompanied by a large autopilot guidance card in the center.
-3. WHEN launch guidance is needed THEN it SHALL be available through the home right drawer `发起` tab.
-4. WHEN runtime support context is expanded THEN it SHALL not permanently occupy the center as a large default panel.
+1. WHEN the home cockpit renders THEN the center-bottom surface SHALL show one vertical Ant Design Splitter.
+2. WHEN the Splitter renders THEN the upper panel SHALL contain the launch guidance and Support / Logs / Artifacts / Runtime tabs that previously lived in the bottom panel.
+3. WHEN the Splitter renders THEN the lower panel SHALL contain exactly one compact `UnifiedLaunchComposer`.
+4. WHEN the control panel renders THEN it SHALL appear above the composer in DOM order and visual order.
 5. THE composer SHALL remain usable with keyboard input and send action.
+6. WHEN a draft destination exists THEN destination preview and route planning SHALL render in the Support tab inside the central control panel instead of inside the composer surface.
+7. THE implementation SHALL NOT render a second standalone bottom copy of the support/runtime panel below the composer.
 
 ### Requirement 2: Match the Reference Composer Structure
 
@@ -28,7 +30,7 @@ This spec is separate from the home shell spec because the composer visual and i
 
 1. THE composer surface SHALL use a rounded translucent container with restrained shadow and blur.
 2. THE main input row SHALL include a placeholder-style prompt and a send icon/button on the right.
-3. THE secondary action row SHALL include controls equivalent to add file, cite data, generate report, create new task, and more.
+3. THE secondary controls SHALL keep attachment, runtime, and submit access compactly without duplicating lower console actions.
 4. THE action buttons SHALL stay in one compact row on desktop where width allows.
 5. WHEN text is long or viewport narrows THEN controls SHALL wrap or compact without overlapping.
 
@@ -54,7 +56,7 @@ This spec is separate from the home shell spec because the composer visual and i
 1. WHEN clarification is active THEN a clarification surface MAY appear above the composer.
 2. WHEN clarification appears THEN it SHALL be temporary and clearly tied to the current command.
 3. WHEN clarification is not active THEN no clarification panel SHALL occupy center space.
-4. WHEN pending launch exists THEN status MAY be shown compactly in the composer or right drawer.
+4. WHEN pending launch exists THEN status MAY be shown compactly in the composer or lower support tab.
 5. WHEN pending launch resolves THEN focus MAY return to task context without opening a left queue drawer.
 
 ### Requirement 5: Test and Visual Verification
@@ -66,5 +68,7 @@ This spec is separate from the home shell spec because the composer visual and i
 1. THE implementation SHALL include a test asserting exactly one launch composer is rendered.
 2. THE implementation SHALL include a test asserting the large center autopilot panel visual role is absent by default.
 3. THE implementation SHALL include a test or smoke assertion for the composer action controls.
-4. THE implementation SHALL include desktop screenshot review after code changes.
-5. THE progress SVG SHALL be updated after this spec is implemented.
+4. THE implementation SHALL include a test asserting destination preview and route planning are not rendered inside the composer surface.
+5. THE implementation SHALL include a test asserting destination preview and route planning render in the lower Support tab when a draft destination exists.
+6. THE implementation SHALL include desktop screenshot review after code changes.
+7. THE progress SVG SHALL be updated after this spec is implemented.

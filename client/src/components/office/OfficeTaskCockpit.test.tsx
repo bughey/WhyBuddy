@@ -49,19 +49,36 @@ vi.mock("@/components/launch/UnifiedLaunchComposer", () => ({
     bare,
     hideHeader,
     hideClarificationPanel,
+    hideOperatorActions,
   }: {
     bare?: boolean;
     hideHeader?: boolean;
     hideClarificationPanel?: boolean;
+    hideOperatorActions?: boolean;
   }) => (
     <div
       data-testid="unified-launch-composer"
       data-bare={bare ? "true" : "false"}
       data-hide-header={hideHeader ? "true" : "false"}
       data-hide-clarification={hideClarificationPanel ? "true" : "false"}
+      data-hide-operator-actions={hideOperatorActions ? "true" : "false"}
     >
       mocked composer
     </div>
+  ),
+}));
+
+vi.mock("@/components/launch/LaunchDestinationPreviewCard", () => ({
+  LaunchDestinationPreviewCard: () => (
+    <div data-testid="autopilot-destination-preview-card">
+      mocked destination preview
+    </div>
+  ),
+}));
+
+vi.mock("@/components/launch/RoutePlanningOverlay", () => ({
+  RoutePlanningOverlay: () => (
+    <div data-testid="route-planning-overlay">mocked route plan</div>
   ),
 }));
 
@@ -85,6 +102,77 @@ vi.mock("@/components/ui/tabs", () => ({
   }) => <button data-value={value}>{children}</button>,
   TabsContent: ({ children }: { children?: React.ReactNode }) => (
     <div>{children}</div>
+  ),
+}));
+
+vi.mock("@/components/ui/dropdown-menu", () => ({
+  DropdownMenu: ({
+    children,
+    modal = true,
+  }: {
+    children?: React.ReactNode;
+    modal?: boolean;
+  }) => (
+    <div data-testid="dropdown-menu" data-modal={String(modal)}>
+      {children}
+    </div>
+  ),
+  DropdownMenuTrigger: ({ children }: { children?: React.ReactNode }) => (
+    <div data-testid="dropdown-menu-trigger">{children}</div>
+  ),
+  DropdownMenuContent: ({
+    children,
+    align,
+    side,
+    sideOffset,
+    className,
+  }: {
+    children?: React.ReactNode;
+    align?: string;
+    side?: string;
+    sideOffset?: number;
+    className?: string;
+  }) => (
+    <div
+      className={className}
+      data-testid="dropdown-menu-content"
+      data-align={align}
+      data-side={side}
+      data-side-offset={String(sideOffset ?? "")}
+    >
+      {children}
+    </div>
+  ),
+  DropdownMenuItem: ({ children }: { children?: React.ReactNode }) => (
+    <div data-testid="dropdown-menu-item">{children}</div>
+  ),
+  DropdownMenuRadioGroup: ({
+    children,
+    value,
+  }: {
+    children?: React.ReactNode;
+    value?: string;
+  }) => (
+    <div data-testid="dropdown-menu-radio-group" data-value={value}>
+      {children}
+    </div>
+  ),
+  DropdownMenuRadioItem: ({
+    children,
+    value,
+    disabled,
+  }: {
+    children?: React.ReactNode;
+    value?: string;
+    disabled?: boolean;
+  }) => (
+    <div
+      data-testid="dropdown-menu-radio-item"
+      data-disabled={disabled ? "true" : "false"}
+      data-value={value}
+    >
+      {children}
+    </div>
   ),
 }));
 
@@ -241,6 +329,7 @@ beforeEach(() => {
   useNLCommandStore.setState({
     currentDialog: null,
     currentCommand: null,
+    draftText: "",
   });
 
   useWorkflowStore.setState({
@@ -319,6 +408,24 @@ describe("OfficeTaskCockpit", () => {
     const markup = renderToStaticMarkup(<OfficeTaskCockpit />);
 
     expect(markup).toContain('data-testid="office-clarification-panel"');
+    expect(markup).toContain('data-testid="office-clarification-stage"');
+    expect(markup).toContain(
+      'data-clarification-placement="viewport-safe-top"'
+    );
+    expect(markup).toContain('data-testid="office-launch-stage"');
+    expect(markup).toContain(
+      "fixed left-1/2 top-[calc(env(safe-area-inset-top)+92px)]"
+    );
+    expect(markup).toContain("max-h-[min(42vh,420px)]");
+    expect(markup).toContain(
+      'data-center-controls-state="clarification-hidden"'
+    );
+    expect(markup).not.toContain('data-testid="office-center-workbench-shell"');
+    expect(markup).toContain('data-testid="office-center-composer-shell"');
+    expect(markup).toContain('data-testid="unified-launch-composer"');
+    expect(
+      markup.indexOf('data-testid="office-clarification-stage"')
+    ).toBeLessThan(markup.indexOf('data-testid="office-launch-stage"'));
     expect(markup).toContain("补问进行中");
     expect(markup).toContain("先完成澄清，再继续主执行流");
     expect(markup).toContain("待补充 1 项");
@@ -348,17 +455,156 @@ describe("OfficeTaskCockpit home hierarchy", () => {
     expect(markup).not.toContain('data-value="task"');
   });
 
+  it("places the collapse control outside the composer input", () => {
+    const markup = renderToStaticMarkup(<OfficeTaskCockpit />);
+
+    expect(markup).toContain('data-testid="office-center-control-stack"');
+    expect(markup).toContain(
+      'data-collapse-control-placement="outside-composer"'
+    );
+    expect(markup).toContain('data-center-controls-state="expanded"');
+    expect(markup).toContain('data-testid="office-center-control-panel"');
+    expect(markup).toContain('data-testid="office-center-collapse-toggle"');
+    expect(markup).toContain('data-testid="office-center-composer-panel"');
+
+    expect(
+      markup.indexOf('data-testid="office-center-control-panel"')
+    ).toBeLessThan(
+      markup.indexOf('data-testid="office-center-composer-panel"')
+    );
+    expect(
+      markup.indexOf('data-testid="office-center-collapse-toggle"')
+    ).toBeLessThan(markup.indexOf('data-testid="unified-launch-composer"'));
+
+    const toggleIndex = markup.indexOf(
+      'data-testid="office-center-collapse-toggle"'
+    );
+    const toggleStart = markup.lastIndexOf("<button", toggleIndex);
+    const toggleEnd = markup.indexOf("</button>", toggleIndex);
+    const toggleMarkup = markup.slice(toggleStart, toggleEnd);
+    expect(toggleMarkup).toContain("pointer-events-auto");
+  });
+
+  it("lets the expanded support workbench fill the center control stack", () => {
+    useNLCommandStore.setState({
+      draftText:
+        "Ship office cockpit by Friday with rollback tests and acceptance criteria.",
+    });
+
+    const markup = renderToStaticMarkup(<OfficeTaskCockpit />);
+
+    expect(markup).toContain('data-testid="office-center-control-stack"');
+    expect(markup).toContain('data-testid="office-center-workbench-shell"');
+    expect(markup).toContain('data-testid="office-center-context-dock"');
+    expect(markup).toContain("max-w-[1320px]");
+    expect(markup).toContain(
+      'class="pointer-events-auto h-[86vh] max-h-[calc(100vh-420px)] min-h-0 overflow-y-auto rounded-[18px] border'
+    );
+    expect(markup).not.toContain("h-[72vh]");
+    expect(markup).not.toContain("h-[min(33vh,420px)]");
+    expect(markup).not.toContain("h-[min(50vh,640px)]");
+    expect(markup).not.toContain("max-h-[min(58vh,620px)]");
+    expect(markup).toContain(
+      'class="pointer-events-auto w-full overflow-hidden rounded-[16px]'
+    );
+    expect(markup).not.toContain(
+      'class="pointer-events-auto mx-auto w-full max-w-[700px] overflow-hidden rounded-[16px]'
+    );
+  });
+
+  it("keeps the lower composer centered at the marked narrow width", () => {
+    const markup = renderToStaticMarkup(<OfficeTaskCockpit />);
+
+    expect(markup).toContain('data-testid="office-center-control-stack"');
+    expect(markup).toContain(
+      'class="pointer-events-none mx-auto w-full max-w-[1320px] overflow-visible"'
+    );
+    expect(markup).toContain('data-testid="office-center-composer-shell"');
+    expect(markup).toContain(
+      'class="pointer-events-auto mx-auto w-full max-w-[860px] overflow-visible"'
+    );
+    expect(
+      markup.indexOf('data-testid="office-center-control-stack"')
+    ).toBeLessThan(
+      markup.indexOf('data-testid="office-center-composer-shell"')
+    );
+  });
+
+  it("moves launch destination preview and route plan into the support tab", () => {
+    useNLCommandStore.setState({
+      draftText:
+        "Ship office cockpit by Friday with rollback tests and acceptance criteria.",
+    });
+
+    const markup = renderToStaticMarkup(<OfficeTaskCockpit />);
+
+    expect(markup).toContain('data-testid="office-launch-support-preview"');
+    expect(markup).toContain(
+      'data-testid="autopilot-destination-preview-card"'
+    );
+    expect(markup).toContain('data-testid="route-planning-overlay"');
+    expect(markup).toContain('data-testid="unified-launch-composer"');
+  });
+
+  it("prioritizes launch planning over task support cards while drafting a destination", () => {
+    useTasksStore.setState({
+      tasks: [missionSummary],
+      detailsById: {
+        "mission-1": {
+          ...missionDetail,
+          status: "blocked",
+          waitingFor: "Review the failure reason before retrying.",
+          blocker: "HTTP code 404 no such container",
+          currentStageLabel: "Finalize mission",
+        },
+      },
+      selectedTaskId: "mission-1",
+    });
+    useNLCommandStore.setState({
+      draftText:
+        "Ship office cockpit by Friday with rollback tests and acceptance criteria.",
+    });
+
+    const markup = renderToStaticMarkup(<OfficeTaskCockpit />);
+
+    expect(markup).toContain('data-testid="office-launch-support-preview"');
+    expect(markup).toContain(
+      'data-launch-planning-priority="destination-draft"'
+    );
+    expect(markup).not.toContain('data-testid="office-support-waiting-card"');
+    expect(markup).not.toContain('data-testid="office-support-blocker-card"');
+    expect(markup).not.toContain('data-testid="office-support-next-step-card"');
+    expect(markup).not.toContain('data-testid="office-support-owner-card"');
+    expect(markup).toContain('data-hide-operator-actions="true"');
+  });
+
   it("keeps the scene HUD mounted on the home cockpit", () => {
     const markup = renderToStaticMarkup(<OfficeTaskCockpit />);
 
     expect(markup).toContain('data-testid="office-scene-hud"');
   });
 
+  it("keeps launch guidance dropdowns non-modal and above the fixed cockpit cards", () => {
+    useAppStore.setState({ locale: "en-US" });
+
+    const markup = renderToStaticMarkup(<OfficeTaskCockpit />);
+
+    expect(markup.match(/data-testid="dropdown-menu"/g)?.length).toBe(2);
+    expect(markup.match(/data-modal="false"/g)?.length).toBe(2);
+    expect(markup.match(/data-side="top"/g)?.length).toBe(2);
+    expect(markup.match(/z-\[120\]/g)?.length).toBe(2);
+    expect(markup).toContain("前端预览");
+    expect(markup).toContain("复制当前焦点");
+    expect(markup).toContain("运行时配置");
+    expect(markup).toContain('data-testid="office-launch-guidance"');
+    expect(markup).toContain('data-testid="unified-launch-composer"');
+  });
+
   it("centers the launch composer and scene HUD on the viewport centerline", () => {
     const markup = renderToStaticMarkup(<OfficeTaskCockpit />);
 
     expect(markup).toContain("fixed bottom-[24px] left-1/2");
-    expect(markup).toContain("w-[min(860px,calc(100vw-48px))]");
+    expect(markup).toContain("w-[min(1320px,calc(100vw-96px))]");
     expect(markup).toContain("-translate-x-1/2");
     expect(markup).toContain("fixed left-1/2 top-[clamp(112px,9vh,150px)]");
     expect(markup).not.toContain("right:360px");

@@ -22,7 +22,9 @@ vi.mock("wouter", () => ({
     component: Component,
     path,
   }: {
-    children?: React.ReactNode | ((params: Record<string, string>) => React.ReactNode);
+    children?:
+      | React.ReactNode
+      | ((params: Record<string, string>) => React.ReactNode);
     component?: React.ComponentType;
     path?: string;
   }) => {
@@ -128,8 +130,8 @@ describe("AppShell fixed sidebar layout", () => {
 
     expect(markup).toContain('data-testid="app-sidebar"');
     expect(markup).toContain('data-testid="tasks-page"');
-    expect(shell).toContain("--sidebar-width:240px");
-    expect(shell).toContain("padding-left:240px");
+    expect(shell).toContain("--sidebar-width:248px");
+    expect(shell).toContain("padding-left:248px");
   });
 
   it("does not offset the home page because it uses embedded scene chrome", () => {

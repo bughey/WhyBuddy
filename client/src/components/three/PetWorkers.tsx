@@ -15,6 +15,10 @@ import {
 import { PET_MODELS } from "@/lib/assets";
 import type { AppLocale } from "@/lib/locale";
 import { getSceneStageColor } from "@/lib/scene-stage-flow";
+import {
+  FUTURE_DEPARTMENT_COLORS,
+  FUTURE_OFFICE_COLORS,
+} from "@/lib/scene-theme";
 import { useAppStore } from "@/lib/store";
 import {
   useWorkflowStore,
@@ -49,7 +53,7 @@ type SceneDepartmentMarker = {
 
 const SCENE_SLOT_TEMPLATES = [
   {
-    color: "#D97706",
+    color: FUTURE_DEPARTMENT_COLORS[0],
     markerPosition: [-3.25, 0, -1.7] as [number, number, number],
     manager: AGENT_VISUAL_MAP.pixel,
     workers: [
@@ -60,7 +64,7 @@ const SCENE_SLOT_TEMPLATES = [
     ],
   },
   {
-    color: "#2563EB",
+    color: FUTURE_DEPARTMENT_COLORS[1],
     markerPosition: [3.2, 0, -1.7] as [number, number, number],
     manager: AGENT_VISUAL_MAP.nexus,
     workers: [
@@ -71,7 +75,7 @@ const SCENE_SLOT_TEMPLATES = [
     ],
   },
   {
-    color: "#059669",
+    color: FUTURE_DEPARTMENT_COLORS[2],
     markerPosition: [-2.8, 0, 2.2] as [number, number, number],
     manager: AGENT_VISUAL_MAP.echo,
     workers: [
@@ -82,7 +86,7 @@ const SCENE_SLOT_TEMPLATES = [
     ],
   },
   {
-    color: "#7C3AED",
+    color: FUTURE_DEPARTMENT_COLORS[3],
     markerPosition: [2.9, 0, 2.2] as [number, number, number],
     manager: AGENT_VISUAL_MAP.warden,
     workers: [
@@ -129,7 +133,7 @@ function createFallbackSceneConfig(
     color:
       SCENE_SLOT_TEMPLATES.find(
         slot => slot.manager.department === config.department
-      )?.color || "#8B5CF6",
+      )?.color || FUTURE_OFFICE_COLORS.violet,
   };
 }
 
@@ -159,14 +163,14 @@ function createDynamicSceneData(
       scale: rootTemplate.scale,
       animationType: rootTemplate.animationType,
       idleText: rootNode.responsibility,
-      color: "#7C3AED",
+      color: FUTURE_OFFICE_COLORS.violet,
     });
 
     markers.push({
       id: rootNode.id,
       label: getLeadMarkerLabel(locale),
       position: [0, 0, -2.45],
-      color: "#7C3AED",
+      color: FUTURE_OFFICE_COLORS.violet,
     });
   }
 
@@ -236,7 +240,7 @@ function createDynamicSceneData(
     });
 
   // ─── Guest Agent Nodes ─────────────────────────────────────────────
-  const GUEST_COLOR = "#F97316";
+  const GUEST_COLOR = FUTURE_OFFICE_COLORS.cyanSoft;
   const guestNodes = organization.nodes.filter(
     node => "guestConfig" in node || node.agentId.startsWith("guest_")
   );
@@ -297,11 +301,7 @@ function createDynamicSceneData(
   return { sceneAgents, markers };
 }
 
-function SpeechBubble(_: {
-  text: string;
-  visible: boolean;
-  accent: string;
-}) {
+function SpeechBubble(_: { text: string; visible: boolean; accent: string }) {
   return null;
 }
 
@@ -469,20 +469,20 @@ function getStatusBorderStyle(status: string): CSSProperties {
   switch (category) {
     case "working":
       return {
-        borderColor: "rgba(6, 182, 212, 0.5)",
-        boxShadow: "0 0 8px rgba(6, 182, 212, 0.5)",
+        borderColor: "rgba(56, 189, 248, 0.55)",
+        boxShadow: "0 0 10px rgba(56, 189, 248, 0.45)",
         animation: "breathe-glow 2s ease-in-out infinite",
       } as CSSProperties;
     case "thinking":
       return {
-        borderColor: "rgba(245, 158, 11, 0.5)",
-        boxShadow: "0 0 8px rgba(245, 158, 11, 0.5)",
-        animation: "breathe-glow-amber 1.5s ease-in-out infinite",
+        borderColor: "rgba(125, 211, 252, 0.55)",
+        boxShadow: "0 0 10px rgba(125, 211, 252, 0.4)",
+        animation: "breathe-glow 1.5s ease-in-out infinite",
       };
     case "reviewing":
       return {
-        borderColor: "rgba(168, 85, 247, 0.5)",
-        boxShadow: "0 0 8px rgba(168, 85, 247, 0.5)",
+        borderColor: "rgba(167, 139, 250, 0.5)",
+        boxShadow: "0 0 10px rgba(167, 139, 250, 0.4)",
         animation: "breathe-glow-purple 2s ease-in-out infinite",
       };
     case "done":
@@ -497,7 +497,7 @@ function getStatusBorderStyle(status: string): CSSProperties {
     default:
       // idle: static semi-transparent white border
       return {
-        borderColor: "rgba(255, 255, 255, 0.1)",
+        borderColor: "rgba(226, 232, 240, 0.34)",
       };
   }
 }
@@ -750,15 +750,16 @@ function AgentWorker({
               isActive ? "scale-110" : ""
             }`}
             style={{
-              background: isActive ? accent : "rgba(31, 41, 55, 0.84)",
+              background: isActive ? accent : "rgba(248, 251, 255, 0.82)",
+              color: isActive ? "#ffffff" : FUTURE_OFFICE_COLORS.text,
               ...getStatusBorderStyle(agentStatus),
             }}
           >
-            <span className="text-white">
+            <span className={isActive ? "text-white" : "text-slate-700"}>
               {config.emoji} {config.shortLabel}
             </span>
             {config.isGuest && !reducedOverlays ? (
-              <span className="rounded-full bg-orange-500/80 px-1.5 py-0.5 text-[8px] font-bold text-white tracking-wider">
+              <span className="rounded-full bg-sky-400/85 px-1.5 py-0.5 text-[8px] font-bold text-white tracking-wider">
                 Guest
               </span>
             ) : null}
@@ -775,7 +776,7 @@ function AgentWorker({
         >
           <div
             className="whitespace-nowrap rounded-full px-2 py-0.5 text-[9px] font-bold text-white shadow-sm transition-all duration-500"
-            style={{ backgroundColor: roleColor || "#8B7355" }}
+            style={{ backgroundColor: roleColor || FUTURE_OFFICE_COLORS.blue }}
           >
             🎭 {currentRoleName}
           </div>
@@ -810,7 +811,7 @@ function AgentWorker({
         <pointLight
           position={[0, 1.8, 0]}
           intensity={0.6}
-          color="#FFD700"
+          color={FUTURE_OFFICE_COLORS.warning}
           distance={3}
           decay={2}
         />
@@ -846,11 +847,11 @@ function AgentWorker({
             roleColor
               ? roleColor
               : agentStatus === "executing"
-                ? "#3B82F6"
+                ? FUTURE_OFFICE_COLORS.blue
                 : agentStatus === "reviewing"
-                  ? "#A855F7"
+                  ? FUTURE_OFFICE_COLORS.violet
                   : agentStatus === "auditing"
-                    ? "#F97316"
+                    ? FUTURE_OFFICE_COLORS.cyan
                     : accent
           }
           distance={2.6}
@@ -888,7 +889,7 @@ function DepartmentMarker({
         distanceFactor={10}
         style={{ pointerEvents: "none" }}
       >
-        <div className="inline-flex items-center gap-2 rounded-full border border-white/70 bg-[#FFF9F2]/88 px-3 py-1 text-[10px] font-semibold text-[#4E3C2C] shadow-md backdrop-blur-sm">
+        <div className="inline-flex items-center gap-2 rounded-full border border-sky-100/80 bg-white/90 px-3 py-1 text-[10px] font-semibold text-slate-700 shadow-md backdrop-blur-sm">
           <span
             className="h-1.5 w-1.5 rounded-full"
             style={{ backgroundColor: color }}
@@ -966,31 +967,31 @@ export function PetWorkers({
           id: "ceo",
           label: getLeadMarkerLabel(locale),
           position: [0, 0, -2.45] as [number, number, number],
-          color: "#7C3AED",
+          color: FUTURE_OFFICE_COLORS.violet,
         },
         {
           id: "game",
           label: getPodLabel(0, locale),
           position: [-3.25, 0, -1.7] as [number, number, number],
-          color: "#D97706",
+          color: FUTURE_DEPARTMENT_COLORS[0],
         },
         {
           id: "ai",
           label: getPodLabel(1, locale),
           position: [3.2, 0, -1.7] as [number, number, number],
-          color: "#2563EB",
+          color: FUTURE_DEPARTMENT_COLORS[1],
         },
         {
           id: "life",
           label: getPodLabel(2, locale),
           position: [-2.8, 0, 2.2] as [number, number, number],
-          color: "#059669",
+          color: FUTURE_DEPARTMENT_COLORS[2],
         },
         {
           id: "meta",
           label: getPodLabel(3, locale),
           position: [2.9, 0, 2.2] as [number, number, number],
-          color: "#7C3AED",
+          color: FUTURE_DEPARTMENT_COLORS[3],
         },
       ],
     };
@@ -1050,7 +1051,7 @@ export function PetWorkers({
       color:
         getSceneStageColor(currentWorkflow.current_stage || "") ||
         configMap[toId]?.color ||
-        "#7C3AED",
+        FUTURE_OFFICE_COLORS.violet,
       opacity: 0.26,
       phase: index * 0.13,
     });

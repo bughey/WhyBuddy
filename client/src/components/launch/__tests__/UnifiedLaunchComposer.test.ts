@@ -181,23 +181,52 @@ describe("UnifiedLaunchComposer helper logic", () => {
       })
     );
 
-    expect(markup).toContain(
-      'data-testid="unified-launch-compact-composer"'
-    );
+    expect(markup).toContain('data-testid="unified-launch-compact-composer"');
     expect(markup).not.toContain('data-testid="autopilot-launch-empty-state"');
     expect(markup).not.toContain(
       'data-testid="autopilot-first-entry-cockpit-guide"'
     );
     expect(markup).toContain('data-testid="launch-compact-examples"');
-    expect(markup).toContain('data-testid="launch-action-create-task"');
-    expect(markup).toContain('data-testid="launch-action-advanced"');
+    expect(markup).not.toContain('data-testid="launch-action-create-task"');
+    expect(markup).not.toContain('data-testid="launch-action-advanced"');
     expect(markup).toContain('data-testid="launch-compact-send"');
     expect(markup).toContain("Add files");
-    expect(markup).toContain("New task");
-    expect(markup).toContain("Advanced");
   });
 
-  it("shows route planning and fleet execution previews when a destination is typed", () => {
+  it("keeps compact example chips visible after a destination is typed", () => {
+    appState.locale = "en-US";
+    appState.runtimeMode = "advanced";
+    nlCommandState.commands = [];
+    nlCommandState.currentCommand = null;
+    nlCommandState.currentAnalysis = null;
+    nlCommandState.currentDialog = null;
+    nlCommandState.currentPlan = null;
+    nlCommandState.draftText =
+      "Plan today's payment alert investigation and deliver a one-page brief.";
+    nlCommandState.lastSubmission = null;
+    nlCommandState.loading = false;
+    nlCommandState.error = null;
+
+    const markup = renderToStaticMarkup(
+      createElement(UnifiedLaunchComposer, {
+        createMission: async () => null,
+        compact: true,
+        bare: true,
+        dense: true,
+        hideHeader: true,
+        hideInputLabel: true,
+      })
+    );
+
+    expect(markup).toContain('data-testid="launch-compact-examples"');
+    expect(markup).toContain('data-state="active-destination"');
+    expect(markup).toContain("Analysis");
+    expect(markup).toContain("Generation");
+    expect(markup).toContain("Implementation");
+    expect(markup).toContain("Research");
+  });
+
+  it("keeps destination preview and route planning out of the compact input surface", () => {
     resetComposerStores();
 
     const markup = renderToStaticMarkup(
@@ -205,12 +234,11 @@ describe("UnifiedLaunchComposer helper logic", () => {
     );
 
     expect(markup).not.toContain('data-testid="autopilot-launch-empty-state"');
-    expect(markup).toContain(
+    expect(markup).not.toContain(
       'data-testid="autopilot-destination-preview-card"'
     );
-    expect(markup).toContain('data-testid="route-planning-overlay"');
-    expect(markup).toContain('data-testid="launch-fleet-preview"');
-    expect(markup).toContain("Autopilot route plan");
-    expect(markup).toContain("Fleet execution");
+    expect(markup).not.toContain('data-testid="route-planning-overlay"');
+    expect(markup).not.toContain('data-testid="launch-fleet-preview"');
+    expect(markup).toContain('data-testid="launch-compact-send"');
   });
 });

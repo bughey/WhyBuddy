@@ -6,6 +6,7 @@ import * as THREE from "three";
 import { useLocation } from "wouter";
 
 import { useViewportTier } from "@/hooks/useViewportTier";
+import { FUTURE_OFFICE_COLORS } from "@/lib/scene-theme";
 import { useTasksStore } from "@/lib/tasks-store";
 
 import { MissionDetailOverlay } from "../tasks/MissionDetailOverlay";
@@ -19,13 +20,13 @@ import {
 const ISLAND_POSITION: [number, number, number] = [0, 0, -2.5];
 const MINI_VIEW_OFFSET: [number, number, number] = [0, 2.8, 0];
 
-const GLOW_COLOR_ACTIVE = new THREE.Color("#F59E0B");
-const GLOW_COLOR_IDLE = new THREE.Color("#D6C4A8");
+const GLOW_COLOR_ACTIVE = new THREE.Color(FUTURE_OFFICE_COLORS.cyan);
+const GLOW_COLOR_IDLE = new THREE.Color(FUTURE_OFFICE_COLORS.hemisphereGround);
 
 /* ── Data Hook ── */
 function useMissionIslandData() {
-  const tasks = useTasksStore((s) => s.tasks);
-  const detailsById = useTasksStore((s) => s.detailsById);
+  const tasks = useTasksStore(s => s.tasks);
+  const detailsById = useTasksStore(s => s.detailsById);
 
   const selectedMission = useMemo(() => selectDisplayMission(tasks), [tasks]);
 
@@ -81,13 +82,10 @@ export function MissionIsland() {
     }
   });
 
-  const handleIslandClick = useCallback(
-    (e: THREE.Event) => {
-      (e as unknown as { stopPropagation: () => void }).stopPropagation();
-      setExpanded((prev) => !prev);
-    },
-    [],
-  );
+  const handleIslandClick = useCallback((e: THREE.Event) => {
+    (e as unknown as { stopPropagation: () => void }).stopPropagation();
+    setExpanded(prev => !prev);
+  }, []);
 
   const handleExpand = useCallback(() => setExpanded(true), []);
   const handleClose = useCallback(() => setExpanded(false), []);
@@ -97,7 +95,7 @@ export function MissionIsland() {
       setExpanded(false);
       setLocation(`/tasks/${taskId}`);
     },
-    [setLocation],
+    [setLocation]
   );
 
   const handleCreateMission = useCallback(() => {
@@ -160,10 +158,7 @@ export function MissionIsland() {
 
       {/* Detail Overlay (visible when expanded) */}
       {expanded && missionDetail && (
-        <Html
-          fullscreen
-          style={{ pointerEvents: "auto" }}
-        >
+        <Html fullscreen style={{ pointerEvents: "auto" }}>
           <MissionDetailOverlay
             detail={missionDetail}
             onClose={handleClose}

@@ -2,10 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
 import { SidebarStatusBlock } from "../SidebarStatusBlock";
-import {
-  getStatusMapping,
-  getStatusLabel,
-} from "../sidebar-status-utils";
+import { getStatusMapping, getStatusLabel } from "../sidebar-status-utils";
 
 vi.mock("@/i18n", () => ({
   useI18n: () => ({
@@ -32,7 +29,7 @@ vi.mock("@/lib/tasks-store", () => ({
         string,
         { autopilotSummary: { driveState: { state: string } } }
       >;
-    }) => unknown,
+    }) => unknown
   ) =>
     selector({
       selectedTaskId: "task-1",
@@ -159,30 +156,34 @@ describe("getStatusMapping", () => {
 
 describe("SidebarStatusBlock", () => {
   it("renders expanded status cards as light-sidebar surfaces", () => {
-    const markup = renderToStaticMarkup(<SidebarStatusBlock collapsed={false} />);
+    const markup = renderToStaticMarkup(
+      <SidebarStatusBlock collapsed={false} />
+    );
 
     expect(markup).toContain('data-sidebar-status-tone="light"');
-    expect(markup).toContain("border-color:rgba(203,213,225");
-    expect(markup).toContain("background-color:rgba(248,250,252");
+    expect(markup).toContain("border-color:rgba(186,230,253,0.68)");
+    expect(markup).toContain("background:rgba(255,255,255,0.66)");
+    expect(markup).toContain("Autopilot Control");
+    expect(markup).toContain("Mission Control");
     expect(markup).not.toContain("var(--sidebar-accent)");
   });
 
   it("renders expanded status cards as transparent glass surfaces when embedded", () => {
     const markup = renderToStaticMarkup(
-      <SidebarStatusBlock collapsed={false} tone="glass" />,
+      <SidebarStatusBlock collapsed={false} tone="glass" />
     );
 
     expect(markup).toContain('data-sidebar-status-tone="glass"');
     expect(markup).toContain('data-sidebar-status-card="glass"');
-    expect(markup).toContain("background-color:rgba(255,255,255,0.34)");
-    expect(markup).toContain("border-color:rgba(255,255,255,0.42)");
+    expect(markup).toContain("background:rgba(255,255,255,0.48)");
+    expect(markup).toContain("border-color:rgba(255,255,255,0.58)");
   });
 
   it("renders collapsed status indicators with light-sidebar icon color", () => {
     const markup = renderToStaticMarkup(<SidebarStatusBlock collapsed />);
 
     expect(markup).toContain('data-sidebar-status-tone="light"');
-    expect(markup).toContain("color:#475569");
+    expect(markup).toContain("color:#0284c7");
     expect(markup).not.toContain("var(--sidebar-foreground)");
   });
 });

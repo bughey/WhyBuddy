@@ -100,7 +100,12 @@
   --studio-sage-strong: #456b58;
   --studio-plum: #836a88;
   --studio-sky: #87afc7;
-  --workspace-page-bg: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 52%, #e2e8f0 100%);
+  --workspace-page-bg: linear-gradient(
+    180deg,
+    #f8fafc 0%,
+    #f1f5f9 52%,
+    #e2e8f0 100%
+  );
   --workspace-shell-bg: linear-gradient(
     180deg,
     rgba(248, 250, 252, 0.94),

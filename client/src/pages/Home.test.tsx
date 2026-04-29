@@ -245,7 +245,7 @@ describe("Home desktop shell", () => {
     const markup = renderToStaticMarkup(<Home />);
 
     expect(markup).toContain('data-testid="scene-3d"');
-    expect(markup).toContain('data-sidebar-width="240"');
+    expect(markup).toContain('data-sidebar-width="248"');
     expect(markup).toContain("home-desktop-sidebar-shell");
 
     const toolbarTag =
@@ -278,8 +278,9 @@ describe("Home desktop shell", () => {
     expect(markup).toContain(
       '.home-desktop-sidebar-shell aside[data-sidebar-tone="glass"]'
     );
-    expect(markup).toContain("rgba(255, 255, 255, 0.46)");
-    expect(markup).toContain("backdrop-filter: blur(24px)");
+    expect(markup).toContain("rgba(255, 255, 255, 0.9)");
+    expect(markup).toContain("rgba(236, 249, 255, 0.36)");
+    expect(markup).toContain("backdrop-filter: blur(30px)");
     expect(markup).not.toContain(
       ".home-desktop-sidebar-shell aside {\n  background: rgba(248, 250, 252, 0.96)"
     );

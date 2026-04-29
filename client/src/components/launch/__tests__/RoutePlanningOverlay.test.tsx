@@ -257,6 +257,21 @@ describe("RoutePlanningOverlay", () => {
     expect(markup).not.toContain("Confirming route...");
   });
 
+  it("keeps route planning as selection-only when no confirm handler is provided", () => {
+    const markup = renderToStaticMarkup(
+      <RoutePlanningOverlay
+        routePlan={makeRoutePlan()}
+        selectedRouteId="fast-route"
+        locale="en-US"
+        onSelect={() => {}}
+      />
+    );
+
+    expect(markup).toContain("Restore recommended route");
+    expect(markup).not.toContain("Confirm route and execute");
+    expect(markup).not.toContain("Confirming route...");
+  });
+
   it("renders confirming route copy when confirmation is in progress", () => {
     const markup = renderToStaticMarkup(
       <RoutePlanningOverlay

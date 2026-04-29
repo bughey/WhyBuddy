@@ -69,7 +69,7 @@
 
   <rect x="1276" y="48" width="220" height="66" rx="18" fill="rgba(56,189,248,0.18)" stroke="rgba(125,211,252,0.46)"/>
   <text x="1294" y="73" class="hero-k">IA checklist</text>
-  <text id="ia-hero-value" x="1294" y="103" class="hero-v">67 / 77</text>
+  <text id="ia-hero-value" x="1294" y="103" class="hero-v">81 / 89</text>
 
   <rect x="922" y="144" width="574" height="10" rx="5" fill="rgba(255,255,255,0.18)"/>
   <rect x="922" y="144" width="500" height="10" rx="5" fill="url(#baseFill)"/>
@@ -94,8 +94,8 @@
 
   <rect x="1176" y="262" width="388" height="112" rx="22" fill="#eff6ff" stroke="#bfdbfe" filter="url(#shadow)"/>
   <text x="1198" y="296" class="card-title">新 IA follow-up</text>
-  <text id="ia-summary-value" x="1198" y="334" class="card-value">67 / 77 items</text>
-  <text id="ia-summary-meta" x="1198" y="358" class="card-meta">3 specs, 10/14 phases, 57/63 subtasks; excludes original 329/329</text>
+  <text id="ia-summary-value" x="1198" y="334" class="card-value">81 / 89 items</text>
+  <text id="ia-summary-meta" x="1198" y="358" class="card-meta">3 specs, 12/15 phases, 69/74 subtasks; excludes original 329/329</text>
 
   <!-- Legend -->
   <circle cx="1038" cy="408" r="6" fill="#22c55e"/>
@@ -110,8 +110,8 @@
   <!-- Current status -->
   <rect x="36" y="432" width="1528" height="122" rx="22" fill="#eff6ff" stroke="#bfdbfe" filter="url(#shadow)"/>
   <rect x="58" y="456" width="94" height="22" rx="11" fill="#dbeafe"/>
-  <text id="ia-status-badge" x="76" y="471" class="badge-work">67/77 tracked</text>
-  <text id="ia-status-title" x="168" y="472" class="alert-title" style="fill:#1e3a8a;">New IA follow-up tracked separately: 67/77 checklist items</text>
+  <text id="ia-status-badge" x="76" y="471" class="badge-work">81/89 tracked</text>
+  <text id="ia-status-title" x="168" y="472" class="alert-title" style="fill:#1e3a8a;">New IA follow-up tracked separately: 81/89 checklist items</text>
   <text x="58" y="506" class="alert-copy" style="fill:#1d4ed8;">新增 specs: home cockpit shell convergence 0/24, task center workbench tabs 0/29, composer-only center input 0/24。</text>
   <text x="58" y="534" class="alert-copy" style="fill:#1d4ed8;">明确边界: /tasks 不显示发起 tab；发起只保留在首页右抽屉与底部输入框；任务中心承接完整任务工作台。</text>
   <text x="950" y="506" class="alert-copy" style="fill:#1d4ed8;">上一轮保留: 左侧透明栏、/tasks 固定侧栏避让、详情 100% 宽度、右抽屉恢复。</text>
@@ -218,7 +218,7 @@
 
   <!-- Follow-up scope -->
   <text x="44" y="918" class="section-title">New IA Follow-up Specs</text>
-  <text id="ia-section-meta" x="312" y="918" class="section-meta">Separate count: 10/14 phases, 57/63 subtasks, 67/77 checklist items</text>
+  <text id="ia-section-meta" x="312" y="918" class="section-meta">Separate count: 12/15 phases, 69/74 subtasks, 81/89 checklist items</text>
 
   <!-- ia-progress-cards:start -->
   <rect x="36" y="936" width="372" height="118" rx="18" fill="#eff6ff" stroke="#bfdbfe"/>
@@ -244,12 +244,12 @@
   <rect x="820" y="936" width="372" height="118" rx="18" fill="#eff6ff" stroke="#bfdbfe"/>
   <rect x="836" y="950" width="86" height="18" rx="9" fill="#dbeafe"/>
   <text x="848" y="963" class="badge-work">in progress</text>
-  <text x="1160" y="964" text-anchor="end" class="card-value" style="font-size:15px;">19/24</text>
+  <text x="1160" y="964" text-anchor="end" class="card-value" style="font-size:15px;">33/36</text>
   <text x="836" y="992" class="spec-title">3. Composer-only center</text>
-  <text x="836" y="1014" class="spec-task">3/5 phases | 16/19 subtasks</text>
+  <text x="836" y="1014" class="spec-task">5/6 phases | 28/30 subtasks</text>
   <text x="836" y="1035" class="spec-slug">ui-redesign-composer-only-center-input</text>
   <rect x="836" y="1044" width="324" height="6" rx="3" fill="#e5ebf3"/>
-  <rect x="836" y="1044" width="257" height="6" rx="3" fill="url(#workFill)"/>
+  <rect x="836" y="1044" width="297" height="6" rx="3" fill="url(#workFill)"/>
 
   <rect x="1212" y="936" width="352" height="118" rx="18" fill="#eff6ff" stroke="#bfdbfe"/>
   <rect x="1228" y="950" width="104" height="18" rx="9" fill="#dbeafe"/>
@@ -261,5 +261,5 @@
   <rect x="1228" y="1044" width="304" height="6" rx="3" fill="url(#workFill)"/>
   <!-- ia-progress-cards:end -->
 
-  <text id="ia-footer" x="60" y="1094" class="foot">Source: .kiro/specs/ui-redesign-* + IA follow-up specs | Updated 2026-04-28 | Original baseline: 8 specs, 329/329 tasks | New IA separate: 67/77 checklist, 10/14 phases, 57/63 subtasks | /tasks launch tab: explicitly excluded | Refresh: node scripts/ui-redesign-ia-progress.mjs --write</text>
+  <text id="ia-footer" x="60" y="1094" class="foot">Source: .kiro/specs/ui-redesign-* + IA follow-up specs | Updated 2026-04-28 | Original baseline: 8 specs, 329/329 tasks | New IA separate: 81/89 checklist, 12/15 phases, 69/74 subtasks | /tasks launch tab: explicitly excluded | Refresh: node scripts/ui-redesign-ia-progress.mjs --write</text>
 </svg>

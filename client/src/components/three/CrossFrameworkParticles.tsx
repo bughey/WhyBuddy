@@ -14,13 +14,14 @@ import { Html } from "@react-three/drei";
 import * as THREE from "three";
 import { useA2AStore } from "../../lib/a2a-store";
 import type { A2AFrameworkType } from "../../../../shared/a2a-protocol";
+import { FUTURE_OFFICE_COLORS } from "@/lib/scene-theme";
 
 /* ── Constants ── */
 const FRAMEWORK_COLORS: Record<A2AFrameworkType, string> = {
-  crewai: "#3B82F6",
-  langgraph: "#8B5CF6",
-  claude: "#F59E0B",
-  custom: "#6B7280",
+  crewai: FUTURE_OFFICE_COLORS.blue,
+  langgraph: FUTURE_OFFICE_COLORS.violet,
+  claude: FUTURE_OFFICE_COLORS.cyan,
+  custom: FUTURE_OFFICE_COLORS.slate,
 };
 
 const PULSE_GREEN = new THREE.Color("#22C55E");
@@ -35,7 +36,7 @@ export function CrossFrameworkParticles({
   active?: boolean;
   showLabels?: boolean;
 }) {
-  const activeSessions = useA2AStore((s) => s.activeSessions);
+  const activeSessions = useA2AStore(s => s.activeSessions);
   const groupRef = useRef<THREE.Group>(null);
 
   if (!active) return null;

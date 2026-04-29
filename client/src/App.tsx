@@ -43,9 +43,7 @@ function Router() {
       <Route path={"/command-center/legacy"}>
         {() => <LegacyCommandCenterPage />}
       </Route>
-      <Route path={"/command-center"}>
-        {() => <RedirectRoute to="/" />}
-      </Route>
+      <Route path={"/command-center"}>{() => <RedirectRoute to="/" />}</Route>
       <Route path={"/lineage"} component={LineagePage} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
@@ -118,7 +116,7 @@ export function AppShell() {
     setSidebarCollapsed(isTablet);
   }, [isTablet]);
 
-  const sidebarWidth = isMobile ? 0 : sidebarCollapsed ? 64 : 240;
+  const sidebarWidth = isMobile ? 0 : sidebarCollapsed ? 64 : 248;
 
   return (
     <>

@@ -31,41 +31,42 @@ import { useWorkflowStore } from "@/lib/workflow-store";
 
 const HOME_DESKTOP_CHROME_CSS = `
 .home-desktop-sidebar-shell aside[data-sidebar-tone="glass"] {
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0.46) 0%, rgba(255, 255, 255, 0.30) 74%, rgba(255, 255, 255, 0.14) 100%) !important;
-  border-color: rgba(255, 255, 255, 0.36) !important;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 252, 255, 0.66) 58%, rgba(236, 249, 255, 0.36) 100%) !important;
+  border-color: rgba(186, 230, 253, 0.48) !important;
   color: #334155 !important;
-  box-shadow: 18px 0 48px rgba(15, 23, 42, 0.08);
-  backdrop-filter: blur(24px);
+  box-shadow: 18px 0 58px rgba(14, 165, 233, 0.1), inset -1px 0 0 rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(30px) saturate(1.18);
 }
 
 .home-desktop-sidebar-shell aside[data-sidebar-tone="glass"] * {
-  color: #475569 !important;
+  color: inherit;
 }
 
 .home-desktop-sidebar-shell aside[data-sidebar-tone="glass"] button {
-  border-color: transparent !important;
+  border-color: transparent;
 }
 
 .home-desktop-sidebar-shell aside[data-sidebar-tone="glass"] button:hover {
-  background: rgba(255, 255, 255, 0.42) !important;
+  border-color: rgba(255, 255, 255, 0.72);
+  background: rgba(255, 255, 255, 0.54) !important;
   color: #0f172a !important;
 }
 
 .home-desktop-sidebar-shell aside[data-sidebar-tone="glass"] button[aria-current="page"] {
-  background: #0f172a !important;
-  border-color: rgba(15, 23, 42, 0.12) !important;
-  box-shadow: 0 16px 32px rgba(15, 23, 42, 0.18);
-  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.86) !important;
+  border-color: rgba(186, 230, 253, 0.82) !important;
+  box-shadow: 0 18px 40px rgba(14, 165, 233, 0.18), 0 6px 18px rgba(15, 23, 42, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.96);
+  color: #0f172a !important;
 }
 
 .home-desktop-sidebar-shell aside[data-sidebar-tone="glass"] button[aria-current="page"] *,
 .home-desktop-sidebar-shell aside[data-sidebar-tone="glass"] button[aria-current="page"] svg {
-  color: #ffffff !important;
+  color: inherit;
 }
 
 .home-desktop-sidebar-shell aside[data-sidebar-tone="glass"] [data-sidebar-status-card="glass"] {
-  background: rgba(255, 255, 255, 0.34) !important;
-  border-color: rgba(255, 255, 255, 0.42) !important;
+  background: rgba(255, 255, 255, 0.48) !important;
+  border-color: rgba(255, 255, 255, 0.58) !important;
 }
 
 .home-first-screen-cockpit > .pointer-events-none.absolute.inset-0.z-20 > section {
@@ -197,11 +198,7 @@ export default function Home() {
     locale === "zh-CN" ? copy.common.englishShort : copy.common.chineseShort;
   const scenePerformanceProfile =
     resizeActive && !isMobile ? "resizing" : "balanced";
-  const desktopSidebarWidth = isMobile
-    ? 0
-    : viewportWidth >= 1280
-      ? 240
-      : 64;
+  const desktopSidebarWidth = isMobile ? 0 : viewportWidth >= 1280 ? 248 : 64;
   const sceneLayer = (
     <Scene3D
       performanceProfile={scenePerformanceProfile}
@@ -227,7 +224,7 @@ export default function Home() {
           },
         },
       ]),
-    [agents],
+    [agents]
   );
   const desktopGlassClass = resizeActive
     ? "border-slate-200/90 bg-[hsl(var(--background))]/96 shadow-[0_8px_20px_rgba(15,23,42,0.06)]"

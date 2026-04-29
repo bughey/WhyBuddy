@@ -17,10 +17,6 @@ import { cn } from "@/lib/utils";
 
 type SidebarTone = "light" | "glass";
 
-// ---------------------------------------------------------------------------
-// Sub-components
-// ---------------------------------------------------------------------------
-
 function SidebarHeader({
   collapsed,
   tone,
@@ -33,42 +29,34 @@ function SidebarHeader({
   return (
     <div
       className={cn(
-        "flex h-16 shrink-0 items-center gap-2 border-b px-4",
-        collapsed && "justify-center px-2",
+        "flex h-[92px] shrink-0 items-center gap-3 px-4",
+        collapsed && "justify-center px-2"
       )}
-      style={{
-        borderColor: glass
-          ? "rgba(15, 23, 42, 0.08)"
-          : "rgba(203, 213, 225, 0.72)",
-      }}
     >
       <span
         className={cn(
-          "flex size-9 shrink-0 items-center justify-center rounded-[10px] border text-xs font-bold shadow-sm",
+          "relative flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-[15px] border text-xs font-black tracking-[0.04em] shadow-sm",
           glass
-            ? "border-slate-900/15 bg-slate-900 text-white shadow-[0_14px_28px_rgba(15,23,42,0.18)]"
-            : "border-emerald-200 bg-emerald-50 text-emerald-700",
+            ? "border-white/80 bg-white/58 text-sky-700 shadow-[0_14px_34px_rgba(14,165,233,0.14),inset_0_1px_0_rgba(255,255,255,0.9)]"
+            : "border-sky-100 bg-white/82 text-sky-700 shadow-[0_14px_34px_rgba(14,165,233,0.14),inset_0_1px_0_rgba(255,255,255,0.96)]"
         )}
       >
-        {glass ? "CP" : "C"}
+        <span className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(125,211,252,0.42),transparent_42%),linear-gradient(135deg,rgba(255,255,255,0.96),rgba(224,242,254,0.46))]" />
+        <span className="relative">CP</span>
       </span>
       {!collapsed && (
         <span className="min-w-0">
           <span
             className={cn(
-              "block truncate font-semibold",
-              glass
-                ? "text-[12px] uppercase tracking-[0.08em] text-slate-800"
-                : "text-sm text-slate-950",
+              "block truncate text-[13px] font-black uppercase tracking-[0.16em]",
+              glass ? "text-slate-700" : "text-slate-800"
             )}
           >
-            {glass ? "Cube Pets Office" : "Cube Pets"}
+            Cube Pets Office
           </span>
-          {glass && (
-            <span className="mt-0.5 block truncate text-[11px] font-medium text-slate-600">
-              办公室已成为桌面运转的伙伴
-            </span>
-          )}
+          <span className="mt-1.5 block truncate text-[11px] font-semibold leading-none text-slate-500">
+            办公室已成为桌面运转的伙伴
+          </span>
         </span>
       )}
     </div>
@@ -109,30 +97,38 @@ function SidebarNavItem({
       data-sidebar-nav-state={active ? "active" : "idle"}
       data-sidebar-nav-tone={tone}
       className={cn(
-        "relative flex min-h-10 w-full items-center gap-3 rounded-md border border-transparent px-3 py-2 text-sm font-medium transition-colors",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40",
-        collapsed && "size-10 justify-center px-0",
+        "group relative flex min-h-[52px] w-full items-center gap-3 overflow-hidden rounded-[18px] border px-3.5 py-3 text-[14px] font-bold transition-all duration-200",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/30",
+        collapsed && "size-12 justify-center px-0",
         glass &&
-          "min-h-11 rounded-[14px] px-3 text-slate-600 hover:bg-white/42 hover:text-slate-950",
-        glass &&
-          collapsed &&
-          "size-11 justify-center rounded-[14px] px-0",
-        active &&
-          (glass
-            ? "border-slate-900/10 bg-slate-900 text-white shadow-[0_14px_28px_rgba(15,23,42,0.22)] hover:bg-slate-900 hover:text-white"
-            : "border-emerald-200 bg-emerald-50 text-emerald-700 shadow-sm"),
-        !active &&
-          !isDisabled &&
-          !glass &&
-          "text-slate-600 hover:bg-slate-100 hover:text-slate-950",
-        isDisabled && "cursor-not-allowed text-slate-400 opacity-75",
+          "border-white/0 text-slate-500 hover:border-white/72 hover:bg-white/54 hover:text-slate-900 hover:shadow-[0_16px_30px_rgba(14,165,233,0.1),inset_0_1px_0_rgba(255,255,255,0.88)]",
+        active
+          ? "border-sky-200/82 bg-white/86 text-slate-950 shadow-[0_18px_40px_rgba(14,165,233,0.18),0_6px_18px_rgba(15,23,42,0.06),inset_0_1px_0_rgba(255,255,255,0.96)] hover:bg-white hover:text-slate-950"
+          : !isDisabled &&
+              !glass &&
+              "border-transparent text-slate-500 hover:border-sky-100 hover:bg-white/70 hover:text-slate-900 hover:shadow-[0_12px_26px_rgba(14,165,233,0.1),inset_0_1px_0_rgba(255,255,255,0.86)]",
+        isDisabled && "cursor-not-allowed text-slate-400 opacity-75"
       )}
     >
-      {active && !glass && (
-        <span className="absolute bottom-2 left-0 top-2 w-[3px] rounded-r bg-emerald-500" />
-      )}
-      <Icon className="size-5 shrink-0" />
+      <span
+        className={cn(
+          "relative z-10 flex size-8 shrink-0 items-center justify-center rounded-[13px] border transition-all duration-200",
+          active
+            ? "border-sky-200 bg-sky-50 text-sky-700 shadow-[0_0_0_4px_rgba(14,165,233,0.1)]"
+            : "border-slate-200/70 bg-white/64 text-slate-500 group-hover:border-sky-100 group-hover:bg-sky-50/80 group-hover:text-sky-700",
+          isDisabled && "border-slate-200 bg-slate-50 text-slate-300"
+        )}
+        data-sidebar-nav-icon=""
+      >
+        <Icon className="size-[17px] shrink-0" />
+      </span>
       {!collapsed && <span className="truncate">{label}</span>}
+      {active && (
+        <>
+          <span className="absolute left-0 top-1/2 h-7 w-1 -translate-y-1/2 rounded-r-full bg-sky-400 shadow-[0_0_18px_rgba(56,189,248,0.68)]" />
+          <span className="pointer-events-none absolute inset-y-2 right-2 w-12 rounded-full bg-[radial-gradient(circle,rgba(125,211,252,0.22),transparent_68%)]" />
+        </>
+      )}
     </button>
   );
 
@@ -169,27 +165,36 @@ function SidebarUserBlock({
   return (
     <div
       className={cn(
-        "flex shrink-0 items-center gap-2 border-t px-4 py-3",
-        glass && "mx-3 mb-2 rounded-[14px] border bg-white/26 px-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.34)]",
-        collapsed && "justify-center px-2",
+        "mx-3 mb-3 flex shrink-0 items-center gap-3 rounded-[18px] border bg-white/62 px-3 py-3 shadow-[0_12px_28px_rgba(14,165,233,0.08),inset_0_1px_0_rgba(255,255,255,0.82)]",
+        glass && "bg-white/44",
+        collapsed && "justify-center px-2"
       )}
       style={{
         borderColor: glass
-          ? "rgba(255, 255, 255, 0.42)"
-          : "rgba(203, 213, 225, 0.72)",
+          ? "rgba(255, 255, 255, 0.62)"
+          : "rgba(186, 230, 253, 0.72)",
       }}
     >
       <div
         className={cn(
-          "flex size-8 shrink-0 items-center justify-center rounded-full border text-xs font-bold",
+          "flex size-10 shrink-0 items-center justify-center rounded-[14px] border text-xs font-black text-sky-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]",
           glass
-            ? "border-emerald-200/80 bg-emerald-50/80 text-emerald-700"
-            : "border-emerald-200 bg-emerald-50 text-emerald-700",
+            ? "border-sky-100/80 bg-sky-50/82"
+            : "border-sky-100 bg-sky-50"
         )}
       >
-        U
+        MC
       </div>
-      {!collapsed && <span className="truncate text-sm text-slate-600">User</span>}
+      {!collapsed && (
+        <span className="min-w-0">
+          <span className="block truncate text-sm font-bold text-slate-800">
+            Mission Control
+          </span>
+          <span className="mt-0.5 block truncate text-[11px] font-medium text-slate-500">
+            高级模式
+          </span>
+        </span>
+      )}
     </div>
   );
 }
@@ -200,13 +205,13 @@ function SidebarTaskStats({ tone }: { tone: SidebarTone }) {
   return (
     <div
       className={cn(
-        "flex shrink-0 items-center justify-around border-t px-4 py-2 text-xs font-medium text-slate-500",
-        glass && "border-t-0 bg-white/18",
+        "mx-3 mb-3 flex shrink-0 items-center justify-around rounded-[18px] border bg-white/50 px-3 py-2 text-[11px] font-bold text-slate-500 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]",
+        glass && "bg-white/34"
       )}
       style={{
         borderColor: glass
-          ? "rgba(255, 255, 255, 0.24)"
-          : "rgba(203, 213, 225, 0.72)",
+          ? "rgba(255, 255, 255, 0.54)"
+          : "rgba(186, 230, 253, 0.66)",
       }}
     >
       <span>OK 0</span>
@@ -215,10 +220,6 @@ function SidebarTaskStats({ tone }: { tone: SidebarTone }) {
     </div>
   );
 }
-
-// ---------------------------------------------------------------------------
-// Main component
-// ---------------------------------------------------------------------------
 
 export interface AppSidebarProps {
   collapsed: boolean;
@@ -252,30 +253,39 @@ export function AppSidebar({
   return (
     <aside
       className={cn(
-        "flex flex-col border-r text-slate-800 backdrop-blur-xl transition-[width] duration-[250ms] ease-in-out",
+        "flex flex-col border-r text-slate-800 backdrop-blur-2xl transition-[width] duration-[250ms] ease-in-out",
         sidebarTone === "glass"
-          ? "shadow-[18px_0_48px_rgba(15,23,42,0.08)]"
-          : "shadow-[8px_0_28px_rgba(15,23,42,0.08)]",
-        embedded ? "relative h-full" : "fixed bottom-0 left-0 top-0 z-40",
+          ? "shadow-[18px_0_58px_rgba(14,165,233,0.1),inset_-1px_0_0_rgba(255,255,255,0.72)]"
+          : "shadow-[10px_0_34px_rgba(14,165,233,0.1),inset_-1px_0_0_rgba(255,255,255,0.86)]",
+        embedded ? "relative h-full" : "fixed bottom-0 left-0 top-0 z-40"
       )}
       data-sidebar-mode={embedded ? "embedded" : "fixed"}
       data-sidebar-tone={sidebarTone}
       style={{
-        width: collapsed ? 64 : 240,
+        width: collapsed ? 64 : 248,
         background: embedded
-          ? "linear-gradient(90deg, rgba(255, 255, 255, 0.62) 0%, rgba(255, 255, 255, 0.36) 72%, rgba(255, 255, 255, 0.24) 100%)"
-          : "rgba(255, 255, 255, 0.96)",
+          ? "linear-gradient(90deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 252, 255, 0.66) 58%, rgba(236, 249, 255, 0.36) 100%)"
+          : "linear-gradient(90deg, rgba(255, 255, 255, 0.98) 0%, rgba(244, 251, 255, 0.94) 100%)",
         borderColor: embedded
-          ? "rgba(255, 255, 255, 0.42)"
-          : "rgba(203, 213, 225, 0.72)",
+          ? "rgba(186, 230, 253, 0.48)"
+          : "rgba(186, 230, 253, 0.68)",
         color: "#1e293b",
       }}
     >
       <SidebarHeader collapsed={collapsed} tone={sidebarTone} />
 
-      <nav className="flex-1 overflow-y-auto px-2 py-2" aria-label="Main navigation">
-        <ul role="list" className="flex flex-col gap-1">
-          {SIDEBAR_NAV_ITEMS.map((item) => (
+      <nav
+        className={cn(
+          "relative flex-1 overflow-y-auto py-4",
+          collapsed ? "px-2" : "px-3.5"
+        )}
+        aria-label="Main navigation"
+      >
+        {!collapsed && (
+          <span className="pointer-events-none absolute bottom-8 left-[31px] top-5 w-px bg-gradient-to-b from-transparent via-sky-100/80 to-transparent" />
+        )}
+        <ul role="list" className="relative flex flex-col gap-2.5">
+          {SIDEBAR_NAV_ITEMS.map(item => (
             <SidebarNavItem
               key={item.id}
               item={item}
@@ -290,16 +300,19 @@ export function AppSidebar({
         </ul>
       </nav>
 
-      <div className="flex shrink-0 justify-end px-2 py-1">
+      <div className="flex shrink-0 justify-end px-3 py-1.5">
         <button
           type="button"
           onClick={onToggleCollapse}
           aria-expanded={!collapsed}
           aria-label={collapsed ? sidebarCopy.expand : sidebarCopy.collapse}
-          className="rounded-md p-1.5 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40"
+          className="rounded-[13px] border border-transparent p-1.5 text-slate-500 transition-colors hover:border-sky-100 hover:bg-white/70 hover:text-sky-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/30"
         >
           <ChevronsLeft
-            className={cn("size-4 transition-transform duration-200", collapsed && "rotate-180")}
+            className={cn(
+              "size-4 transition-transform duration-200",
+              collapsed && "rotate-180"
+            )}
           />
         </button>
       </div>
