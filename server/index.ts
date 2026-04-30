@@ -1345,6 +1345,9 @@ async function startServer() {
 
   heartbeatScheduler.start();
 
+  const { createPersistenceHealthRouter } = await import("./routes/persistence-health.js");
+  app.use("/api/health/persistence", createPersistenceHealthRouter());
+
   app.get("/api/health", (_req, res) => {
     res.json({
       status: "ok",

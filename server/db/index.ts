@@ -2,6 +2,12 @@
  * Database Layer — JSON file-based storage
  * Compatible with the MySQL schema design from ROADMAP.
  * Can be swapped to MySQL by changing this module.
+ *
+ * Legacy boundary:
+ * This module persists demo/runtime state in data/database.json. It must not be
+ * used as the source of truth for real ToC user identity, sessions, project
+ * ownership, or admin access control. New auth/project permission checks should
+ * use the MySQL-backed persistence layer under server/persistence.
  */
 import fs from "fs";
 import path from "path";

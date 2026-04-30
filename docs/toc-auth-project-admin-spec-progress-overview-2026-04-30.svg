@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1600" height="1260" viewBox="0 0 1600 1260" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Cube Pets Office ToC Auth Project Admin Spec Progress Overview</title>
+  <desc id="desc">ToC MySQL Redis persistence, DB-backed email auth, personal project isolation, admin console, optional admin audit, and trimmed login architecture progress overview.</desc>
+  <defs>
+    <linearGradient id="heroGradient" x1="40" y1="30" x2="1560" y2="250" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#17324D"/>
+      <stop offset="0.46" stop-color="#2D6A6A"/>
+      <stop offset="1" stop-color="#4E7A51"/>
+    </linearGradient>
+    <filter id="softShadow" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="14" stdDeviation="18" flood-color="#1B2A38" flood-opacity="0.13"/>
+    </filter>
+    <marker id="arrow" viewBox="0 0 14 14" refX="11" refY="7" markerWidth="12" markerHeight="12" orient="auto-start-reverse">
+      <path d="M2 2 L12 7 L2 12 Z" fill="#5D6C7D"/>
+    </marker>
+    <style>
+      .bg { fill: #F5F7FA; }
+      .hero-title { font: 800 40px "Inter", "PingFang SC", "Microsoft YaHei", Arial, sans-serif; fill: #FFFFFF; letter-spacing: 0; }
+      .hero-subtitle { font: 500 18px "Inter", "PingFang SC", "Microsoft YaHei", Arial, sans-serif; fill: rgba(255,255,255,0.84); letter-spacing: 0; }
+      .hero-meta { font: 700 14px "Inter", "PingFang SC", "Microsoft YaHei", Arial, sans-serif; fill: rgba(255,255,255,0.72); letter-spacing: 0; }
+      .card { fill: #FFFFFF; stroke: #E4E9F0; stroke-width: 1; filter: url(#softShadow); }
+      .plain-card { fill: #FFFFFF; stroke: #E4E9F0; stroke-width: 1; }
+      .summary-label { font: 700 15px "Inter", "PingFang SC", "Microsoft YaHei", Arial, sans-serif; fill: #5B6878; letter-spacing: 0; }
+      .summary-value { font: 900 34px "Inter", "PingFang SC", "Microsoft YaHei", Arial, sans-serif; fill: #17324D; letter-spacing: 0; }
+      .summary-note { font: 600 13px "Inter", "PingFang SC", "Microsoft YaHei", Arial, sans-serif; fill: #7B8794; letter-spacing: 0; }
+      .section-title { font: 900 23px "Inter", "PingFang SC", "Microsoft YaHei", Arial, sans-serif; fill: #17324D; letter-spacing: 0; }
+      .section-note { font: 600 14px "Inter", "PingFang SC", "Microsoft YaHei", Arial, sans-serif; fill: #687386; letter-spacing: 0; }
+      .lane-label { font: 850 13px "Inter", "PingFang SC", "Microsoft YaHei", Arial, sans-serif; fill: #FFFFFF; letter-spacing: 0; }
+      .spec-title { font: 850 19px "Inter", "PingFang SC", "Microsoft YaHei", Arial, sans-serif; fill: #17324D; letter-spacing: 0; }
+      .spec-path { font: 700 12px "JetBrains Mono", "Consolas", monospace; fill: #7B8794; letter-spacing: 0; }
+      .spec-desc { font: 560 14px "Inter", "PingFang SC", "Microsoft YaHei", Arial, sans-serif; fill: #566274; letter-spacing: 0; }
+      .spec-count { font: 900 20px "Inter", "PingFang SC", "Microsoft YaHei", Arial, sans-serif; fill: #17324D; letter-spacing: 0; }
+      .spec-percent { font: 750 13px "Inter", "PingFang SC", "Microsoft YaHei", Arial, sans-serif; fill: #687386; letter-spacing: 0; }
+      .pill-text { font: 850 12px "Inter", "PingFang SC", "Microsoft YaHei", Arial, sans-serif; fill: #FFFFFF; letter-spacing: 0; }
+      .legend { font: 650 13px "Inter", "PingFang SC", "Microsoft YaHei", Arial, sans-serif; fill: #5B6878; letter-spacing: 0; }
+      .bar-bg { fill: #E9EEF5; }
+      .done { fill: #2EB67D; }
+      .progress { fill: #2F80ED; }
+      .infra { fill: #0E8B8B; }
+      .empty { fill: #A7B0BE; }
+      .defer { fill: #7C5CC4; }
+      .arrow-line { stroke: #5D6C7D; stroke-width: 2.5; fill: none; marker-end: url(#arrow); }
+      .footer-title { font: 900 20px "Inter", "PingFang SC", "Microsoft YaHei", Arial, sans-serif; fill: #17324D; letter-spacing: 0; }
+      .footer-text { font: 580 15px "Inter", "PingFang SC", "Microsoft YaHei", Arial, sans-serif; fill: #556174; letter-spacing: 0; }
+      .footer-strong { font: 900 15px "Inter", "PingFang SC", "Microsoft YaHei", Arial, sans-serif; fill: #17324D; letter-spacing: 0; }
+      .tiny { font: 650 12px "Inter", "PingFang SC", "Microsoft YaHei", Arial, sans-serif; fill: #778396; letter-spacing: 0; }
+    </style>
+  </defs>
+
+  <rect class="bg" width="1600" height="1260"/>
+
+  <rect x="40" y="30" width="1520" height="220" rx="24" fill="url(#heroGradient)"/>
+  <text x="80" y="92" class="hero-meta">TOC AUTH / MYSQL-FIRST / REDIS-OPTIONAL / PROJECT ISOLATION / 2026-04-30</text>
+  <text x="80" y="142" class="hero-title">Cube Pets Office - ToC 权限规格执行进度总览</text>
+  <text x="80" y="183" class="hero-subtitle">先立 MySQL + 可选 Redis 持久化底座，再做 DB-backed 邮箱登录、我的项目隔离、管理员后台和后置运营审计。</text>
+  <text x="80" y="214" class="hero-meta">统计口径：5 个 spec，15 份文档，MVP 必做包含 Wave 0 基础设施与前三个权限 spec；配套裁剪版登录架构图已生成。</text>
+  <rect x="1170" y="72" width="310" height="128" rx="18" fill="rgba(255,255,255,0.14)" stroke="rgba(255,255,255,0.24)"/>
+  <text x="1194" y="112" class="hero-meta">MVP 任务完成度</text>
+  <text x="1194" y="160" class="hero-title">25%</text>
+  <text x="1292" y="160" class="hero-subtitle">15 / 59</text>
+  <rect x="1194" y="178" width="250" height="8" rx="4" fill="rgba(255,255,255,0.24)"/>
+  <rect x="1194" y="178" width="64" height="8" rx="4" fill="#FFFFFF"/>
+
+  <g transform="translate(60 285)">
+    <rect class="card" width="280" height="122" rx="20"/>
+    <text x="24" y="38" class="summary-label">Spec 总数</text>
+    <text x="24" y="82" class="summary-value">5</text>
+    <text x="78" y="82" class="summary-note">4 必做 + 1 后置</text>
+  </g>
+  <g transform="translate(365 285)">
+    <rect class="card" width="280" height="122" rx="20"/>
+    <text x="24" y="38" class="summary-label">规格文档</text>
+    <text x="24" y="82" class="summary-value">15 / 15</text>
+    <text x="216" y="82" class="summary-note">齐备</text>
+  </g>
+  <g transform="translate(670 285)">
+    <rect class="card" width="280" height="122" rx="20"/>
+    <text x="24" y="38" class="summary-label">MVP 必做任务</text>
+    <text x="24" y="82" class="summary-value">15 / 59</text>
+    <text x="198" y="82" class="summary-note">Wave 0 完成</text>
+  </g>
+  <g transform="translate(975 285)">
+    <rect class="card" width="280" height="122" rx="20"/>
+    <text x="24" y="38" class="summary-label">全部任务</text>
+    <text x="24" y="82" class="summary-value">15 / 74</text>
+    <text x="198" y="82" class="summary-note">含后置</text>
+  </g>
+  <g transform="translate(1280 285)">
+    <rect class="card" width="260" height="122" rx="20"/>
+    <text x="24" y="38" class="summary-label">基础设施状态</text>
+    <text x="24" y="78" class="summary-value">DONE</text>
+    <text x="126" y="78" class="summary-note">Wave 0 已落地</text>
+    <text x="24" y="101" class="tiny">MySQL migration 与 Redis health 已验证</text>
+  </g>
+
+  <g transform="translate(60 440)">
+    <text x="0" y="0" class="section-title">实施主线</text>
+    <text x="112" y="0" class="section-note">Wave 0 先固定数据库、会话和 Redis 边界；后续权限 spec 只消费这层能力，不再摇摆存储方案。</text>
+    <rect x="0" y="24" width="260" height="42" rx="21" fill="#0E8B8B"/>
+    <text x="22" y="51" class="lane-label">Wave 0 - MySQL / Redis 地基</text>
+    <rect x="282" y="24" width="260" height="42" rx="21" fill="#2F80ED"/>
+    <text x="304" y="51" class="lane-label">Wave 1 - 邮箱账号与会话</text>
+    <rect x="564" y="24" width="300" height="42" rx="21" fill="#2D6A6A"/>
+    <text x="586" y="51" class="lane-label">Wave 2 - 我的项目归属隔离</text>
+    <rect x="886" y="24" width="260" height="42" rx="21" fill="#4E7A51"/>
+    <text x="908" y="51" class="lane-label">Wave 3 - 管理员后台入口</text>
+    <rect x="1168" y="24" width="230" height="42" rx="21" fill="#7C5CC4"/>
+    <text x="1190" y="51" class="lane-label">Later - 运营审计动作</text>
+    <g transform="translate(1420 35)">
+      <circle cx="0" cy="0" r="6" fill="#2EB67D"/>
+      <text x="14" y="5" class="legend">已完成项</text>
+      <circle cx="86" cy="0" r="6" fill="#A7B0BE"/>
+      <text x="100" y="5" class="legend">待实施</text>
+    </g>
+  </g>
+
+  <path class="arrow-line" d="M290 540 C334 540 352 540 396 540"/>
+  <path class="arrow-line" d="M790 540 C834 540 852 540 896 540"/>
+  <path class="arrow-line" d="M1290 540 C1334 566 1350 608 1350 646"/>
+
+  <g transform="translate(60 535)">
+    <rect class="card" width="470" height="184" rx="20"/>
+    <rect x="24" y="24" width="96" height="28" rx="14" class="done"/>
+    <text x="42" y="43" class="pill-text">已完成</text>
+    <text x="136" y="44" class="spec-title">0. MySQL Redis Persistence</text>
+    <text x="24" y="72" class="spec-path">lightweight-mysql-redis-persistence-strategy</text>
+    <text x="24" y="101" class="spec-desc">独立 MySQL 库、可选 Redis、session 可撤销、migration、health check。</text>
+    <text x="24" y="124" class="spec-desc">已完成：配置脱敏、migration 幂等、基础表、仓储、health 与 legacy 边界。</text>
+    <rect x="24" y="149" width="320" height="10" rx="5" class="bar-bg"/>
+    <rect x="24" y="149" width="320" height="10" rx="5" class="done"/>
+    <text x="366" y="159" class="spec-count">15 / 15</text>
+    <text x="24" y="174" class="spec-percent">100% - MVP Wave 0 - 已完成</text>
+  </g>
+
+  <g transform="translate(565 535)">
+    <rect class="card" width="470" height="184" rx="20"/>
+    <rect x="24" y="24" width="86" height="28" rx="14" class="empty"/>
+    <text x="43" y="43" class="pill-text">未开始</text>
+    <text x="132" y="44" class="spec-title">1. Consumer Email Auth</text>
+    <text x="24" y="72" class="spec-path">consumer-email-auth-and-account</text>
+    <text x="24" y="101" class="spec-desc">邮箱注册/登录、当前用户、httpOnly DB session、角色 user/admin。</text>
+    <text x="24" y="124" class="spec-desc">消费 Wave 0 的 users、sessions、email_login_tokens 和可选 Redis cache。</text>
+    <rect x="24" y="149" width="320" height="10" rx="5" class="bar-bg"/>
+    <rect x="24" y="149" width="1" height="10" rx="5" class="progress"/>
+    <text x="366" y="159" class="spec-count">0 / 14</text>
+    <text x="24" y="174" class="spec-percent">0% - MVP Wave 1 - 必做</text>
+  </g>
+
+  <g transform="translate(1070 535)">
+    <rect class="card" width="470" height="184" rx="20"/>
+    <rect x="24" y="24" width="86" height="28" rx="14" class="empty"/>
+    <text x="43" y="43" class="pill-text">未开始</text>
+    <text x="132" y="44" class="spec-title">2. Personal Project Isolation</text>
+    <text x="24" y="72" class="spec-path">personal-project-ownership-and-isolation</text>
+    <text x="24" y="101" class="spec-desc">Project.ownerUserId、我的项目列表、project bundle 继承 owner guard。</text>
+    <text x="24" y="124" class="spec-desc">普通用户只看自己的项目；管理员全局视图走 /api/admin/*。</text>
+    <rect x="24" y="149" width="320" height="10" rx="5" class="bar-bg"/>
+    <rect x="24" y="149" width="1" height="10" rx="5" class="progress"/>
+    <text x="366" y="159" class="spec-count">0 / 15</text>
+    <text x="24" y="174" class="spec-percent">0% - MVP Wave 2 - 必做</text>
+  </g>
+
+  <g transform="translate(60 760)">
+    <rect class="card" width="470" height="184" rx="20"/>
+    <rect x="24" y="24" width="86" height="28" rx="14" class="empty"/>
+    <text x="43" y="43" class="pill-text">未开始</text>
+    <text x="132" y="44" class="spec-title">3. Admin Console Gate</text>
+    <text x="24" y="72" class="spec-path">admin-console-and-global-role-gate</text>
+    <text x="24" y="101" class="spec-desc">/admin 后台、requireAdmin、用户/项目/运行/异常只读视图。</text>
+    <text x="24" y="124" class="spec-desc">后台菜单第一版写死，不迁移动态菜单、角色权限管理页。</text>
+    <rect x="24" y="149" width="320" height="10" rx="5" class="bar-bg"/>
+    <rect x="24" y="149" width="1" height="10" rx="5" class="progress"/>
+    <text x="366" y="159" class="spec-count">0 / 15</text>
+    <text x="24" y="174" class="spec-percent">0% - MVP Wave 3 - 必做</text>
+  </g>
+
+  <g transform="translate(565 760)">
+    <rect class="card" width="470" height="184" rx="20"/>
+    <rect x="24" y="24" width="86" height="28" rx="14" class="defer"/>
+    <text x="43" y="43" class="pill-text">后置</text>
+    <text x="132" y="44" class="spec-title">4. Admin Audit And Support</text>
+    <text x="24" y="72" class="spec-path">admin-audit-and-support-operations</text>
+    <text x="24" y="101" class="spec-desc">禁用用户、归档项目、重跑失败任务、导出 evidence 与审计。</text>
+    <text x="24" y="124" class="spec-desc">仅当后台需要真实运营动作时实施，不阻塞 ToC MVP。</text>
+    <rect x="24" y="149" width="320" height="10" rx="5" class="bar-bg"/>
+    <rect x="24" y="149" width="1" height="10" rx="5" class="defer"/>
+    <text x="366" y="159" class="spec-count">0 / 15</text>
+    <text x="24" y="174" class="spec-percent">0% - Later - 可选后置</text>
+  </g>
+
+  <g transform="translate(1070 760)">
+    <rect class="card" width="470" height="184" rx="20"/>
+    <text x="24" y="42" class="section-title">MVP 验收线</text>
+    <text x="24" y="78" class="spec-desc">1. 用户身份、DB-backed session、项目归属以 MySQL 为准。</text>
+    <text x="24" y="103" class="spec-desc">2. Redis 关闭或不可用时，登录和项目隔离仍可用。</text>
+    <text x="24" y="128" class="spec-desc">3. 普通用户只看到自己的项目，越权项目返回 404。</text>
+    <text x="24" y="153" class="spec-desc">4. 管理员通过 /admin 和 /api/admin/* 查看全局只读状态。</text>
+  </g>
+
+  <g transform="translate(60 985)">
+    <rect class="plain-card" width="1480" height="104" rx="22"/>
+    <text x="28" y="36" class="footer-title">建议开工顺序</text>
+    <text x="28" y="70" class="footer-strong">第一步：</text>
+    <text x="90" y="70" class="footer-text">Wave 0 已完成，可直接进入邮箱登录和 DB-backed session。</text>
+    <text x="650" y="70" class="footer-strong">第二步：</text>
+    <text x="712" y="70" class="footer-text">接邮箱登录和 DB-backed session。</text>
+    <text x="1005" y="70" class="footer-strong">第三步：</text>
+    <text x="1067" y="70" class="footer-text">接 Project.ownerUserId 与 admin gate。</text>
+    <text x="28" y="92" class="tiny">注意：测试服务器凭据只放本地 env；Redis 是增强项，不是权限事实源；登录链路以 docs/cube-pets-office-toc-login-architecture-2026-04-30.svg 为配套参考。</text>
+  </g>
+
+  <g transform="translate(60 1115)">
+    <rect class="plain-card" width="1480" height="84" rx="20"/>
+    <text x="28" y="38" class="footer-strong">当前状态：</text>
+    <text x="116" y="38" class="footer-text">Wave 0 已完成 15 项；MVP 必做 59 项，已完成 15 项；全部含后置 74 项，已完成 15 项。</text>
+    <text x="28" y="64" class="footer-strong">资源边界：</text>
+    <text x="116" y="64" class="footer-text">MySQL 使用独立库 cube_pets_office；不删除、不清空、不修改 rbac_multitenant；Redis 仅做可选缓存/限流/队列。</text>
+    <text x="1008" y="64" class="tiny">总览图：docs/toc-auth-project-admin-spec-progress-overview-2026-04-30.svg</text>
+  </g>
+</svg>
