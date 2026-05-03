@@ -3,7 +3,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useAuthStore } from "./lib/auth-store";
 
-const { locationState, viewportState } = vi.hoisted(() => ({
+const { deployTargetState, locationState, viewportState } = vi.hoisted(() => ({
+  deployTargetState: {
+    isGitHubPages: false,
+  },
   locationState: {
     current: "/tasks",
     setLocation: vi.fn(),
@@ -15,6 +18,15 @@ const { locationState, viewportState } = vi.hoisted(() => ({
 }));
 
 import { AppShell, isProjectWorkspaceLocation } from "./App";
+
+vi.mock("./lib/deploy-target", () => ({
+  CAN_USE_ADVANCED_RUNTIME: true,
+  GITHUB_REPOSITORY: "opencroc/cube-pets-office",
+  GITHUB_REPOSITORY_URL: "https://github.com/opencroc/cube-pets-office",
+  get IS_GITHUB_PAGES() {
+    return deployTargetState.isGitHubPages;
+  },
+}));
 
 vi.mock("wouter", () => ({
   useLocation: () => [locationState.current, locationState.setLocation],
@@ -148,6 +160,7 @@ vi.mock("./pages/NotFound", () => ({
 
 describe("AppShell fixed sidebar layout", () => {
   beforeEach(() => {
+    deployTargetState.isGitHubPages = false;
     locationState.setLocation.mockClear();
     useAuthStore.getState().resetForTest();
   });
@@ -227,6 +240,18 @@ describe("AppShell fixed sidebar layout", () => {
     expect(markup).toContain('data-testid="auth-page"');
     expect(shell).toContain("--sidebar-width:0px");
     expect(shell).toContain("padding-left:0");
+  });
+
+  it("redirects the login page to project space on GitHub Pages", () => {
+    deployTargetState.isGitHubPages = true;
+    locationState.current = "/login";
+    viewportState.isMobile = false;
+    viewportState.isTablet = false;
+
+    const markup = renderToStaticMarkup(<AppShell />);
+
+    expect(markup).not.toContain('data-testid="auth-page"');
+    expect(markup).not.toContain("Sign in");
   });
 
   it("classifies project workspace routes for unauthenticated redirect", () => {

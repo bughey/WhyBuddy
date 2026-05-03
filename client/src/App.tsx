@@ -65,7 +65,11 @@ function Router() {
       <Route path={`${PROJECTS_PATH}/:projectId`}>
         {params => <ProjectAutopilotRedirect projectId={params.projectId} />}
       </Route>
-      <Route path={"/login"} component={AuthPage} />
+      <Route path={"/login"}>
+        {() =>
+          IS_GITHUB_PAGES ? <RedirectRoute to={PROJECTS_PATH} /> : <AuthPage />
+        }
+      </Route>
       <Route path={"/admin"}>
         {() => (
           <AdminLayout>
