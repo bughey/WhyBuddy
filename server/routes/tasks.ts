@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { Router, type Request } from 'express';
+import { Router, type Request, type RequestHandler } from 'express';
 import fs from 'node:fs';
 import { stat } from 'node:fs/promises';
 import { readFile } from 'node:fs/promises';
@@ -15,8 +15,10 @@ import { EXECUTOR_API_ROUTES, type CancelExecutorJobRequest } from '../../shared
 import type { SubmitMissionOperatorActionRequest } from '../../shared/mission/api.js';
 import { BUILTIN_DECISION_TEMPLATES } from '../../shared/mission/decision-templates.js';
 import { normalizeWorkflowInputProjection } from '../../shared/workflow-input.js';
+import type { AuthenticatedRequest } from '../auth/types.js';
 import { buildExecutionPlan } from '../core/execution-plan-builder.js';
 import { ExecutorClient } from '../core/executor-client.js';
+import type { ProjectRecord } from '../persistence/repositories.js';
 import { submitMissionDecision } from '../tasks/mission-decision.js';
 import {
   buildMissionProjectionView,
@@ -47,6 +49,20 @@ const FINAL_MISSION_STATUSES = new Set(['done', 'failed', 'cancelled']);
 export interface TaskRouterOptions {
   fetchImpl?: typeof fetch;
   executorBaseUrl?: string;
+  requireAuth?: RequestHandler;
+  projects?: {
+    findByIdForOwner(
+      projectId: string,
+      ownerUserId: string,
+    ): Promise<ProjectRecord | null>;
+  };
+  projectResources?: {
+    create<TPayload extends Record<string, unknown>>(input: {
+      projectId: string;
+      resourceType: 'mission';
+      payload: TPayload;
+    }): Promise<unknown>;
+  };
 }
 
 function parseLimit(rawValue: unknown, defaultLimit = DEFAULT_LIMIT): number {
@@ -69,6 +85,58 @@ function buildTaskTitle(
   }
 
   return null;
+}
+
+function parseOptionalString(value: unknown): string | undefined {
+  return typeof value === 'string' && value.trim() ? value.trim() : undefined;
+}
+
+function getProjectionProjectId(body: Record<string, unknown>): string | undefined {
+  const projection = body.projection;
+  if (!projection || typeof projection !== 'object' || Array.isArray(projection)) {
+    return undefined;
+  }
+
+  return parseOptionalString((projection as Record<string, unknown>).projectId);
+}
+
+function missionLinkPayload(projectId: string, task: MissionRecord): Record<string, unknown> {
+  return {
+    projectId,
+    missionId: task.id,
+    status: task.status,
+    createdAt: new Date(task.createdAt).toISOString(),
+    updatedAt: new Date(task.updatedAt).toISOString(),
+  };
+}
+
+function runRequestHandler(
+  handler: RequestHandler,
+  request: Request,
+  response: Parameters<RequestHandler>[1],
+): Promise<boolean> {
+  return new Promise((resolve, reject) => {
+    const cleanup = () => {
+      response.off('finish', onFinished);
+      response.off('close', onFinished);
+    };
+    const onFinished = () => {
+      cleanup();
+      resolve(false);
+    };
+
+    response.once('finish', onFinished);
+    response.once('close', onFinished);
+
+    handler(request, response, error => {
+      cleanup();
+      if (error) {
+        reject(error);
+        return;
+      }
+      resolve(true);
+    });
+  });
 }
 
 function normalizeCancelSource(value: unknown): MissionEvent['source'] {
@@ -450,8 +518,20 @@ export function createTaskRouter(
   }
 
   router.post('/', async (req, res) => {
-    const body = req.body || {};
+    const body =
+      req.body && typeof req.body === 'object'
+        ? (req.body as Record<string, unknown>)
+        : {};
     const title = buildTaskTitle(body.title, body.sourceText);
+    const bodyProjectId = parseOptionalString(body.projectId);
+    const projectionProjectId = getProjectionProjectId(body);
+    if (bodyProjectId && projectionProjectId && bodyProjectId !== projectionProjectId) {
+      return res.status(400).json({
+        error: 'projectId mismatch between request body and projection',
+      });
+    }
+
+    const requestedProjectId = bodyProjectId ?? projectionProjectId;
     const projection = normalizeWorkflowInputProjection({
       ...(typeof body.projection === 'object' && body.projection !== null
         ? body.projection
@@ -463,6 +543,34 @@ export function createTaskRouter(
       return res.status(400).json({
         error: 'title or sourceText is required',
       });
+    }
+
+    let ownedProjectId: string | undefined;
+    if (requestedProjectId) {
+      if (!options.requireAuth || !options.projects) {
+        return res.status(500).json({
+          error: 'Project owner validation is not configured',
+        });
+      }
+
+      const authenticated = await runRequestHandler(options.requireAuth, req, res);
+      if (!authenticated) {
+        return undefined;
+      }
+
+      const userId = (req as AuthenticatedRequest).user?.id;
+      if (!userId) {
+        return res.status(401).json({ error: 'Authentication required' });
+      }
+
+      const project = await options.projects.findByIdForOwner(
+        requestedProjectId,
+        userId,
+      );
+      if (!project) {
+        return res.status(404).json({ error: 'Project not found.' });
+      }
+      ownedProjectId = project.id;
     }
 
     let task = runtime.createTask({
@@ -485,6 +593,7 @@ export function createTaskRouter(
             }
           : {}),
         ...(projection || {}),
+        ...(ownedProjectId ? { projectId: ownedProjectId } : {}),
       },
       stageLabels: [...MISSION_CORE_STAGE_BLUEPRINT],
     });
@@ -503,6 +612,14 @@ export function createTaskRouter(
       task = dispatched.task ?? task;
       dispatchAccepted = dispatched.dispatchAccepted;
       dispatchError = dispatched.dispatchError;
+    }
+
+    if (ownedProjectId && options.projectResources) {
+      await options.projectResources.create({
+        projectId: ownedProjectId,
+        resourceType: 'mission',
+        payload: missionLinkPayload(ownedProjectId, task),
+      });
     }
 
     return res.status(201).json({

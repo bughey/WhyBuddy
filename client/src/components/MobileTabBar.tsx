@@ -3,23 +3,27 @@ import { useLocation } from "wouter";
 import {
   getActiveSidebarId,
   getMobileTabItems,
+  resolveSidebarHref,
   type SidebarNavigationItem,
 } from "@/components/navigation-config";
 import { useI18n } from "@/i18n";
+import { useProjectStore } from "@/lib/project-store";
 import { cn } from "@/lib/utils";
 
 function MobileTabItem({
   item,
+  href,
   active,
   label,
   onNavigate,
 }: {
   item: SidebarNavigationItem;
+  href?: string;
   active: boolean;
   label: string;
   onNavigate: (href: string) => void;
 }) {
-  const isDisabled = item.disabled || !item.href;
+  const isDisabled = item.disabled || !href;
   const Icon = item.icon;
 
   return (
@@ -29,8 +33,8 @@ function MobileTabItem({
       aria-selected={active}
       disabled={isDisabled}
       onClick={() => {
-        if (!isDisabled && item.href) {
-          onNavigate(item.href);
+        if (!isDisabled && href) {
+          onNavigate(href);
         }
       }}
       className={cn(
@@ -50,8 +54,9 @@ function MobileTabItem({
 export function MobileTabBar() {
   const [location, setLocation] = useLocation();
   const { copy } = useI18n();
+  const currentProjectId = useProjectStore(state => state.currentProjectId);
   const activeId = getActiveSidebarId(location);
-  const items = getMobileTabItems();
+  const items = getMobileTabItems(location);
   const sidebarCopy = copy.sidebar;
 
   const labelMap: Record<string, string> = {
@@ -76,15 +81,20 @@ export function MobileTabBar() {
       }}
     >
       <div className="flex h-14 items-center justify-around" role="tablist" aria-label="主导航">
-        {items.map(item => (
-          <MobileTabItem
-            key={item.id}
-            item={item}
-            active={item.id === activeId}
-            label={labelMap[item.id] ?? item.id}
-            onNavigate={setLocation}
-          />
-        ))}
+        {items.map(item => {
+          const href = resolveSidebarHref(item, location, currentProjectId);
+
+          return (
+            <MobileTabItem
+              key={item.id}
+              item={item}
+              href={href}
+              active={item.id === activeId}
+              label={labelMap[item.id] ?? item.id}
+              onNavigate={setLocation}
+            />
+          );
+        })}
       </div>
     </div>
   );

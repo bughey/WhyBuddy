@@ -4,7 +4,10 @@ import NotFound from "@/pages/NotFound";
 import { Route, Router as WouterRouter, Switch, useLocation } from "wouter";
 import { useEffect, useState } from "react";
 
-import { REPLAY_PATH_PREFIX } from "@/components/navigation-config";
+import {
+  PROJECTS_PATH,
+  REPLAY_PATH_PREFIX,
+} from "@/components/navigation-config";
 import { ReplayPage } from "@/components/replay/ReplayPage";
 import DebugPage from "@/pages/debug/DebugPage";
 import LegacyCommandCenterPage from "@/pages/nl-command/LegacyCommandCenterPage";
@@ -18,8 +21,20 @@ import { RecoveryDialog } from "./components/RecoveryDialog";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { useRecoveryDetection } from "./hooks/useRecoveryDetection";
 import { useViewportTier } from "./hooks/useViewportTier";
+import { useAuthStore } from "./lib/auth-store";
+import { useProjectStore } from "./lib/project-store";
 import { useAppStore } from "./lib/store";
 import Home from "./pages/Home";
+import {
+  AdminAuditPage,
+  AdminFailuresPage,
+  AdminLayout,
+  AdminOverviewPage,
+  AdminProjectsPage,
+  AdminRunsPage,
+  AdminUsersPage,
+} from "./pages/admin/AdminLayout";
+import AuthPage from "./pages/auth/AuthPage";
 import SpecCenterPage from "./pages/specs/SpecCenterPage";
 import { TaskDetailPage, TasksPage } from "./pages/tasks";
 
@@ -31,7 +46,54 @@ const routerBase =
 function Router() {
   return (
     <Switch>
-      <Route path={"/"} component={Home} />
+      <Route path={"/"}>{() => <RedirectRoute to={PROJECTS_PATH} />}</Route>
+      <Route path={PROJECTS_PATH}>{() => <Home />}</Route>
+      <Route path={`${PROJECTS_PATH}/:projectId`}>
+        {params => <Home projectId={params.projectId} />}
+      </Route>
+      <Route path={"/login"} component={AuthPage} />
+      <Route path={"/admin"}>
+        {() => (
+          <AdminLayout>
+            <AdminOverviewPage />
+          </AdminLayout>
+        )}
+      </Route>
+      <Route path={"/admin/users"}>
+        {() => (
+          <AdminLayout>
+            <AdminUsersPage />
+          </AdminLayout>
+        )}
+      </Route>
+      <Route path={"/admin/projects"}>
+        {() => (
+          <AdminLayout>
+            <AdminProjectsPage />
+          </AdminLayout>
+        )}
+      </Route>
+      <Route path={"/admin/runs"}>
+        {() => (
+          <AdminLayout>
+            <AdminRunsPage />
+          </AdminLayout>
+        )}
+      </Route>
+      <Route path={"/admin/failures"}>
+        {() => (
+          <AdminLayout>
+            <AdminFailuresPage />
+          </AdminLayout>
+        )}
+      </Route>
+      <Route path={"/admin/audit"}>
+        {() => (
+          <AdminLayout>
+            <AdminAuditPage />
+          </AdminLayout>
+        )}
+      </Route>
       <Route path={"/tasks"}>{() => <TasksPage />}</Route>
       <Route path={"/specs"} component={SpecCenterPage} />
       <Route path={"/tasks/:taskId"}>
@@ -45,7 +107,9 @@ function Router() {
       <Route path={"/command-center/legacy"}>
         {() => <LegacyCommandCenterPage />}
       </Route>
-      <Route path={"/command-center"}>{() => <RedirectRoute to="/" />}</Route>
+      <Route path={"/command-center"}>
+        {() => <RedirectRoute to={PROJECTS_PATH} />}
+      </Route>
       <Route path={"/lineage"} component={LineagePage} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
@@ -109,9 +173,68 @@ function RecoveryGuard() {
   );
 }
 
+function AuthBootstrap() {
+  const fetchMe = useAuthStore(state => state.fetchMe);
+
+  useEffect(() => {
+    void fetchMe();
+  }, [fetchMe]);
+
+  return null;
+}
+
+function AuthProjectOwnerBridge() {
+  const currentUserId = useAuthStore(state => state.currentUser?.id ?? null);
+  const setActiveOwner = useProjectStore(state => state.setActiveOwner);
+
+  useEffect(() => {
+    setActiveOwner(currentUserId);
+  }, [currentUserId, setActiveOwner]);
+
+  return null;
+}
+
 function isHomeLocation(location: string) {
   const [pathname] = location.trim().split(/[?#]/, 1);
-  return pathname === "" || pathname === "/";
+  return (
+    pathname === "" || pathname === "/" || pathname.startsWith(PROJECTS_PATH)
+  );
+}
+
+function isAuthLocation(location: string) {
+  const [pathname] = location.trim().split(/[?#]/, 1);
+  return pathname === "/login";
+}
+
+export function isProjectWorkspaceLocation(location: string) {
+  const [pathname] = location.trim().split(/[?#]/, 1);
+  if (pathname === "" || pathname === "/") return true;
+  return (
+    pathname.startsWith(PROJECTS_PATH) ||
+    pathname.startsWith("/tasks") ||
+    pathname.startsWith("/specs") ||
+    pathname.startsWith(REPLAY_PATH_PREFIX)
+  );
+}
+
+function AuthRouteGuard() {
+  const [location, setLocation] = useLocation();
+  const currentUser = useAuthStore(state => state.currentUser);
+  const loading = useAuthStore(state => state.loading);
+  const sessionChecked = useAuthStore(state => state.sessionChecked);
+
+  useEffect(() => {
+    if (
+      sessionChecked &&
+      !loading &&
+      !currentUser &&
+      isProjectWorkspaceLocation(location)
+    ) {
+      setLocation("/login");
+    }
+  }, [currentUser, loading, location, sessionChecked, setLocation]);
+
+  return null;
 }
 
 export function AppShell() {
@@ -125,12 +248,15 @@ export function AppShell() {
 
   const sidebarWidth = isMobile ? 0 : sidebarCollapsed ? 64 : 248;
   const isHome = isHomeLocation(location);
+  const isAuth = isAuthLocation(location);
+  const isChromeFree = isHome || isAuth;
 
   return (
     <>
-      <RecoveryGuard />
+      {!isAuth && <RecoveryGuard />}
+      {!isAuth && <AuthRouteGuard />}
 
-      {!isMobile && !isHome && (
+      {!isMobile && !isChromeFree && (
         <AppSidebar
           collapsed={sidebarCollapsed}
           onToggleCollapse={() => setSidebarCollapsed(current => !current)}
@@ -139,23 +265,23 @@ export function AppShell() {
 
       <div
         className={
-          isHome
+          isChromeFree
             ? "min-h-screen"
             : "min-h-screen transition-[padding-left] duration-[250ms] ease-in-out"
         }
         style={
           {
-            "--sidebar-width": `${isHome ? 0 : sidebarWidth}px`,
-            paddingLeft: isHome ? 0 : sidebarWidth,
+            "--sidebar-width": `${isChromeFree ? 0 : sidebarWidth}px`,
+            paddingLeft: isChromeFree ? 0 : sidebarWidth,
           } as React.CSSProperties
         }
       >
         <Router />
       </div>
 
-      {isMobile && <MobileTabBar />}
+      {isMobile && !isAuth && <MobileTabBar />}
 
-      <ConfigPanel />
+      {!isAuth && <ConfigPanel />}
     </>
   );
 }
@@ -166,6 +292,8 @@ function App() {
       <ThemeProvider defaultTheme="light">
         <TooltipProvider>
           <LocaleSync />
+          <AuthBootstrap />
+          <AuthProjectOwnerBridge />
           <Toaster
             position="top-center"
             toastOptions={{

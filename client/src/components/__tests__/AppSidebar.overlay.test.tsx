@@ -1,14 +1,32 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+const { locationState, projectState } = vi.hoisted(() => ({
+  locationState: {
+    current: "/projects",
+    setLocation: vi.fn(),
+  },
+  projectState: {
+    currentProjectId: "project-1" as string | null,
+  },
+}));
+
+import { useAuthStore } from "@/lib/auth-store";
 
 import { AppSidebar } from "../AppSidebar";
 
 vi.mock("wouter", () => ({
-  useLocation: () => ["/", vi.fn()],
+  useLocation: () => [locationState.current, locationState.setLocation],
+}));
+
+vi.mock("@/lib/project-store", () => ({
+  useProjectStore: (selector: (state: typeof projectState) => unknown) =>
+    selector(projectState),
 }));
 
 vi.mock("@/i18n", () => ({
   useI18n: () => ({
+    locale: "en-US",
     copy: {
       sidebar: {
         autopilot: "Autopilot",
@@ -45,6 +63,13 @@ vi.mock("../ui/tooltip", () => ({
 }));
 
 describe("AppSidebar overlay embedding", () => {
+  beforeEach(() => {
+    useAuthStore.getState().resetForTest();
+    locationState.current = "/projects";
+    locationState.setLocation.mockClear();
+    projectState.currentProjectId = "project-1";
+  });
+
   it("uses relative full-height layout when rendered inside UE overlay chrome", () => {
     const markup = renderToStaticMarkup(
       <AppSidebar collapsed={false} onToggleCollapse={() => {}} embedded />
@@ -129,5 +154,64 @@ describe("AppSidebar overlay embedding", () => {
     expect(aside).toContain("width:64px");
     expect(markup).toContain('aria-current="page"');
     expect(markup).toContain('aria-expanded="false"');
+  });
+
+  it("keeps the project-space sidebar focused on the single project entry", () => {
+    useAuthStore.setState({
+      currentUser: {
+        id: "user-1",
+        email: "user@example.com",
+        displayName: "User",
+        avatarUrl: null,
+        role: "user",
+        status: "active",
+        emailVerified: true,
+        createdAt: "2026-04-30T00:00:00.000Z",
+      },
+    });
+
+    const markup = renderToStaticMarkup(
+      <AppSidebar collapsed={false} onToggleCollapse={() => {}} />
+    );
+
+    expect(markup).toContain(">Projects<");
+    expect(markup).not.toContain(">Admin<");
+    expect(markup).not.toContain(">Tasks<");
+    expect(markup).not.toContain(">Autopilot<");
+    expect(markup).not.toContain(">Settings<");
+    expect(markup).not.toContain("/admin");
+  });
+
+  it("switches to project-internal workbench navigation after entering a project", () => {
+    locationState.current = "/projects/project-1";
+
+    useAuthStore.setState({
+      currentUser: {
+        id: "user-1",
+        email: "user@example.com",
+        displayName: "User",
+        avatarUrl: null,
+        role: "user",
+        status: "active",
+        emailVerified: true,
+        createdAt: "2026-04-30T00:00:00.000Z",
+      },
+    });
+
+    const markup = renderToStaticMarkup(
+      <AppSidebar collapsed={false} onToggleCollapse={() => {}} />
+    );
+
+    expect(markup).toContain(">Autopilot<");
+    expect(markup).toContain(">Tasks<");
+    expect(markup).not.toContain(">Projects<");
+    expect(markup).toContain(">Knowledge<");
+    expect(markup).toContain(">Data<");
+    expect(markup).toContain(">Dashboard<");
+    expect(markup).toContain(">Marketplace<");
+    expect(markup).toContain(">Notifications<");
+    expect(markup).toContain(">Settings<");
+    expect(markup).toContain('data-sidebar-nav-state="active"');
+    expect(markup).toContain('aria-current="page"');
   });
 });

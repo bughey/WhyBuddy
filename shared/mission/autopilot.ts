@@ -1245,7 +1245,7 @@ function collectDestinationStructuredRoots(mission: MissionRecord): unknown[] {
     mission.projection,
     mission.decision?.payload,
     ...(mission.decisionHistory || []).map(entry => entry.payload),
-  ].filter((value): value is unknown => value !== undefined && value !== null);
+  ].filter((value): value is NonNullable<typeof value> => value !== undefined && value !== null);
 }
 
 function extractStructuredDestinationItems(

@@ -11,19 +11,15 @@ import {
   ListTodo,
   type LucideIcon,
   Navigation,
-  Settings,
   Settings2,
+  Settings,
   Shield,
   Store,
 } from "lucide-react";
 
 export type PrimaryNavigationId = "office" | "more";
 export type MainPathId = "office" | "tasks";
-export type MoreNavigationId =
-  | "config"
-  | "permissions"
-  | "audit"
-  | "help";
+export type MoreNavigationId = "config" | "permissions" | "audit" | "help";
 export type DebugTab =
   | "overview"
   | "config"
@@ -48,6 +44,7 @@ export const DEBUG_LINEAGE_PATH = "/debug/lineage";
 export const DEBUG_HELP_PATH = "/debug/help";
 export const LEGACY_LINEAGE_PATH = "/lineage";
 export const OFFICE_PATH = "/";
+export const PROJECTS_PATH = "/projects";
 export const REPLAY_PATH_PREFIX = "/replay";
 
 export function getReplayPath(missionId: string): string {
@@ -191,26 +188,114 @@ export interface SidebarNavigationItem {
   disabled?: boolean;
 }
 
-export const SIDEBAR_NAV_ITEMS: SidebarNavigationItem[] = [
-  { id: "projects",      icon: FolderKanban,  href: "/",      mobileVisible: true },
-  { id: "tasks",         icon: ListTodo,      href: "/tasks", mobileVisible: true },
-  { id: "autopilot",     icon: Navigation,    href: "/",      mobileVisible: false },
-  { id: "knowledge",     icon: BookOpen,                      mobileVisible: true,  disabled: true },
-  { id: "datasource",    icon: Database,                      mobileVisible: false, disabled: true },
-  { id: "dashboard",     icon: BarChart3,                     mobileVisible: false, disabled: true },
-  { id: "marketplace",   icon: Store,                         mobileVisible: false, disabled: true },
-  { id: "notifications", icon: Bell,                          mobileVisible: false, disabled: true },
-  { id: "settings",      icon: Settings,      href: "/debug", mobileVisible: true },
+export const PROJECT_SPACE_NAV_ITEMS: SidebarNavigationItem[] = [
+  {
+    id: "projects",
+    icon: FolderKanban,
+    href: PROJECTS_PATH,
+    mobileVisible: true,
+  },
 ];
 
-export function getMobileTabItems(): SidebarNavigationItem[] {
-  return SIDEBAR_NAV_ITEMS.filter(item => item.mobileVisible);
+export const SIDEBAR_NAV_ITEMS: SidebarNavigationItem[] = [
+  {
+    id: "autopilot",
+    icon: Navigation,
+    href: PROJECTS_PATH,
+    mobileVisible: true,
+  },
+  {
+    id: "tasks",
+    icon: ListTodo,
+    href: "/tasks",
+    mobileVisible: true,
+  },
+  {
+    id: "knowledge",
+    icon: BookOpen,
+    mobileVisible: true,
+    disabled: true,
+  },
+  {
+    id: "datasource",
+    icon: Database,
+    mobileVisible: false,
+    disabled: true,
+  },
+  {
+    id: "dashboard",
+    icon: BarChart3,
+    mobileVisible: false,
+    disabled: true,
+  },
+  {
+    id: "marketplace",
+    icon: Store,
+    mobileVisible: false,
+    disabled: true,
+  },
+  {
+    id: "notifications",
+    icon: Bell,
+    mobileVisible: false,
+    disabled: true,
+  },
+  {
+    id: "settings",
+    icon: Settings,
+    href: DEBUG_PATH,
+    mobileVisible: true,
+  },
+];
+
+export function isProjectDetailPath(path: string): boolean {
+  const pathname = normalizeNavigationPath(path);
+  return matchesPathPrefix(pathname, PROJECTS_PATH) && pathname !== PROJECTS_PATH;
+}
+
+export function getSidebarNavItems(path: string): SidebarNavigationItem[] {
+  const pathname = normalizeNavigationPath(path);
+  if (pathname === "/" || pathname === PROJECTS_PATH) {
+    return PROJECT_SPACE_NAV_ITEMS;
+  }
+  return SIDEBAR_NAV_ITEMS;
+}
+
+export function getMobileTabItems(path?: string): SidebarNavigationItem[] {
+  const items = path ? getSidebarNavItems(path) : SIDEBAR_NAV_ITEMS;
+  return items.filter(item => item.mobileVisible);
+}
+
+export function resolveSidebarHref(
+  item: SidebarNavigationItem,
+  path: string,
+  currentProjectId?: string | null
+): string | undefined {
+  const pathname = normalizeNavigationPath(path);
+  if (item.disabled) return undefined;
+
+  if (item.id === "autopilot") {
+    if (isProjectDetailPath(pathname)) {
+      return pathname;
+    }
+    if (currentProjectId) {
+      return `${PROJECTS_PATH}/${currentProjectId}`;
+    }
+    return PROJECTS_PATH;
+  }
+
+  if (item.id === "projects") {
+    return PROJECTS_PATH;
+  }
+
+  return item.href;
 }
 
 export function getActiveSidebarId(path: string): SidebarNavigationId {
   const pathname = normalizeNavigationPath(path);
-  if (pathname === "/" || pathname === "") return "projects";
+  if (pathname === "/" || pathname === PROJECTS_PATH) return "projects";
+  if (matchesPathPrefix(pathname, PROJECTS_PATH)) return "autopilot";
   if (matchesPathPrefix(pathname, "/tasks")) return "tasks";
-  if (matchesPathPrefix(pathname, "/debug")) return "settings";
+  if (matchesPathPrefix(pathname, DEBUG_PATH)) return "settings";
   return "autopilot";
 }

@@ -5323,8 +5323,10 @@ export const useTasksStore = create<TasksStoreState>((set, get) => ({
       return null;
     }
 
-    const { projectId: _projectId, ...missionInput } = input;
-    const response = await createMissionRequest(missionInput);
+    const response = await createMissionRequest({
+      ...input,
+      projectId: input.projectId ?? undefined,
+    });
     await get().refresh({
       preferredTaskId: response.task.id,
     });

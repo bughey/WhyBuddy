@@ -6,6 +6,7 @@ export interface MissionProjectionLinks {
   sessionId?: string;
   replayId?: string;
   sourceApp?: string;
+  projectId?: string;
 }
 
 interface ResolveMissionProjectionInput {
@@ -36,8 +37,9 @@ export function normalizeMissionProjectionLinks(
   const sessionId = normalizeProjectionValue(candidate.sessionId);
   const replayId = normalizeProjectionValue(candidate.replayId);
   const sourceApp = normalizeProjectionValue(candidate.sourceApp);
+  const projectId = normalizeProjectionValue(candidate.projectId);
 
-  if (!workflowId && !instanceId && !sessionId && !replayId && !sourceApp) {
+  if (!workflowId && !instanceId && !sessionId && !replayId && !sourceApp && !projectId) {
     return undefined;
   }
 
@@ -47,6 +49,7 @@ export function normalizeMissionProjectionLinks(
     ...(sessionId ? { sessionId } : {}),
     ...(replayId ? { replayId } : {}),
     ...(sourceApp ? { sourceApp } : {}),
+    ...(projectId ? { projectId } : {}),
   };
 }
 
@@ -100,5 +103,6 @@ export function resolveMissionProjectionLinks(
       ? { replayId: merged?.replayId ?? input.replayId ?? workflowId }
       : {}),
     ...(merged?.sourceApp ? { sourceApp: merged.sourceApp } : {}),
+    ...(merged?.projectId ? { projectId: merged.projectId } : {}),
   };
 }

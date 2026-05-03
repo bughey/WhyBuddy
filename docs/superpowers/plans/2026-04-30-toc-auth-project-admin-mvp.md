@@ -95,7 +95,7 @@ Reason: every later slice depends on `CurrentUser`, cookie name, response shape,
 - Create: `server/auth/types.ts`
 - Test: `server/tests/auth-contract.test.ts`
 
-- [ ] **Step 1: Write the failing shared contract test**
+- [x] **Step 1: Write the failing shared contract test**
 
 Create `server/tests/auth-contract.test.ts`:
 
@@ -141,7 +141,7 @@ npx vitest run --config vitest.config.server.ts server/tests/auth-contract.test.
 
 Expected: fail because `shared/auth.ts` does not exist.
 
-- [ ] **Step 3: Add shared auth contract**
+- [x] **Step 3: Add shared auth contract**
 
 Create `shared/auth.ts`:
 
@@ -206,7 +206,7 @@ export interface RequestWithOptionalUser extends Request {
 }
 ```
 
-- [ ] **Step 4: Run the test and verify it passes**
+- [x] **Step 4: Run the test and verify it passes**
 
 Run the same command. Expected: pass.
 
@@ -228,7 +228,7 @@ git commit -m "feat: add shared auth contract"
 - Modify: `server/persistence/repositories.ts`
 - Test: `server/tests/auth-session-middleware.test.ts`
 
-- [ ] **Step 1: Write failing middleware tests**
+- [x] **Step 1: Write failing middleware tests**
 
 Create `server/tests/auth-session-middleware.test.ts`:
 
@@ -334,7 +334,7 @@ npx vitest run --config vitest.config.server.ts server/tests/auth-session-middle
 
 Expected: fail because auth modules do not exist.
 
-- [ ] **Step 3: Implement password helpers**
+- [x] **Step 3: Implement password helpers**
 
 Create `server/auth/password.ts`:
 
@@ -360,7 +360,7 @@ export async function verifyPassword(password: string, encoded: string): Promise
 }
 ```
 
-- [ ] **Step 4: Implement session service**
+- [x] **Step 4: Implement session service**
 
 Create `server/auth/session-service.ts`:
 
@@ -484,7 +484,7 @@ export function createSessionService(options: {
 }
 ```
 
-- [ ] **Step 5: Implement middleware**
+- [x] **Step 5: Implement middleware**
 
 Create `server/auth/middleware.ts`:
 
@@ -535,7 +535,7 @@ export function createAuthMiddleware(sessionService: SessionService) {
 }
 ```
 
-- [ ] **Step 6: Add repository `findById` and run tests**
+- [x] **Step 6: Add repository `findById` and run tests**
 
 Modify `createUsersRepository` in `server/persistence/repositories.ts` to include:
 
@@ -578,7 +578,7 @@ git commit -m "feat: add db session auth middleware"
 - Modify: `server/persistence/repositories.ts`
 - Test: `server/tests/auth-routes.test.ts`
 
-- [ ] **Step 1: Write failing route tests**
+- [x] **Step 1: Write failing route tests**
 
 Create `server/tests/auth-routes.test.ts` with route factory tests that do not import `server/index.ts`. Cover:
 
@@ -602,7 +602,7 @@ npx vitest run --config vitest.config.server.ts server/tests/auth-routes.test.ts
 
 Expected: fail because `server/routes/auth.ts` does not exist.
 
-- [ ] **Step 3: Implement `createAuthRouter`**
+- [x] **Step 3: Implement `createAuthRouter`**
 
 Create `server/routes/auth.ts` with this public shape:
 
@@ -631,7 +631,7 @@ Validation rules:
 - Login failure always returns `401 { success:false, error:"邮箱或密码错误" }`.
 - Never return `passwordHash`, `tokenHash`, or token plaintext in JSON.
 
-- [ ] **Step 4: Wire real dependencies in `server/index.ts`**
+- [x] **Step 4: Wire real dependencies in `server/index.ts`**
 
 Near other route imports after persistence foundation is available:
 
@@ -668,7 +668,7 @@ app.use("/api/auth", createAuthRouter({
 
 If this duplicates DB executor creation with health, keep it local for now; do not refactor global app lifecycle in this task.
 
-- [ ] **Step 5: Run route tests and smoke**
+- [x] **Step 5: Run route tests and smoke**
 
 ```powershell
 npx vitest run --config vitest.config.server.ts server/tests/auth-routes.test.ts server/tests/auth-session-middleware.test.ts --pool=forks --poolOptions.forks.singleFork --no-file-parallelism
@@ -694,7 +694,7 @@ git commit -m "feat: add email auth routes"
 - Modify: `client/src/App.tsx`
 - Test: `client/src/lib/auth-store.test.ts`
 
-- [ ] **Step 1: Write failing auth store tests**
+- [x] **Step 1: Write failing auth store tests**
 
 Create `client/src/lib/auth-store.test.ts`:
 
@@ -740,7 +740,7 @@ If Windows hits `spawn EPERM`, rerun with:
 npx vitest run client/src/lib/auth-store.test.ts --pool=forks --poolOptions.forks.singleFork --no-file-parallelism
 ```
 
-- [ ] **Step 3: Implement `auth-store`**
+- [x] **Step 3: Implement `auth-store`**
 
 Create `client/src/lib/auth-store.ts`:
 
@@ -827,7 +827,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 }));
 ```
 
-- [ ] **Step 4: Add login page and routes**
+- [x] **Step 4: Add login page and routes**
 
 Create `client/src/pages/auth/AuthPage.tsx` as a compact app page with email, password, display name only in register mode, submit button, and no marketing hero.
 
@@ -858,11 +858,15 @@ function AuthBootstrap() {
 
 Render `<AuthBootstrap />` under `<LocaleSync />`.
 
-- [ ] **Step 5: Run tests**
+- [x] **Step 5: Run tests**
 
 ```powershell
 npx vitest run client/src/lib/auth-store.test.ts --pool=forks --poolOptions.forks.singleFork --no-file-parallelism
 ```
+
+- [x] **Step 5a: Add project workspace unauthenticated redirect**
+
+Added `sessionChecked` to the frontend auth store so route guards wait for session restore before redirecting. `AppShell` now redirects unauthenticated access to `/`, `/tasks`, `/tasks/:taskId`, `/specs`, and replay workspace routes to `/login`, while leaving `/login`, `/admin`, and debug routes outside that personal project workspace guard.
 
 - [ ] **Step 6: Commit**
 
@@ -879,7 +883,7 @@ git commit -m "feat: add frontend auth flow"
 - Modify: `client/src/lib/project-store.ts`
 - Test: `client/src/lib/project-store.test.ts`
 
-- [ ] **Step 1: Write failing tests**
+- [x] **Step 1: Write failing tests**
 
 Add tests in `client/src/lib/project-store.test.ts`:
 
@@ -906,7 +910,7 @@ it("uses a user-scoped current project selection", () => {
 npx vitest run client/src/lib/project-store.test.ts --pool=forks --poolOptions.forks.singleFork --no-file-parallelism
 ```
 
-- [ ] **Step 3: Add `ownerUserId` transition support**
+- [x] **Step 3: Add `ownerUserId` transition support**
 
 Modify `Project`:
 
@@ -936,7 +940,7 @@ ownerUserId: get().activeOwnerUserId ?? undefined,
 
 Do not make localStorage the real permission source. This is only transition metadata until `/api/projects` is live.
 
-- [ ] **Step 4: Run tests**
+- [x] **Step 4: Run tests**
 
 ```powershell
 npx vitest run client/src/lib/project-store.test.ts --pool=forks --poolOptions.forks.singleFork --no-file-parallelism
@@ -959,7 +963,7 @@ git commit -m "feat: add project owner transition metadata"
 - Modify: `server/persistence/repositories.ts`
 - Modify: `server/index.ts`
 
-- [ ] **Step 1: Write failing route tests**
+- [x] **Step 1: Write failing route tests**
 
 Create `server/tests/project-owner-routes.test.ts` covering:
 
@@ -990,7 +994,7 @@ app.use((req, _res, next) => {
 npx vitest run --config vitest.config.server.ts server/tests/project-owner-routes.test.ts --pool=forks --poolOptions.forks.singleFork --no-file-parallelism
 ```
 
-- [ ] **Step 3: Implement project route**
+- [x] **Step 3: Implement project route**
 
 Create `server/routes/projects.ts` with:
 
@@ -1016,7 +1020,7 @@ Rules:
 - Ordinary not-found or not-owned returns 404.
 - Response shape: `{ success: true, project }` or `{ success: true, projects }`.
 
-- [ ] **Step 4: Extend repository**
+- [x] **Step 4: Extend repository**
 
 Add:
 
@@ -1030,7 +1034,7 @@ Use SQL with:
 WHERE id = ? AND owner_user_id = ?
 ```
 
-- [ ] **Step 5: Wire in `server/index.ts` after auth middleware exists**
+- [x] **Step 5: Wire in `server/index.ts` after auth middleware exists**
 
 Mount:
 
@@ -1041,11 +1045,23 @@ app.use("/api/projects", createProjectsRouter({
 }));
 ```
 
-- [ ] **Step 6: Run tests**
+- [x] **Step 6: Run tests**
 
 ```powershell
 npx vitest run --config vitest.config.server.ts server/tests/project-owner-routes.test.ts server/tests/persistence-repositories.test.ts --pool=forks --poolOptions.forks.singleFork --no-file-parallelism
 ```
+
+- [x] **Step 6a: Add owner-guarded project resource bundle and write APIs**
+
+Implemented `GET /api/projects/:projectId/bundle` plus owner-guarded writes for messages, clarification questions, specs, routes, mission links, artifacts, and evidence. Added the `project_resources` persistence migration and repository so child resources inherit project ownership through the server project lookup instead of trusting request payload ownership fields.
+
+- [x] **Step 6b: Guard project-bound mission creation and return path**
+
+Extended mission projection links and `CreateMissionRequest` to carry `projectId`. `POST /api/tasks` now rejects mismatched top-level/projection project IDs, conditionally restores auth only when a project binding is requested, validates `projects.findByIdForOwner(projectId, currentUser.id)` before `runtime.createTask`, writes only the canonical owned project ID into `task.projection.projectId`, and records a server-side `project_resources` mission link for bundle return paths. The client tasks store now sends `projectId` through to the mission API instead of stripping it.
+
+- [x] **Step 6c: Document single-owner Project-first phase**
+
+Updated the Project ownership design document to state that this phase is a single owner model and does not include project members, invites, sharing links, project roles, team spaces, or collaboration status.
 
 - [ ] **Step 7: Commit**
 
@@ -1063,7 +1079,7 @@ git commit -m "feat: add owner-scoped project api"
 - Create: `server/tests/admin-routes.test.ts`
 - Modify: `server/index.ts`
 
-- [ ] **Step 1: Write failing admin route tests**
+- [x] **Step 1: Write failing admin route tests**
 
 Create `server/tests/admin-routes.test.ts` covering:
 
@@ -1078,7 +1094,7 @@ Create `server/tests/admin-routes.test.ts` covering:
 npx vitest run --config vitest.config.server.ts server/tests/admin-routes.test.ts --pool=forks --poolOptions.forks.singleFork --no-file-parallelism
 ```
 
-- [ ] **Step 3: Implement `server/routes/admin.ts`**
+- [x] **Step 3: Implement `server/routes/admin.ts`**
 
 ```ts
 export function createAdminRouter(deps: {
@@ -1109,7 +1125,7 @@ For `runs/failures/audit`, return a safe empty first slice if real repository is
 
 This satisfies read-only shell without pretending operations exist.
 
-- [ ] **Step 4: Wire `/api/admin`**
+- [x] **Step 4: Wire `/api/admin`**
 
 In `server/index.ts`, mount after auth middleware creation:
 
@@ -1122,7 +1138,7 @@ app.use("/api/admin", createAdminRouter({
 }));
 ```
 
-- [ ] **Step 5: Run tests**
+- [x] **Step 5: Run tests**
 
 ```powershell
 npx vitest run --config vitest.config.server.ts server/tests/admin-routes.test.ts server/tests/auth-session-middleware.test.ts --pool=forks --poolOptions.forks.singleFork --no-file-parallelism
@@ -1151,7 +1167,7 @@ git commit -m "feat: add admin role gate api"
 - Modify: `client/src/components/AppSidebar.tsx`
 - Test: `client/src/pages/admin/AdminLayout.test.tsx`
 
-- [ ] **Step 1: Write failing shell tests**
+- [x] **Step 1: Write failing shell tests**
 
 Create a test that renders admin route with an admin user and expects the admin nav labels. Render with a non-admin user and expect redirect or denied state.
 
@@ -1161,7 +1177,7 @@ Create a test that renders admin route with an admin user and expects the admin 
 npx vitest run client/src/pages/admin/AdminLayout.test.tsx --pool=forks --poolOptions.forks.singleFork --no-file-parallelism
 ```
 
-- [ ] **Step 3: Implement restrained admin shell**
+- [x] **Step 3: Implement restrained admin shell**
 
 Design constraints:
 
@@ -1182,7 +1198,7 @@ Failures
 Audit
 ```
 
-- [ ] **Step 4: Add routes**
+- [x] **Step 4: Add routes**
 
 In `client/src/App.tsx`:
 
@@ -1197,11 +1213,11 @@ In `client/src/App.tsx`:
 
 Each page should check `useAuthStore(state => state.isAdmin())`; non-admin gets a compact denied state.
 
-- [ ] **Step 5: Add sidebar entry only for admin**
+- [x] **Step 5: Add sidebar entry only for admin**
 
 Modify `AppSidebar` to read `useAuthStore`. Show `Admin` link only when `isAdmin()` is true.
 
-- [ ] **Step 6: Run tests**
+- [x] **Step 6: Run tests**
 
 ```powershell
 npx vitest run client/src/pages/admin/AdminLayout.test.tsx --pool=forks --poolOptions.forks.singleFork --no-file-parallelism
@@ -1225,11 +1241,11 @@ git commit -m "feat: add admin console shell"
 - Modify: `docs/toc-auth-project-admin-spec-progress-overview-2026-04-30.svg`
 - Optionally modify: `docs/cube-pets-office-toc-login-architecture-2026-04-30.svg`
 
-- [ ] **Step 1: Update checkboxes**
+- [x] **Step 1: Update checkboxes**
 
 Mark only completed items. Do not mark UI or API tasks done just because placeholders exist.
 
-- [ ] **Step 2: Update SVG counts**
+- [x] **Step 2: Update SVG counts**
 
 Expected after Tasks 1-8 if all completed:
 
@@ -1238,7 +1254,7 @@ Expected after Tasks 1-8 if all completed:
 - Project isolation: likely `6-10 / 15` depending bundle/write endpoints.
 - Admin gate: likely `10-14 / 15` depending tests and docs.
 
-- [ ] **Step 3: Validate SVG XML**
+- [x] **Step 3: Validate SVG XML**
 
 ```powershell
 $path = Resolve-Path 'docs\toc-auth-project-admin-spec-progress-overview-2026-04-30.svg'
@@ -1262,19 +1278,19 @@ git commit -m "docs: update toc auth progress"
 **Files:**
 - No required code files unless verification exposes issues.
 
-- [ ] **Step 1: Run targeted server suites**
+- [x] **Step 1: Run targeted server suites**
 
 ```powershell
 npx vitest run --config vitest.config.server.ts server/tests/auth-contract.test.ts server/tests/auth-session-middleware.test.ts server/tests/auth-routes.test.ts server/tests/project-owner-routes.test.ts server/tests/admin-routes.test.ts server/tests/persistence-config.test.ts server/tests/migration-runner.test.ts server/tests/persistence-health-routes.test.ts server/tests/persistence-repositories.test.ts --pool=forks --poolOptions.forks.singleFork --no-file-parallelism
 ```
 
-- [ ] **Step 2: Run targeted client suites**
+- [x] **Step 2: Run targeted client suites**
 
 ```powershell
 npx vitest run client/src/lib/auth-store.test.ts client/src/lib/project-store.test.ts client/src/pages/admin/AdminLayout.test.tsx --pool=forks --poolOptions.forks.singleFork --no-file-parallelism
 ```
 
-- [ ] **Step 3: Run persistence smoke**
+- [x] **Step 3: Run persistence smoke**
 
 ```powershell
 npx tsx scripts/persistence-smoke.mjs
@@ -1287,7 +1303,14 @@ MYSQL_OK database=cube_pets_office applied=0 skippedSecond=1
 REDIS_OK db=2 prefix=cube:pets:office:
 ```
 
-- [ ] **Step 4: Run secret scan**
+Actual after adding `002_project_resources`:
+
+```text
+MYSQL_OK database=cube_pets_office applied=1 skippedSecond=2
+REDIS_OK db=2 prefix=cube:pets:office:
+```
+
+- [x] **Step 4: Run secret scan**
 
 ```powershell
 rg -n "real_password_here|real_api_key_here|real_test_host_here|sk-[A-Za-z0-9_-]{12,}" .env.example .kiro\specs docs server client shared scripts
@@ -1295,7 +1318,9 @@ rg -n "real_password_here|real_api_key_here|real_test_host_here|sk-[A-Za-z0-9_-]
 
 Expected: no matches for real test secrets. Existing generic credential-pattern docs may be reviewed manually if they appear.
 
-- [ ] **Step 5: Run diff whitespace check**
+Actual: the broad `sk-...` expression also matches ordinary `task-...` slugs. A boundary-refined rescan only matched this documented command line and no real secret tokens.
+
+- [x] **Step 5: Run diff whitespace check**
 
 ```powershell
 git diff --check

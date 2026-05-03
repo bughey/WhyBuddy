@@ -56,7 +56,10 @@ describe("migration runner", () => {
     expect(initialSql).toMatch(/CREATE TABLE IF NOT EXISTS email_login_tokens/i);
     expect(initialSql).toMatch(/CREATE TABLE IF NOT EXISTS sessions/i);
     expect(initialSql).toMatch(/CREATE TABLE IF NOT EXISTS projects/i);
+    expect(initialSql).toMatch(/CREATE TABLE IF NOT EXISTS project_resources/i);
     expect(initialSql).toMatch(/owner_user_id/i);
+    expect(initialSql).toMatch(/resource_type/i);
+    expect(initialSql).toMatch(/payload_json/i);
     expect(initialSql).toMatch(/revoked_at/i);
     expect(initialSql).toMatch(/token_hash/i);
   });

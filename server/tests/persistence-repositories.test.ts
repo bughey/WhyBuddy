@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   createEmailLoginTokensRepository,
+  createProjectResourcesRepository,
   createUsersRepository,
   createProjectsRepository,
   createSessionsRepository,
@@ -39,6 +40,7 @@ describe("persistence repositories", () => {
       displayName: "Cube User",
     });
     await users.updateLastLogin("user-1", "127.0.0.1");
+    await users.markEmailVerified("user-1", new Date("2026-04-30T00:03:00.000Z"));
     await users.updateStatusAndRole("user-1", "disabled", "admin");
 
     expect(user.emailNormalized).toBe("user@example.com");
@@ -47,8 +49,9 @@ describe("persistence repositories", () => {
     expect(db.queries[0].sql).toMatch(/insert\s+into\s+users/i);
     expect(db.queries[0].params).toContain("user@example.com");
     expect(db.queries[1].sql).toMatch(/last_login_at/i);
-    expect(db.queries[2].sql).toMatch(/status\s+=\s+\?/i);
-    expect(db.queries[2].params).toEqual([
+    expect(db.queries[2].sql).toMatch(/email_verified_at/i);
+    expect(db.queries[3].sql).toMatch(/status\s+=\s+\?/i);
+    expect(db.queries[3].params).toEqual([
       "disabled",
       "admin",
       new Date("2026-04-30T00:00:00.000Z"),
@@ -65,6 +68,7 @@ describe("persistence repositories", () => {
         user_id: "user-1",
       },
     ]);
+    db.nextRows.push([{ count: "3" }]);
     const tokens = createEmailLoginTokensRepository(db, {
       now: () => new Date("2026-04-30T00:00:00.000Z"),
       id: () => "token-1",
@@ -84,17 +88,25 @@ describe("persistence repositories", () => {
       new Date("2026-04-30T00:05:00.000Z"),
     );
     await tokens.markConsumed("token-1");
+    const recentCount = await tokens.countCreatedSince(
+      "USER@Example.COM",
+      "login",
+      new Date("2026-04-29T23:50:00.000Z"),
+    );
 
     expect(valid).toEqual({
       id: "token-1",
       emailNormalized: "user@example.com",
       userId: "user-1",
     });
+    expect(recentCount).toBe(3);
     expect(db.queries[0].sql).toMatch(/insert\s+into\s+email_login_tokens/i);
     expect(db.queries[0].sql).toMatch(/token_hash/i);
     expect(db.queries[1].sql).toMatch(/consumed_at\s+is\s+null/i);
     expect(db.queries[1].sql).toMatch(/expires_at\s+>\s+\?/i);
     expect(db.queries[2].sql).toMatch(/consumed_at/i);
+    expect(db.queries[3].sql).toMatch(/count\(\*\)/i);
+    expect(db.queries[3].params).toContain("user@example.com");
     expect(JSON.stringify(db.queries)).not.toContain("plain-email-token");
   });
 
@@ -146,5 +158,150 @@ describe("persistence repositories", () => {
     expect(db.queries[0].sql).toMatch(/where\s+id\s+=\s+\?/i);
     expect(db.queries[0].sql).toMatch(/owner_user_id\s+=\s+\?/i);
     expect(db.queries[0].params).toEqual(["project-1", "user-1"]);
+  });
+
+  it("updates projects only through owner_user_id filters", async () => {
+    const db = new RecordingDb();
+    db.nextRows.push([
+      {
+        id: "project-1",
+        owner_user_id: "user-1",
+        name: "Renamed",
+        description: null,
+        status: "archived",
+        source: "user",
+        created_at: new Date("2026-04-30T00:00:00.000Z"),
+        updated_at: new Date("2026-04-30T00:05:00.000Z"),
+        archived_at: new Date("2026-04-30T00:05:00.000Z"),
+      },
+    ]);
+    const projects = createProjectsRepository(db, {
+      now: () => new Date("2026-04-30T00:05:00.000Z"),
+    });
+
+    const project = await projects.updateForOwner("project-1", "user-1", {
+      name: "Renamed",
+      description: null,
+      status: "archived",
+    });
+
+    expect(project).toMatchObject({
+      id: "project-1",
+      ownerUserId: "user-1",
+      name: "Renamed",
+      status: "archived",
+    });
+    expect(db.queries[0].sql).toMatch(/update\s+projects/i);
+    expect(db.queries[0].sql).toMatch(/owner_user_id\s+=\s+\?/i);
+    expect(db.queries[0].params).toEqual([
+      "Renamed",
+      null,
+      "archived",
+      new Date("2026-04-30T00:05:00.000Z"),
+      new Date("2026-04-30T00:05:00.000Z"),
+      "project-1",
+      "user-1",
+    ]);
+  });
+
+  it("supports admin read-only user and project lookups without owner filters", async () => {
+    const db = new RecordingDb();
+    db.nextRows.push(
+      [
+        {
+          id: "user-1",
+          email: "user@example.com",
+          email_normalized: "user@example.com",
+          password_hash: "hash",
+          display_name: null,
+          avatar_url: null,
+          role: "user",
+          status: "active",
+          email_verified_at: null,
+          last_login_at: null,
+          last_login_ip: null,
+          created_at: new Date("2026-04-30T00:00:00.000Z"),
+          updated_at: new Date("2026-04-30T00:00:00.000Z"),
+        },
+      ],
+      [
+        {
+          id: "project-1",
+          owner_user_id: "user-1",
+          name: "Project",
+          description: null,
+          status: "active",
+          source: "user",
+          created_at: new Date("2026-04-30T00:00:00.000Z"),
+          updated_at: new Date("2026-04-30T00:00:00.000Z"),
+          archived_at: null,
+        },
+      ],
+    );
+    const users = createUsersRepository(db);
+    const projects = createProjectsRepository(db);
+
+    await users.list();
+    await projects.findById("project-1");
+
+    expect(db.queries[0].sql).toMatch(/from\s+users/i);
+    expect(db.queries[0].sql).not.toMatch(/owner_user_id/i);
+    expect(db.queries[1].sql).toMatch(/where\s+id\s+=\s+\?/i);
+    expect(db.queries[1].sql).not.toMatch(/owner_user_id\s+=\s+\?/i);
+    expect(db.queries[1].params).toEqual(["project-1"]);
+  });
+
+  it("stores project scoped resources under a project id", async () => {
+    const db = new RecordingDb();
+    db.nextRows.push([
+      {
+        id: "resource-1",
+        project_id: "project-1",
+        resource_type: "message",
+        payload_json: JSON.stringify({
+          id: "message-1",
+          projectId: "project-1",
+          content: "Hello",
+        }),
+        created_at: new Date("2026-04-30T00:00:00.000Z"),
+        updated_at: new Date("2026-04-30T00:00:00.000Z"),
+      },
+    ]);
+    const resources = createProjectResourcesRepository(db, {
+      now: () => new Date("2026-04-30T00:00:00.000Z"),
+      id: () => "resource-1",
+    });
+
+    const created = await resources.create({
+      projectId: "project-1",
+      resourceType: "message",
+      payload: {
+        id: "message-1",
+        projectId: "project-1",
+        content: "Hello",
+      },
+    });
+    const listed = await resources.listForProject("project-1");
+
+    expect(created).toMatchObject({
+      id: "resource-1",
+      projectId: "project-1",
+      resourceType: "message",
+    });
+    expect(db.queries[0].sql).toMatch(/insert\s+into\s+project_resources/i);
+    expect(db.queries[0].params).toContain("project-1");
+    expect(db.queries[0].params).toContain("message");
+    expect(db.queries[1].sql).toMatch(/where\s+project_id\s+=\s+\?/i);
+    expect(db.queries[1].params).toEqual(["project-1"]);
+    expect(listed[0]).toMatchObject({
+      id: "resource-1",
+      projectId: "project-1",
+      resourceType: "message",
+      payload: {
+        id: "message-1",
+        projectId: "project-1",
+        content: "Hello",
+      },
+    });
   });
 });

@@ -1,20 +1,87 @@
 import type { AddressInfo } from 'node:net';
 
-import express from 'express';
+import express, { type RequestHandler } from 'express';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { createTaskRouter } from '../routes/tasks.js';
 import db from '../db/index.js';
 import { MissionRuntime } from '../tasks/mission-runtime.js';
 import { MissionStore } from '../tasks/mission-store.js';
+import type { CurrentUser } from '../../shared/auth.js';
+import type { ProjectRecord } from '../persistence/repositories.js';
+
+const routeUser: CurrentUser = {
+  id: 'user-1',
+  email: 'user@example.com',
+  role: 'user',
+  status: 'active',
+  emailVerified: true,
+  createdAt: '2026-04-30T00:00:00.000Z',
+};
+
+function makeProject(input: {
+  id: string;
+  ownerUserId: string;
+  name?: string;
+}): ProjectRecord {
+  const now = new Date('2026-04-30T00:00:00.000Z');
+  return {
+    id: input.id,
+    ownerUserId: input.ownerUserId,
+    name: input.name ?? 'Project',
+    description: null,
+    status: 'active',
+    source: 'user',
+    createdAt: now,
+    updatedAt: now,
+    archivedAt: null,
+  };
+}
 
 async function startServer(
   runtime: MissionRuntime,
   fetchImpl?: typeof fetch,
+  projectGuard?: {
+    user?: CurrentUser;
+    findByIdForOwner: (
+      projectId: string,
+      ownerUserId: string,
+    ) => Promise<ProjectRecord | null>;
+    createProjectResource?: (input: {
+      projectId: string;
+      resourceType: 'mission';
+      payload: Record<string, unknown>;
+    }) => Promise<unknown>;
+  },
 ) {
   const app = express();
   app.use(express.json());
-  app.use('/api/tasks', createTaskRouter(runtime, { fetchImpl }));
+  const requireAuth: RequestHandler = (request, _response, next) => {
+    (request as typeof request & { user: CurrentUser }).user =
+      projectGuard?.user ?? routeUser;
+    next();
+  };
+  app.use(
+    '/api/tasks',
+    createTaskRouter(runtime, {
+      fetchImpl,
+      ...(projectGuard
+        ? {
+            requireAuth,
+            projects: {
+              findByIdForOwner: projectGuard.findByIdForOwner,
+            },
+            ...(projectGuard.createProjectResource
+              ? {
+                  projectResources: {
+                    create: projectGuard.createProjectResource,
+                  },
+                }
+              : {}),
+          }
+        : {}),
+    }),
+  );
 
   const server = await new Promise<ReturnType<typeof app.listen>>(resolve => {
     const instance = app.listen(0, () => resolve(instance));
@@ -123,6 +190,141 @@ describe('tasks routes', () => {
         { key: 'finalize', label: 'Finalize mission', status: 'pending' },
       ],
     });
+  });
+
+  it('validates project ownership before binding projectId to a mission', async () => {
+    const findByIdForOwner = vi.fn(async (projectId: string, ownerUserId: string) =>
+      projectId === 'project-1' && ownerUserId === 'user-1'
+        ? makeProject({ id: 'project-1', ownerUserId: 'user-1' })
+        : null
+    );
+    const createProjectResource = vi.fn(async input => input);
+
+    await new Promise<void>((resolve, reject) => {
+      if (!server) {
+        resolve();
+        return;
+      }
+
+      server.close(error => (error ? reject(error) : resolve()));
+    });
+
+    const started = await startServer(runtime, undefined, {
+      findByIdForOwner,
+      createProjectResource,
+    });
+    server = started.server;
+    baseUrl = started.baseUrl;
+
+    const response = await fetch(`${baseUrl}/api/tasks`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        kind: 'nl-command',
+        sourceText: 'Create the project-bound implementation plan.',
+        projectId: 'project-1',
+        autoDispatch: false,
+      }),
+    });
+    const body = await response.json();
+
+    expect(response.status).toBe(201);
+    expect(findByIdForOwner).toHaveBeenCalledWith('project-1', 'user-1');
+    expect(body.task.projection).toMatchObject({
+      projectId: 'project-1',
+    });
+    expect(createProjectResource).toHaveBeenCalledWith({
+      projectId: 'project-1',
+      resourceType: 'mission',
+      payload: expect.objectContaining({
+        projectId: 'project-1',
+        missionId: body.task.id,
+        status: 'queued',
+      }),
+    });
+  });
+
+  it('rejects non-owned projectId before creating or dispatching a mission', async () => {
+    const fetchImpl = vi.fn();
+    const findByIdForOwner = vi.fn(async () => null);
+
+    await new Promise<void>((resolve, reject) => {
+      if (!server) {
+        resolve();
+        return;
+      }
+
+      server.close(error => (error ? reject(error) : resolve()));
+    });
+
+    const started = await startServer(runtime, fetchImpl as unknown as typeof fetch, {
+      findByIdForOwner,
+    });
+    server = started.server;
+    baseUrl = started.baseUrl;
+
+    const response = await fetch(`${baseUrl}/api/tasks`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        kind: 'nl-command',
+        sourceText: 'This must not create a mission.',
+        projectId: 'project-2',
+        autoDispatch: true,
+      }),
+    });
+    const body = await response.json();
+
+    expect(response.status).toBe(404);
+    expect(body).toEqual({ error: 'Project not found.' });
+    expect(findByIdForOwner).toHaveBeenCalledWith('project-2', 'user-1');
+    expect(runtime.listTasks(10)).toEqual([]);
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
+
+  it('rejects mismatched top-level and projection project ids before owner lookup', async () => {
+    const findByIdForOwner = vi.fn();
+
+    await new Promise<void>((resolve, reject) => {
+      if (!server) {
+        resolve();
+        return;
+      }
+
+      server.close(error => (error ? reject(error) : resolve()));
+    });
+
+    const started = await startServer(runtime, undefined, {
+      findByIdForOwner,
+    });
+    server = started.server;
+    baseUrl = started.baseUrl;
+
+    const response = await fetch(`${baseUrl}/api/tasks`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        sourceText: 'Mismatched project binding.',
+        projectId: 'project-1',
+        projection: {
+          projectId: 'project-2',
+        },
+      }),
+    });
+    const body = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(body).toEqual({
+      error: 'projectId mismatch between request body and projection',
+    });
+    expect(findByIdForOwner).not.toHaveBeenCalled();
+    expect(runtime.listTasks(10)).toEqual([]);
   });
 
   it('auto-dispatches nl-command missions when requested at creation time', async () => {

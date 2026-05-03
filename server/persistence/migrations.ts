@@ -92,11 +92,29 @@ CREATE TABLE IF NOT EXISTS projects (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 `;
 
+const PROJECT_RESOURCES_SQL = `
+CREATE TABLE IF NOT EXISTS project_resources (
+  id VARCHAR(36) PRIMARY KEY,
+  project_id VARCHAR(36) NOT NULL,
+  resource_type ENUM('message', 'clarification_question', 'spec', 'route', 'mission', 'artifact', 'evidence') NOT NULL,
+  payload_json JSON NOT NULL,
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  KEY idx_project_resources_project_type_created (project_id, resource_type, created_at),
+  CONSTRAINT fk_project_resources_project FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+`;
+
 export const AUTH_PROJECT_MIGRATIONS: readonly Migration[] = [
   {
     id: "001_initial_auth_project",
     name: "Initial ToC auth sessions and owned projects",
     sql: INITIAL_AUTH_PROJECT_SQL,
+  },
+  {
+    id: "002_project_resources",
+    name: "Project scoped resources for owner-guarded bundles",
+    sql: PROJECT_RESOURCES_SQL,
   },
 ];
 

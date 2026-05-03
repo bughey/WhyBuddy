@@ -1,5 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { useAuthStore } from "./lib/auth-store";
 
 const { locationState, viewportState } = vi.hoisted(() => ({
   locationState: {
@@ -12,7 +14,7 @@ const { locationState, viewportState } = vi.hoisted(() => ({
   },
 }));
 
-import { AppShell } from "./App";
+import { AppShell, isProjectWorkspaceLocation } from "./App";
 
 vi.mock("wouter", () => ({
   useLocation: () => [locationState.current, locationState.setLocation],
@@ -31,6 +33,8 @@ vi.mock("wouter", () => ({
     const current = locationState.current;
     const matches =
       path === current ||
+      (path === "/projects" && current === "/") ||
+      (path === "/projects/:projectId" && current.startsWith("/projects/")) ||
       (path === "/tasks/:taskId" && current.startsWith("/tasks/")) ||
       (path === "/debug/:section" && current.startsWith("/debug/")) ||
       (!path && current === "/404");
@@ -98,6 +102,22 @@ vi.mock("./pages/Home", () => ({
   default: () => <main data-testid="home-page" />,
 }));
 
+vi.mock("./pages/auth/AuthPage", () => ({
+  default: () => <main data-testid="auth-page" />,
+}));
+
+vi.mock("./pages/admin/AdminLayout", () => ({
+  AdminLayout: ({ children }: { children?: React.ReactNode }) => (
+    <main data-testid="admin-layout">{children}</main>
+  ),
+  AdminOverviewPage: () => <section data-testid="admin-overview-page" />,
+  AdminUsersPage: () => <section data-testid="admin-users-page" />,
+  AdminProjectsPage: () => <section data-testid="admin-projects-page" />,
+  AdminRunsPage: () => <section data-testid="admin-runs-page" />,
+  AdminFailuresPage: () => <section data-testid="admin-failures-page" />,
+  AdminAuditPage: () => <section data-testid="admin-audit-page" />,
+}));
+
 vi.mock("./pages/tasks", () => ({
   TasksPage: () => <main data-testid="tasks-page" />,
   TaskDetailPage: () => <main data-testid="task-detail-page" />,
@@ -120,7 +140,29 @@ vi.mock("./pages/NotFound", () => ({
 }));
 
 describe("AppShell fixed sidebar layout", () => {
+  beforeEach(() => {
+    locationState.setLocation.mockClear();
+    useAuthStore.getState().resetForTest();
+  });
+
+  function signInForShell() {
+    useAuthStore.setState({
+      sessionChecked: true,
+      currentUser: {
+        id: "user-1",
+        email: "user@example.com",
+        displayName: "User",
+        avatarUrl: null,
+        role: "user",
+        status: "active",
+        emailVerified: true,
+        createdAt: "2026-04-30T00:00:00.000Z",
+      },
+    });
+  }
+
   it("offsets non-home desktop content by the fixed sidebar width", () => {
+    signInForShell();
     locationState.current = "/tasks";
     viewportState.isMobile = false;
     viewportState.isTablet = false;
@@ -135,6 +177,7 @@ describe("AppShell fixed sidebar layout", () => {
   });
 
   it("does not offset the home page because it uses embedded scene chrome", () => {
+    signInForShell();
     locationState.current = "/";
     viewportState.isMobile = false;
     viewportState.isTablet = false;
@@ -149,6 +192,7 @@ describe("AppShell fixed sidebar layout", () => {
   });
 
   it("does not keep the task sidebar offset when the home URL has query or hash state", () => {
+    signInForShell();
     locationState.current = "/?from=tasks#autopilot";
     viewportState.isMobile = false;
     viewportState.isTablet = false;
@@ -160,5 +204,43 @@ describe("AppShell fixed sidebar layout", () => {
     expect(shell).toContain("--sidebar-width:0px");
     expect(shell).toContain("padding-left:0");
     expect(shell).not.toContain("transition-[padding-left]");
+  });
+
+  it("keeps the login page free of app chrome", () => {
+    locationState.current = "/login";
+    viewportState.isMobile = false;
+    viewportState.isTablet = false;
+
+    const markup = renderToStaticMarkup(<AppShell />);
+    const shell = markup.match(/<div class="min-h-screen[^>]*>/)?.[0] ?? "";
+
+    expect(markup).not.toContain('data-testid="app-sidebar"');
+    expect(markup).not.toContain('data-testid="config-panel"');
+    expect(markup).not.toContain('data-testid="recovery-dialog"');
+    expect(markup).toContain('data-testid="auth-page"');
+    expect(shell).toContain("--sidebar-width:0px");
+    expect(shell).toContain("padding-left:0");
+  });
+
+  it("classifies project workspace routes for unauthenticated redirect", () => {
+    expect(isProjectWorkspaceLocation("/")).toBe(true);
+    expect(isProjectWorkspaceLocation("/tasks")).toBe(true);
+    expect(isProjectWorkspaceLocation("/tasks/task-1")).toBe(true);
+    expect(isProjectWorkspaceLocation("/specs?tab=routes")).toBe(true);
+    expect(isProjectWorkspaceLocation("/replay/mission-1#timeline")).toBe(true);
+    expect(isProjectWorkspaceLocation("/login")).toBe(false);
+    expect(isProjectWorkspaceLocation("/admin")).toBe(false);
+    expect(isProjectWorkspaceLocation("/debug")).toBe(false);
+  });
+
+  it("keeps authenticated project workspace access in place", () => {
+    signInForShell();
+    locationState.current = "/";
+    viewportState.isMobile = false;
+    viewportState.isTablet = false;
+
+    renderToStaticMarkup(<AppShell />);
+
+    expect(locationState.setLocation).not.toHaveBeenCalledWith("/login");
   });
 });

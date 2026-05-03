@@ -54,6 +54,65 @@ describe("project-store", () => {
     expect(state.getCurrentProject()?.id).toBe(project.id);
   });
 
+  it("assigns ownerUserId when creating a project with an authenticated owner", () => {
+    useProjectStore.getState().setActiveOwnerForTest("user-1");
+
+    const project = useProjectStore.getState().createProject({
+      goal: "Build auth",
+    });
+
+    expect(project.ownerUserId).toBe("user-1");
+    expect(useProjectStore.getState().getVisibleProjects()).toEqual([project]);
+  });
+
+  it("keeps current project selection scoped to the active owner", () => {
+    useProjectStore.getState().setActiveOwnerForTest("user-1");
+    const first = useProjectStore.getState().createProject({ goal: "First" });
+    useProjectStore.getState().setActiveOwnerForTest("user-2");
+    const second = useProjectStore.getState().createProject({ goal: "Second" });
+
+    expect(first.ownerUserId).toBe("user-1");
+    expect(second.ownerUserId).toBe("user-2");
+    expect(useProjectStore.getState().currentProjectId).toBe(second.id);
+    expect(useProjectStore.getState().getCurrentProject()?.id).toBe(second.id);
+    expect(useProjectStore.getState().getVisibleProjects()).toEqual([second]);
+
+    useProjectStore.getState().setActiveOwnerForTest("user-1");
+
+    expect(useProjectStore.getState().currentProjectId).toBe(first.id);
+    expect(useProjectStore.getState().getCurrentProject()?.id).toBe(first.id);
+    expect(useProjectStore.getState().getVisibleProjects()).toEqual([first]);
+  });
+
+  it("binds legacy local projects to the first authenticated owner", () => {
+    const legacy = useProjectStore.getState().createProject({
+      goal: "Legacy local project",
+    });
+    expect(legacy.ownerUserId).toBeUndefined();
+
+    useProjectStore.getState().setActiveOwnerForTest("user-1");
+
+    const migratedProject = useProjectStore.getState().projects[0];
+    expect(migratedProject).toMatchObject({
+      id: legacy.id,
+      ownerUserId: "user-1",
+    });
+    expect(useProjectStore.getState().getCurrentProject()?.id).toBe(legacy.id);
+  });
+
+  it("does not select or expose projects owned by a different user", () => {
+    useProjectStore.getState().setActiveOwnerForTest("user-1");
+    const first = useProjectStore.getState().createProject({ goal: "First" });
+    useProjectStore.getState().setActiveOwnerForTest("user-2");
+    const second = useProjectStore.getState().createProject({ goal: "Second" });
+
+    useProjectStore.getState().selectProject(first.id);
+
+    expect(useProjectStore.getState().currentProjectId).toBeNull();
+    expect(useProjectStore.getState().getProjectBundle(first.id)).toBeNull();
+    expect(useProjectStore.getState().getVisibleProjects()).toEqual([second]);
+  });
+
   it("persists and hydrates the current project snapshot", () => {
     const project = useProjectStore.getState().createProject({
       name: "Permission System",

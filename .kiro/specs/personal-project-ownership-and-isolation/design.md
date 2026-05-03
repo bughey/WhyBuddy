@@ -98,6 +98,12 @@ POST   /api/projects/:projectId/evidence
 - 本 spec 补 `ownerUserId`、认证上下文和服务端隔离。
 - `project-execution-center`、`project-spec-center`、`project-fsd-route-planner`、`project-evidence-artifact-replay` 后续都应通过本 spec 的项目归属规则访问项目资源。
 
+## 本阶段实现状态
+
+本阶段的项目空间是单 owner 模型。任务创建、mission link、artifact/evidence 回流和 bundle 读取都以 `projectId -> project.ownerUserId -> currentUser.id` 为服务端事实链路；如果要绑定 `projectId`，必须先完成 owner 校验。
+
+Project-first 相关页面可以展示“我的项目”上下文，但不出现项目成员列表、邀请入口、共享链接、团队角色、项目 RBAC 或多人协同状态。需要协作时另开 ProjectMember/ProjectRole 规格，不复用本 spec 的个人项目接口做隐式共享。
+
 ## 非目标
 
 本 spec 不引入 ProjectMember、ProjectRole、邀请、共享链接、团队空间或 ToB 数据权限。后续如果需要协作，再新增项目成员 RBAC spec。

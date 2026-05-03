@@ -8,69 +8,70 @@ const {
   telemetryState,
   workflowState,
   locationState,
-} =
-  vi.hoisted(() => {
-    const appState = {
-      isSceneReady: true,
-      hydrateAIConfig: async () => {},
-      runtimeMode: "frontend" as "frontend" | "advanced",
-      setRuntimeMode: async () => {},
-      locale: "en-US",
-      toggleLocale: () => {},
-      toggleConfig: () => {},
-      selectedPet: null as string | null,
-      setSelectedPet: () => {},
-    };
-    const tasksState = {
-      ensureReady: async () => {},
-      createMission: async () => null,
-      tasks: [],
-      detailsById: {},
-      selectedTaskId: null as string | null,
-      selectTask: () => {},
-    };
-    const projectState = {
-      ready: true,
-      ensureReady: () => {},
-      currentProjectId: null as string | null,
-      projects: [] as any[],
-      messages: [] as any[],
-      clarificationQuestions: [] as any[],
-      specs: [] as any[],
-      routes: [] as any[],
-      missions: [] as any[],
-      artifacts: [] as any[],
-      evidence: [] as any[],
-      createProject: vi.fn(),
-      selectProject: vi.fn(),
-      addProjectArtifact: vi.fn(),
-    };
-    const telemetryState = {
-      fetchInitial: async () => {},
-      snapshot: null,
-    };
-    const workflowState = {
-      agents: [],
-      workflows: [],
-      heartbeatStatuses: {},
-      disconnectSocket: () => {},
-      toggleWorkflowPanel: () => {},
-      openWorkflowPanel: () => {},
-    };
-    const locationState = {
-      current: "/",
-      setLocation: vi.fn(),
-    };
+} = vi.hoisted(() => {
+  const appState = {
+    isSceneReady: true,
+    hydrateAIConfig: async () => {},
+    runtimeMode: "frontend" as "frontend" | "advanced",
+    setRuntimeMode: async () => {},
+    locale: "en-US",
+    toggleLocale: () => {},
+    toggleConfig: () => {},
+    selectedPet: null as string | null,
+    setSelectedPet: () => {},
+  };
+  const tasksState = {
+    ensureReady: async () => {},
+    createMission: async () => null,
+    tasks: [],
+    detailsById: {},
+    selectedTaskId: null as string | null,
+    selectTask: () => {},
+  };
+  const projectState = {
+    ready: true,
+    ensureReady: () => {},
+    currentProjectId: null as string | null,
+    projects: [] as any[],
+    messages: [] as any[],
+    clarificationQuestions: [] as any[],
+    specs: [] as any[],
+    routes: [] as any[],
+    missions: [] as any[],
+    artifacts: [] as any[],
+    evidence: [] as any[],
+    createProject: vi.fn(),
+    selectProject: vi.fn(),
+    updateProject: vi.fn(),
+    archiveProject: vi.fn(),
+    addProjectArtifact: vi.fn(),
+  };
+  const telemetryState = {
+    fetchInitial: async () => {},
+    snapshot: null,
+  };
+  const workflowState = {
+    agents: [],
+    workflows: [],
+    heartbeatStatuses: {},
+    disconnectSocket: () => {},
+    toggleWorkflowPanel: () => {},
+    openWorkflowPanel: () => {},
+  };
+  const locationState = {
+    current: "/",
+    setLocation: vi.fn(),
+  };
 
-    return {
-      appState,
-      projectState,
-      tasksState,
-      telemetryState,
-      workflowState,
-      locationState,
-    };
-  });
+  return {
+    appState,
+    projectState,
+    tasksState,
+    telemetryState,
+    workflowState,
+    locationState,
+  };
+});
 
 import Home from "./Home";
 
@@ -279,7 +280,10 @@ vi.mock("@/lib/project-store", () => ({
   selectCurrentProject: (state: typeof projectState) =>
     state.projects.find(project => project.id === state.currentProjectId) ??
     null,
-  selectProjectBundle: (state: typeof projectState, projectId: string | null) =>
+  selectProjectBundle: (
+    state: typeof projectState,
+    projectId: string | null
+  ) =>
     projectId
       ? {
           project: state.projects.find(project => project.id === projectId),
@@ -293,9 +297,7 @@ vi.mock("@/lib/project-store", () => ({
           artifacts: state.artifacts.filter(
             item => item.projectId === projectId
           ),
-          evidence: state.evidence.filter(
-            item => item.projectId === projectId
-          ),
+          evidence: state.evidence.filter(item => item.projectId === projectId),
         }
       : null,
   useProjectStore: (selector: (state: typeof projectState) => unknown) =>
@@ -327,6 +329,8 @@ describe("Home desktop shell", () => {
     projectState.evidence = [];
     projectState.createProject.mockClear();
     projectState.selectProject.mockClear();
+    projectState.updateProject.mockClear();
+    projectState.archiveProject.mockClear();
     projectState.addProjectArtifact.mockClear();
   });
 
@@ -379,7 +383,19 @@ describe("Home desktop shell", () => {
   });
 
   it("keeps the right drawer reachable while retaining the autopilot cockpit", () => {
-    const markup = renderToStaticMarkup(<Home />);
+    projectState.currentProjectId = "project-1";
+    projectState.projects = [
+      {
+        id: "project-1",
+        name: "Permission System",
+        goal: "Build a permission management system",
+        status: "clarifying",
+        createdAt: "2026-04-30T00:00:00.000Z",
+        updatedAt: "2026-04-30T00:00:00.000Z",
+      },
+    ];
+
+    const markup = renderToStaticMarkup(<Home projectId="project-1" />);
 
     expect(markup).toContain('data-testid="office-task-cockpit"');
     expect(markup).toContain("home-first-screen-cockpit");
@@ -392,19 +408,42 @@ describe("Home desktop shell", () => {
     );
   });
 
-  it("surfaces the project-first empty state on the desktop home hero", () => {
+  it("surfaces the project space empty state before opening a project", () => {
     const markup = renderToStaticMarkup(<Home />);
 
-    expect(markup).toContain("Project Cockpit");
-    expect(markup).toContain("Create your first project");
-    expect(markup).toContain("No project");
+    expect(markup).toContain('data-testid="home-project-hub"');
+    expect(markup).toContain("Project Space");
+    expect(markup).toContain("No projects yet");
     expect(markup).toContain("Permission system");
     expect(markup).toContain("Research brief");
     expect(markup).toContain("Product spec");
     expect(markup).toContain("Import materials");
-    expect(markup).toContain("Specs 0");
-    expect(markup).toContain('data-testid="home-project-stage-panel"');
-    expect(markup).toContain("Create / import / describe");
+    expect(markup).toContain('data-testid="home-project-search"');
+    expect(markup).not.toContain('data-testid="office-task-cockpit"');
+  });
+
+  it("shows project search, edit, and delete controls on project cards", () => {
+    projectState.currentProjectId = "project-1";
+    projectState.projects = [
+      {
+        id: "project-1",
+        name: "Permission System",
+        goal: "Build a permission management system",
+        summary: "Manage roles, resources, and audit evidence.",
+        status: "clarifying",
+        createdAt: "2026-04-30T00:00:00.000Z",
+        updatedAt: "2026-04-30T00:00:00.000Z",
+      },
+    ];
+
+    const markup = renderToStaticMarkup(<Home />);
+
+    expect(markup).toContain('data-testid="home-project-search"');
+    expect(markup).toContain('data-testid="home-project-card"');
+    expect(markup).toContain('data-testid="home-project-edit"');
+    expect(markup).toContain('data-testid="home-project-delete"');
+    expect(markup).toContain("Permission System");
+    expect(markup).toContain("Open Autopilot");
   });
 
   it("shows the current project and project bundle counters on the home hero", () => {
@@ -494,9 +533,12 @@ describe("Home desktop shell", () => {
       },
     ];
 
-    const markup = renderToStaticMarkup(<Home />);
+    const markup = renderToStaticMarkup(<Home projectId="project-1" />);
 
     expect(markup).toContain("Permission System");
+    expect(markup).toContain("Autopilot");
+    expect(markup).toContain("Back to Project Space");
+    expect(markup).toContain('data-testid="home-back-to-project-space"');
     expect(markup).toContain("Clarifying");
     expect(markup).toContain("Specs 1");
     expect(markup).toContain("Routes 1");
@@ -523,7 +565,9 @@ describe("Home desktop shell", () => {
     expect(markup).toContain("Conservative / Current");
     expect(markup).toContain("Conservative Control Route");
     expect(markup).toContain("low risk");
-    expect(markup).toContain("Confirm assumptions / Prepare rollback-safe work");
+    expect(markup).toContain(
+      "Confirm assumptions / Prepare rollback-safe work"
+    );
   });
 
   it("shows a compact project switcher when multiple projects exist", () => {
@@ -547,7 +591,7 @@ describe("Home desktop shell", () => {
       },
     ];
 
-    const markup = renderToStaticMarkup(<Home />);
+    const markup = renderToStaticMarkup(<Home projectId="project-2" />);
 
     expect(markup).toContain('data-testid="home-project-switcher"');
     expect(markup).toContain("Switch project");

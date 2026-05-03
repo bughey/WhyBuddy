@@ -3,7 +3,8 @@ import { useLocation } from "wouter";
 
 import {
   getActiveSidebarId,
-  SIDEBAR_NAV_ITEMS,
+  getSidebarNavItems,
+  resolveSidebarHref,
   type SidebarNavigationItem,
 } from "@/components/navigation-config";
 import { SidebarStatusBlock } from "@/components/SidebarStatusBlock";
@@ -13,6 +14,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useI18n } from "@/i18n";
+import { useProjectStore } from "@/lib/project-store";
 import { cn } from "@/lib/utils";
 
 type SidebarTone = "light" | "glass";
@@ -71,6 +73,7 @@ function SidebarHeader({
 
 function SidebarNavItem({
   item,
+  href,
   active,
   collapsed,
   label,
@@ -79,6 +82,7 @@ function SidebarNavItem({
   tone,
 }: {
   item: SidebarNavigationItem;
+  href?: string;
   active: boolean;
   collapsed: boolean;
   label: string;
@@ -86,7 +90,7 @@ function SidebarNavItem({
   onNavigate: (href: string) => void;
   tone: SidebarTone;
 }) {
-  const isDisabled = item.disabled || !item.href;
+  const isDisabled = item.disabled || !href;
   const Icon = item.icon;
   const glass = tone === "glass";
 
@@ -94,8 +98,8 @@ function SidebarNavItem({
     <button
       type="button"
       onClick={() => {
-        if (!isDisabled && item.href) {
-          onNavigate(item.href);
+        if (!isDisabled && href) {
+          onNavigate(href);
         }
       }}
       disabled={isDisabled}
@@ -243,10 +247,12 @@ export function AppSidebar({
 }: AppSidebarProps) {
   const [location, setLocation] = useLocation();
   const { locale, copy } = useI18n();
+  const currentProjectId = useProjectStore(state => state.currentProjectId);
   const activeId = getActiveSidebarId(location);
   const sidebarTone: SidebarTone = embedded ? "glass" : "light";
   const isZh = locale === "zh-CN";
   const sidebarCopy = copy.sidebar;
+  const visibleNavItems = getSidebarNavItems(location);
 
   const labelMap: Record<string, string> = {
     autopilot: isZh ? "自动驾驶" : sidebarCopy.autopilot,
@@ -299,18 +305,23 @@ export function AppSidebar({
           <span className="pointer-events-none absolute bottom-8 left-[31px] top-5 w-px bg-gradient-to-b from-transparent via-sky-100/80 to-transparent" />
         ) : null}
         <ul role="list" className="relative flex flex-col gap-2.5">
-          {SIDEBAR_NAV_ITEMS.map(item => (
-            <SidebarNavItem
-              key={item.id}
-              item={item}
-              active={item.id === activeId}
-              collapsed={collapsed}
-              label={labelMap[item.id] ?? item.id}
-              comingSoonLabel={sidebarCopy.comingSoon}
-              onNavigate={setLocation}
-              tone={sidebarTone}
-            />
-          ))}
+          {visibleNavItems.map(item => {
+            const href = resolveSidebarHref(item, location, currentProjectId);
+
+            return (
+              <SidebarNavItem
+                key={item.id}
+                item={item}
+                href={href}
+                active={item.id === activeId}
+                collapsed={collapsed}
+                label={labelMap[item.id] ?? item.id}
+                comingSoonLabel={sidebarCopy.comingSoon}
+                onNavigate={setLocation}
+                tone={sidebarTone}
+              />
+            );
+          })}
         </ul>
       </nav>
 

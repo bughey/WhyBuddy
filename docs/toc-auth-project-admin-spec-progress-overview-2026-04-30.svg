@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg width="1600" height="1260" viewBox="0 0 1600 1260" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
   <title id="title">Cube Pets Office ToC Auth Project Admin Spec Progress Overview</title>
-  <desc id="desc">ToC MySQL Redis persistence, DB-backed email auth, personal project isolation, admin console, optional admin audit, and trimmed login architecture progress overview.</desc>
+  <desc id="desc">ToC MySQL Redis persistence, auth contract gate, DB-backed email auth, personal project isolation, admin console, optional admin audit, and trimmed login architecture progress overview.</desc>
   <defs>
     <linearGradient id="heroGradient" x1="40" y1="30" x2="1560" y2="250" gradientUnits="userSpaceOnUse">
       <stop offset="0" stop-color="#17324D"/>
@@ -57,10 +57,10 @@
   <text x="80" y="214" class="hero-meta">统计口径：5 个 spec，15 份文档，MVP 必做包含 Wave 0 基础设施与前三个权限 spec；配套裁剪版登录架构图已生成。</text>
   <rect x="1170" y="72" width="310" height="128" rx="18" fill="rgba(255,255,255,0.14)" stroke="rgba(255,255,255,0.24)"/>
   <text x="1194" y="112" class="hero-meta">MVP 任务完成度</text>
-  <text x="1194" y="160" class="hero-title">25%</text>
-  <text x="1292" y="160" class="hero-subtitle">15 / 59</text>
+  <text x="1194" y="160" class="hero-title">97%</text>
+  <text x="1292" y="160" class="hero-subtitle">57 / 59</text>
   <rect x="1194" y="178" width="250" height="8" rx="4" fill="rgba(255,255,255,0.24)"/>
-  <rect x="1194" y="178" width="64" height="8" rx="4" fill="#FFFFFF"/>
+  <rect x="1194" y="178" width="242" height="8" rx="4" fill="#FFFFFF"/>
 
   <g transform="translate(60 285)">
     <rect class="card" width="280" height="122" rx="20"/>
@@ -77,13 +77,13 @@
   <g transform="translate(670 285)">
     <rect class="card" width="280" height="122" rx="20"/>
     <text x="24" y="38" class="summary-label">MVP 必做任务</text>
-    <text x="24" y="82" class="summary-value">15 / 59</text>
-    <text x="198" y="82" class="summary-note">Wave 0 完成</text>
+    <text x="24" y="82" class="summary-value">57 / 59</text>
+    <text x="198" y="82" class="summary-note">任务 owner 校验完成</text>
   </g>
   <g transform="translate(975 285)">
     <rect class="card" width="280" height="122" rx="20"/>
     <text x="24" y="38" class="summary-label">全部任务</text>
-    <text x="24" y="82" class="summary-value">15 / 74</text>
+    <text x="24" y="82" class="summary-value">57 / 74</text>
     <text x="198" y="82" class="summary-note">含后置</text>
   </g>
   <g transform="translate(1280 285)">
@@ -96,11 +96,13 @@
 
   <g transform="translate(60 440)">
     <text x="0" y="0" class="section-title">实施主线</text>
-    <text x="112" y="0" class="section-note">Wave 0 先固定数据库、会话和 Redis 边界；后续权限 spec 只消费这层能力，不再摇摆存储方案。</text>
+    <text x="112" y="0" class="section-note">Wave 0 先固定数据库和 Redis 边界；Wave 1 先落 Auth Contract Gate，再开放 Project/Admin 并行。</text>
     <rect x="0" y="24" width="260" height="42" rx="21" fill="#0E8B8B"/>
     <text x="22" y="51" class="lane-label">Wave 0 - MySQL / Redis 地基</text>
     <rect x="282" y="24" width="260" height="42" rx="21" fill="#2F80ED"/>
     <text x="304" y="51" class="lane-label">Wave 1 - 邮箱账号与会话</text>
+    <rect x="292" y="70" width="240" height="24" rx="12" fill="#FFFFFF" stroke="#2EB67D" stroke-width="1.5"/>
+    <text x="308" y="86" class="tiny">Auth Contract Gate：已固定共享合同</text>
     <rect x="564" y="24" width="300" height="42" rx="21" fill="#2D6A6A"/>
     <text x="586" y="51" class="lane-label">Wave 2 - 我的项目归属隔离</text>
     <rect x="886" y="24" width="260" height="42" rx="21" fill="#4E7A51"/>
@@ -135,44 +137,44 @@
 
   <g transform="translate(565 535)">
     <rect class="card" width="470" height="184" rx="20"/>
-    <rect x="24" y="24" width="86" height="28" rx="14" class="empty"/>
-    <text x="43" y="43" class="pill-text">未开始</text>
+    <rect x="24" y="24" width="96" height="28" rx="14" class="done"/>
+    <text x="42" y="43" class="pill-text">已完成</text>
     <text x="132" y="44" class="spec-title">1. Consumer Email Auth</text>
     <text x="24" y="72" class="spec-path">consumer-email-auth-and-account</text>
-    <text x="24" y="101" class="spec-desc">邮箱注册/登录、当前用户、httpOnly DB session、角色 user/admin。</text>
-    <text x="24" y="124" class="spec-desc">消费 Wave 0 的 users、sessions、email_login_tokens 和可选 Redis cache。</text>
+    <text x="24" y="101" class="spec-desc">已完成：shared/auth、DB session、auth store、登录页和 /api/auth/*。</text>
+    <text x="24" y="124" class="spec-desc">待完成：完整 Redis miss/禁用用户覆盖，以及 web-main 不迁移审核记录。</text>
     <rect x="24" y="149" width="320" height="10" rx="5" class="bar-bg"/>
-    <rect x="24" y="149" width="1" height="10" rx="5" class="progress"/>
-    <text x="366" y="159" class="spec-count">0 / 14</text>
-    <text x="24" y="174" class="spec-percent">0% - MVP Wave 1 - 必做</text>
+    <rect x="24" y="149" width="274" height="10" rx="5" class="progress"/>
+    <text x="366" y="159" class="spec-count">12 / 14</text>
+    <text x="24" y="174" class="spec-percent">86% - MVP Wave 1 - 登录入口与未登录跳转已完成</text>
   </g>
 
   <g transform="translate(1070 535)">
     <rect class="card" width="470" height="184" rx="20"/>
-    <rect x="24" y="24" width="86" height="28" rx="14" class="empty"/>
-    <text x="43" y="43" class="pill-text">未开始</text>
+    <rect x="24" y="24" width="96" height="28" rx="14" class="done"/>
+    <text x="42" y="43" class="pill-text">已完成</text>
     <text x="132" y="44" class="spec-title">2. Personal Project Isolation</text>
     <text x="24" y="72" class="spec-path">personal-project-ownership-and-isolation</text>
-    <text x="24" y="101" class="spec-desc">Project.ownerUserId、我的项目列表、project bundle 继承 owner guard。</text>
-    <text x="24" y="124" class="spec-desc">普通用户只看自己的项目；管理员全局视图走 /api/admin/*。</text>
+    <text x="24" y="101" class="spec-desc">已完成：owner 迁移、项目资源 API、任务创建前 owner 校验与 mission link。</text>
+    <text x="24" y="124" class="spec-desc">已记录：本阶段个人项目单 owner，不做项目成员、分享或协作 RBAC。</text>
     <rect x="24" y="149" width="320" height="10" rx="5" class="bar-bg"/>
-    <rect x="24" y="149" width="1" height="10" rx="5" class="progress"/>
-    <text x="366" y="159" class="spec-count">0 / 15</text>
-    <text x="24" y="174" class="spec-percent">0% - MVP Wave 2 - 必做</text>
+    <rect x="24" y="149" width="320" height="10" rx="5" class="done"/>
+    <text x="366" y="159" class="spec-count">15 / 15</text>
+    <text x="24" y="174" class="spec-percent">100% - MVP Wave 2 - 项目 owner 隔离已完成</text>
   </g>
 
   <g transform="translate(60 760)">
     <rect class="card" width="470" height="184" rx="20"/>
-    <rect x="24" y="24" width="86" height="28" rx="14" class="empty"/>
-    <text x="43" y="43" class="pill-text">未开始</text>
+    <rect x="24" y="24" width="86" height="28" rx="14" class="progress"/>
+    <text x="43" y="43" class="pill-text">进行中</text>
     <text x="132" y="44" class="spec-title">3. Admin Console Gate</text>
     <text x="24" y="72" class="spec-path">admin-console-and-global-role-gate</text>
     <text x="24" y="101" class="spec-desc">/admin 后台、requireAdmin、用户/项目/运行/异常只读视图。</text>
-    <text x="24" y="124" class="spec-desc">后台菜单第一版写死，不迁移动态菜单、角色权限管理页。</text>
+    <text x="24" y="124" class="spec-desc">已完成 role、requireAdmin、/api/admin 只读接口、/admin 前端壳与页面。</text>
     <rect x="24" y="149" width="320" height="10" rx="5" class="bar-bg"/>
-    <rect x="24" y="149" width="1" height="10" rx="5" class="progress"/>
-    <text x="366" y="159" class="spec-count">0 / 15</text>
-    <text x="24" y="174" class="spec-percent">0% - MVP Wave 3 - 必做</text>
+    <rect x="24" y="149" width="320" height="10" rx="5" class="done"/>
+    <text x="366" y="159" class="spec-count">15 / 15</text>
+    <text x="24" y="174" class="spec-percent">100% - MVP Wave 3 - 后台壳与只读视图已完成</text>
   </g>
 
   <g transform="translate(565 760)">
@@ -192,7 +194,7 @@
   <g transform="translate(1070 760)">
     <rect class="card" width="470" height="184" rx="20"/>
     <text x="24" y="42" class="section-title">MVP 验收线</text>
-    <text x="24" y="78" class="spec-desc">1. 用户身份、DB-backed session、项目归属以 MySQL 为准。</text>
+    <text x="24" y="78" class="spec-desc">1. shared/auth.ts、CurrentUser、req.user 合同已固定。</text>
     <text x="24" y="103" class="spec-desc">2. Redis 关闭或不可用时，登录和项目隔离仍可用。</text>
     <text x="24" y="128" class="spec-desc">3. 普通用户只看到自己的项目，越权项目返回 404。</text>
     <text x="24" y="153" class="spec-desc">4. 管理员通过 /admin 和 /api/admin/* 查看全局只读状态。</text>
@@ -202,18 +204,18 @@
     <rect class="plain-card" width="1480" height="104" rx="22"/>
     <text x="28" y="36" class="footer-title">建议开工顺序</text>
     <text x="28" y="70" class="footer-strong">第一步：</text>
-    <text x="90" y="70" class="footer-text">Wave 0 已完成，可直接进入邮箱登录和 DB-backed session。</text>
+    <text x="90" y="70" class="footer-text">Auth 前后端入口已完成。</text>
     <text x="650" y="70" class="footer-strong">第二步：</text>
-    <text x="712" y="70" class="footer-text">接邮箱登录和 DB-backed session。</text>
+    <text x="712" y="70" class="footer-text">Admin 前端壳已完成。</text>
     <text x="1005" y="70" class="footer-strong">第三步：</text>
-    <text x="1067" y="70" class="footer-text">接 Project.ownerUserId 与 admin gate。</text>
-    <text x="28" y="92" class="tiny">注意：测试服务器凭据只放本地 env；Redis 是增强项，不是权限事实源；登录链路以 docs/cube-pets-office-toc-login-architecture-2026-04-30.svg 为配套参考。</text>
+    <text x="1067" y="70" class="footer-text">补认证覆盖和 web-main 不迁移审核记录。</text>
+    <text x="28" y="92" class="tiny">已落地 auth store、未登录跳转、/api/projects owner guard、project_resources、任务 owner 绑定、/api/admin 只读接口与 /admin 前端壳。</text>
   </g>
 
   <g transform="translate(60 1115)">
     <rect class="plain-card" width="1480" height="84" rx="20"/>
     <text x="28" y="38" class="footer-strong">当前状态：</text>
-    <text x="116" y="38" class="footer-text">Wave 0 已完成 15 项；MVP 必做 59 项，已完成 15 项；全部含后置 74 项，已完成 15 项。</text>
+    <text x="116" y="38" class="footer-text">Wave 0 已完成 15 项；Auth 12 / 14，Project 15 / 15，Admin Gate 15 / 15；MVP 57 / 59，全部 57 / 74。</text>
     <text x="28" y="64" class="footer-strong">资源边界：</text>
     <text x="116" y="64" class="footer-text">MySQL 使用独立库 cube_pets_office；不删除、不清空、不修改 rbac_multitenant；Redis 仅做可选缓存/限流/队列。</text>
     <text x="1008" y="64" class="tiny">总览图：docs/toc-auth-project-admin-spec-progress-overview-2026-04-30.svg</text>

@@ -25,6 +25,7 @@ export type ProjectStatus =
 
 export interface Project {
   id: string;
+  ownerUserId?: string;
   name: string;
   goal: string;
   status: ProjectStatus;
@@ -246,6 +247,7 @@ export interface ProjectBundle {
 interface ProjectStoreSnapshot {
   schemaVersion: number;
   currentProjectId: string | null;
+  currentProjectIdsByOwner: Record<string, string | null>;
   projects: Project[];
   messages: ProjectMessage[];
   clarificationQuestions: ProjectClarificationQuestion[];
@@ -392,9 +394,12 @@ export interface RecordProjectRouteEvidenceInput {
 }
 
 export interface ProjectStoreState extends ProjectStoreSnapshot {
+  activeOwnerUserId: string | null;
   ready: boolean;
   ensureReady: () => void;
   reset: () => void;
+  setActiveOwner: (userId: string | null) => void;
+  setActiveOwnerForTest: (userId: string | null) => void;
   createProject: (input: CreateProjectInput) => Project;
   selectProject: (projectId: string | null) => void;
   updateProject: (
@@ -447,6 +452,7 @@ export interface ProjectStoreState extends ProjectStoreSnapshot {
   ) => ProjectMission | null;
   addProjectArtifact: (input: AddProjectArtifactInput) => ProjectArtifact | null;
   addProjectEvidence: (input: AddProjectEvidenceInput) => ProjectEvidence | null;
+  getVisibleProjects: () => Project[];
   getCurrentProject: () => Project | null;
   getProjectBundle: (projectId: string) => ProjectBundle | null;
   getProjectClarificationQuestions: (
@@ -491,6 +497,7 @@ function emptySnapshot(): ProjectStoreSnapshot {
   return {
     schemaVersion: PROJECT_STORE_SCHEMA_VERSION,
     currentProjectId: null,
+    currentProjectIdsByOwner: {},
     projects: [],
     messages: [],
     clarificationQuestions: [],
@@ -528,6 +535,25 @@ function asArray<T>(value: unknown): T[] {
   return Array.isArray(value) ? (value as T[]) : [];
 }
 
+function normalizeOwnerSelections(value: unknown): Record<string, string | null> {
+  if (!isRecord(value)) return {};
+  return Object.fromEntries(
+    Object.entries(value).filter(
+      (entry): entry is [string, string | null] =>
+        typeof entry[0] === "string" &&
+        (typeof entry[1] === "string" || entry[1] === null)
+    )
+  );
+}
+
+function normalizeProjectOwner(project: Project): Project {
+  const ownerUserId = project.ownerUserId?.trim();
+  return {
+    ...project,
+    ownerUserId: ownerUserId || undefined,
+  };
+}
+
 export function migrateProjectStoreSnapshot(
   value: unknown
 ): ProjectStoreSnapshot {
@@ -541,7 +567,10 @@ export function migrateProjectStoreSnapshot(
   return {
     schemaVersion: PROJECT_STORE_SCHEMA_VERSION,
     currentProjectId,
-    projects: asArray<Project>(value.projects),
+    currentProjectIdsByOwner: normalizeOwnerSelections(
+      value.currentProjectIdsByOwner
+    ),
+    projects: asArray<Project>(value.projects).map(normalizeProjectOwner),
     messages: asArray<ProjectMessage>(value.messages),
     clarificationQuestions: asArray<ProjectClarificationQuestion>(
       value.clarificationQuestions
@@ -594,6 +623,7 @@ function persistSnapshot(state: ProjectStoreSnapshot) {
       JSON.stringify({
         schemaVersion: PROJECT_STORE_SCHEMA_VERSION,
         currentProjectId: state.currentProjectId,
+        currentProjectIdsByOwner: state.currentProjectIdsByOwner,
         projects: state.projects,
         messages: state.messages,
         clarificationQuestions: state.clarificationQuestions,
@@ -613,6 +643,7 @@ function toSnapshot(state: ProjectStoreState): ProjectStoreSnapshot {
   return {
     schemaVersion: PROJECT_STORE_SCHEMA_VERSION,
     currentProjectId: state.currentProjectId,
+    currentProjectIdsByOwner: state.currentProjectIdsByOwner,
     projects: state.projects,
     messages: state.messages,
     clarificationQuestions: state.clarificationQuestions,
@@ -642,7 +673,70 @@ function resolveProjectId(
 ): string | null {
   const resolved = projectId ?? state.currentProjectId;
   if (!resolved) return null;
-  return state.projects.some(project => project.id === resolved) ? resolved : null;
+  return state.projects.some(
+    project => project.id === resolved && canAccessProject(project, state.activeOwnerUserId)
+  )
+    ? resolved
+    : null;
+}
+
+function ownerSelectionKey(userId: string | null): string {
+  return userId ?? "__legacy__";
+}
+
+function canAccessProject(project: Project, ownerUserId: string | null): boolean {
+  if (!ownerUserId) return true;
+  return project.ownerUserId === ownerUserId;
+}
+
+function getVisibleProjectsForOwner(
+  projects: Project[],
+  ownerUserId: string | null
+): Project[] {
+  return ownerUserId
+    ? projects.filter(project => project.ownerUserId === ownerUserId)
+    : projects;
+}
+
+function findVisibleProject(
+  projects: Project[],
+  projectId: string | null | undefined,
+  ownerUserId: string | null
+): Project | null {
+  if (!projectId) return null;
+  return (
+    projects.find(
+      project => project.id === projectId && canAccessProject(project, ownerUserId)
+    ) ?? null
+  );
+}
+
+function resolveCurrentProjectIdForOwner(
+  state: Pick<
+    ProjectStoreState,
+    "activeOwnerUserId" | "currentProjectId" | "currentProjectIdsByOwner" | "projects"
+  >
+): string | null {
+  const ownerKey = ownerSelectionKey(state.activeOwnerUserId);
+  const ownerSelection = state.currentProjectIdsByOwner[ownerKey] ?? null;
+  const preferred = ownerSelection ?? state.currentProjectId;
+  if (findVisibleProject(state.projects, preferred, state.activeOwnerUserId)) {
+    return preferred;
+  }
+  return (
+    getVisibleProjectsForOwner(state.projects, state.activeOwnerUserId)[0]?.id ??
+    null
+  );
+}
+
+function claimLegacyProjectsForOwner(
+  projects: Project[],
+  ownerUserId: string | null
+): Project[] {
+  if (!ownerUserId) return projects;
+  return projects.map(project =>
+    project.ownerUserId ? project : { ...project, ownerUserId }
+  );
 }
 
 function touchProject(project: Project, timestamp: string): Project {
@@ -747,6 +841,7 @@ function commit(
 
 export const useProjectStore = create<ProjectStoreState>((set, get) => ({
   ...emptySnapshot(),
+  activeOwnerUserId: null,
   ready: false,
 
   ensureReady: () => {
@@ -754,6 +849,10 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
     const snapshot = loadSnapshot();
     set({
       ...snapshot,
+      currentProjectId: resolveCurrentProjectIdForOwner({
+        ...snapshot,
+        activeOwnerUserId: get().activeOwnerUserId,
+      }),
       ready: true,
     });
   },
@@ -768,15 +867,47 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
     }
     set({
       ...snapshot,
+      activeOwnerUserId: null,
       ready: true,
     });
+  },
+
+  setActiveOwner: userId => {
+    get().ensureReady();
+    const activeOwnerUserId = userId?.trim() || null;
+    commit(set, state => {
+      const projects = claimLegacyProjectsForOwner(
+        state.projects,
+        activeOwnerUserId
+      );
+      const currentProjectId = resolveCurrentProjectIdForOwner({
+        ...state,
+        projects,
+        activeOwnerUserId,
+      });
+      return {
+        activeOwnerUserId,
+        projects,
+        currentProjectId,
+        currentProjectIdsByOwner: {
+          ...state.currentProjectIdsByOwner,
+          [ownerSelectionKey(activeOwnerUserId)]: currentProjectId,
+        },
+      };
+    });
+  },
+
+  setActiveOwnerForTest: userId => {
+    get().setActiveOwner(userId);
   },
 
   createProject: input => {
     get().ensureReady();
     const timestamp = nowIso();
+    const ownerUserId = get().activeOwnerUserId ?? undefined;
     const project: Project = {
       id: createId("project"),
+      ownerUserId,
       name: deriveProjectName(input),
       goal: input.goal.trim(),
       status: input.status ?? "draft",
@@ -787,6 +918,10 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
 
     commit(set, state => ({
       currentProjectId: project.id,
+      currentProjectIdsByOwner: {
+        ...state.currentProjectIdsByOwner,
+        [ownerSelectionKey(state.activeOwnerUserId)]: project.id,
+      },
       projects: [...state.projects, project],
     }));
 
@@ -795,10 +930,21 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
 
   selectProject: projectId => {
     get().ensureReady();
+    const state = get();
     const resolved = projectId
-      ? get().projects.find(project => project.id === projectId)?.id ?? null
+      ? state.projects.find(
+          project =>
+            project.id === projectId &&
+            canAccessProject(project, state.activeOwnerUserId)
+        )?.id ?? null
       : null;
-    commit(set, () => ({ currentProjectId: resolved }));
+    commit(set, current => ({
+      currentProjectId: resolved,
+      currentProjectIdsByOwner: {
+        ...current.currentProjectIdsByOwner,
+        [ownerSelectionKey(current.activeOwnerUserId)]: resolved,
+      },
+    }));
   },
 
   updateProject: (projectId, patch) => {
@@ -1623,19 +1769,30 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
     return evidence;
   },
 
+  getVisibleProjects: () => {
+    get().ensureReady();
+    const state = get();
+    return getVisibleProjectsForOwner(state.projects, state.activeOwnerUserId);
+  },
+
   getCurrentProject: () => {
     get().ensureReady();
     const state = get();
-    return (
-      state.projects.find(project => project.id === state.currentProjectId) ??
-      null
+    return findVisibleProject(
+      state.projects,
+      state.currentProjectId,
+      state.activeOwnerUserId
     );
   },
 
   getProjectBundle: projectId => {
     get().ensureReady();
     const state = get();
-    const project = state.projects.find(item => item.id === projectId);
+    const project = findVisibleProject(
+      state.projects,
+      projectId,
+      state.activeOwnerUserId
+    );
     if (!project) return null;
 
     return {
@@ -1654,6 +1811,10 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
 
   getProjectClarificationQuestions: projectId => {
     get().ensureReady();
+    const state = get();
+    if (!findVisibleProject(state.projects, projectId, state.activeOwnerUserId)) {
+      return [];
+    }
     return get().clarificationQuestions.filter(
       question => question.projectId === projectId
     );
@@ -1661,6 +1822,10 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
 
   getProjectSpecs: projectId => {
     get().ensureReady();
+    const state = get();
+    if (!findVisibleProject(state.projects, projectId, state.activeOwnerUserId)) {
+      return [];
+    }
     return sortSpecsByVersion(
       get().specs.filter(spec => spec.projectId === projectId)
     );
@@ -1669,7 +1834,11 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
   getCurrentProjectSpec: projectId => {
     get().ensureReady();
     const state = get();
-    const project = state.projects.find(item => item.id === projectId);
+    const project = findVisibleProject(
+      state.projects,
+      projectId,
+      state.activeOwnerUserId
+    );
     if (!project) return null;
     if (project.currentSpecId) {
       return state.specs.find(spec => spec.id === project.currentSpecId) ?? null;
@@ -1685,24 +1854,35 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
 
   getMissionProjectLink: missionId => {
     get().ensureReady();
-    return (
-      get().missions.find(mission => mission.missionId === missionId) ?? null
-    );
+    const state = get();
+    const mission =
+      state.missions.find(item => item.missionId === missionId) ?? null;
+    if (!mission) return null;
+    return findVisibleProject(
+      state.projects,
+      mission.projectId,
+      state.activeOwnerUserId
+    )
+      ? mission
+      : null;
   },
 
   getProjectIdForMission: missionId => {
     get().ensureReady();
-    return (
-      get().missions.find(mission => mission.missionId === missionId)
-        ?.projectId ?? null
-    );
+    return get().getMissionProjectLink(missionId)?.projectId ?? null;
   },
 }));
 
 export function selectCurrentProject(state: ProjectStoreState) {
-  return (
-    state.projects.find(project => project.id === state.currentProjectId) ?? null
+  return findVisibleProject(
+    state.projects,
+    state.currentProjectId,
+    state.activeOwnerUserId
   );
+}
+
+export function selectVisibleProjects(state: ProjectStoreState): Project[] {
+  return getVisibleProjectsForOwner(state.projects, state.activeOwnerUserId);
 }
 
 export function selectProjectBundle(
@@ -1710,7 +1890,11 @@ export function selectProjectBundle(
   projectId: string | null
 ): ProjectBundle | null {
   if (!projectId) return null;
-  const project = state.projects.find(item => item.id === projectId);
+  const project = findVisibleProject(
+    state.projects,
+    projectId,
+    state.activeOwnerUserId
+  );
   if (!project) return null;
 
   return {
@@ -1732,6 +1916,9 @@ export function selectProjectSpecs(
   projectId: string | null
 ): ProjectSpec[] {
   if (!projectId) return [];
+  if (!findVisibleProject(state.projects, projectId, state.activeOwnerUserId)) {
+    return [];
+  }
   return sortSpecsByVersion(
     state.specs.filter(spec => spec.projectId === projectId)
   );
@@ -1742,7 +1929,11 @@ export function selectCurrentProjectSpec(
   projectId: string | null
 ): ProjectSpec | null {
   if (!projectId) return null;
-  const project = state.projects.find(item => item.id === projectId);
+  const project = findVisibleProject(
+    state.projects,
+    projectId,
+    state.activeOwnerUserId
+  );
   if (!project) return null;
   if (project.currentSpecId) {
     return state.specs.find(spec => spec.id === project.currentSpecId) ?? null;

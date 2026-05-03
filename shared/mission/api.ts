@@ -130,6 +130,8 @@ export interface CreateMissionRequest {
   workflowId?: string;
   sessionId?: string;
   sourceApp?: string;
+  projectId?: string;
+  projection?: MissionProjectionLinks;
   autoDispatch?: boolean;
 }
 

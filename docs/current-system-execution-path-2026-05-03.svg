@@ -1,0 +1,324 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1320" viewBox="0 0 1800 1320" role="img" aria-labelledby="title desc">
+  <title id="title">Cube Pets Office 当前系统执行路径</title>
+  <desc id="desc">展示当前高级模式项目空间从登录态、项目启动、路线评估、澄清门、任务创建、执行器回调到前端实时更新的执行路径。绿色表示已走通或当前所在主路径，黄色表示当前阻塞的澄清门，蓝色表示执行器和实时回传通道，灰色表示已实现但本次尚未触发。</desc>
+  <defs>
+    <marker id="arrow-green" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M2,2 L10,6 L2,10 Z" fill="#16a34a"/>
+    </marker>
+    <marker id="arrow-amber" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M2,2 L10,6 L2,10 Z" fill="#d97706"/>
+    </marker>
+    <marker id="arrow-blue" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M2,2 L10,6 L2,10 Z" fill="#2563eb"/>
+    </marker>
+    <marker id="arrow-gray" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M2,2 L10,6 L2,10 Z" fill="#64748b"/>
+    </marker>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#0f172a" flood-opacity="0.10"/>
+    </filter>
+    <style>
+      .bg { fill: #f8fafc; }
+      .title { font: 800 34px "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", Arial, sans-serif; fill: #0f172a; }
+      .subtitle { font: 500 17px "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", Arial, sans-serif; fill: #475569; }
+      .lane-title { font: 800 18px "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", Arial, sans-serif; fill: #334155; }
+      .lane-sub { font: 500 13px "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", Arial, sans-serif; fill: #64748b; }
+      .node-title { font: 800 17px "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", Arial, sans-serif; fill: #0f172a; }
+      .node-line { font: 500 13px "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", Arial, sans-serif; fill: #334155; }
+      .node-code { font: 700 12px Consolas, "SFMono-Regular", Menlo, monospace; fill: #334155; }
+      .small { font: 500 12px "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", Arial, sans-serif; fill: #475569; }
+      .label { font: 800 12px "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", Arial, sans-serif; fill: #334155; }
+      .tag-text { font: 800 12px "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", Arial, sans-serif; }
+      .lane { fill: #ffffff; stroke: #e2e8f0; stroke-width: 1.2; }
+      .node { rx: 16; ry: 16; filter: url(#shadow); }
+      .green { fill: #dcfce7; stroke: #16a34a; stroke-width: 2.3; }
+      .amber { fill: #fffbeb; stroke: #d97706; stroke-width: 2.5; }
+      .blue { fill: #dbeafe; stroke: #2563eb; stroke-width: 2.3; }
+      .gray { fill: #f8fafc; stroke: #94a3b8; stroke-width: 2; }
+      .danger { fill: #fef2f2; stroke: #ef4444; stroke-width: 2.3; }
+      .tag-green { fill: #16a34a; }
+      .tag-amber { fill: #d97706; }
+      .tag-blue { fill: #2563eb; }
+      .tag-gray { fill: #64748b; }
+      .arrow-green { stroke: #16a34a; stroke-width: 3; fill: none; marker-end: url(#arrow-green); }
+      .arrow-amber { stroke: #d97706; stroke-width: 3; fill: none; marker-end: url(#arrow-amber); }
+      .arrow-blue { stroke: #2563eb; stroke-width: 3; fill: none; marker-end: url(#arrow-blue); }
+      .arrow-gray { stroke: #64748b; stroke-width: 3; fill: none; marker-end: url(#arrow-gray); stroke-dasharray: 9 7; }
+      .arrow-thin { stroke-width: 2.2; }
+      .divider { stroke: #cbd5e1; stroke-width: 1.5; stroke-dasharray: 5 7; }
+    </style>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="1800" height="1320"/>
+
+  <text class="title" x="48" y="54">Cube Pets Office 当前系统执行路径</text>
+  <text class="subtitle" x="48" y="86">当前画面：高级模式 / 办公室 / 项目空间 / 权限管理系统 / Clarifying / 3 个待回答澄清问题</text>
+
+  <g transform="translate(1190 28)">
+    <rect x="0" y="0" width="560" height="70" rx="16" fill="#ffffff" stroke="#e2e8f0"/>
+    <rect x="22" y="22" width="18" height="18" rx="5" class="green"/><text class="small" x="48" y="36">已实现并在当前主路径上</text>
+    <rect x="198" y="22" width="18" height="18" rx="5" class="amber"/><text class="small" x="224" y="36">当前阻塞/等待用户补充</text>
+    <rect x="402" y="22" width="18" height="18" rx="5" class="blue"/><text class="small" x="428" y="36">实时回传通道</text>
+    <rect x="22" y="46" width="18" height="12" rx="4" class="gray"/><text class="small" x="48" y="57">已实现，但本次还没有触发</text>
+  </g>
+
+  <!-- Lane 1 -->
+  <rect class="lane" x="36" y="122" width="1728" height="250" rx="22"/>
+  <text class="lane-title" x="62" y="154">1. 前端主路径：从登录态进入项目空间</text>
+  <text class="lane-sub" x="62" y="176">当前这条链路已经走到项目启动器，并停在澄清门前。</text>
+
+  <g transform="translate(62 202)">
+    <rect class="node green" x="0" y="0" width="205" height="116"/>
+    <rect class="tag-green" x="16" y="16" width="58" height="22" rx="11"/><text class="tag-text" x="29" y="31" fill="#ffffff">已走通</text>
+    <text class="node-title" x="16" y="62">登录态恢复</text>
+    <text class="node-line" x="16" y="84">HttpOnly session cookie</text>
+    <text class="node-code" x="16" y="104">auth-store.fetchMe()</text>
+  </g>
+
+  <path class="arrow-green" d="M270 260 L330 260"/>
+  <text class="label" x="284" y="248">/api/auth/me</text>
+
+  <g transform="translate(335 202)">
+    <rect class="node green" x="0" y="0" width="205" height="116"/>
+    <rect class="tag-green" x="16" y="16" width="58" height="22" rx="11"/><text class="tag-text" x="29" y="31" fill="#ffffff">已走通</text>
+    <text class="node-title" x="16" y="62">高级模式办公室</text>
+    <text class="node-line" x="16" y="84">AppShell + Sidebar</text>
+    <text class="node-code" x="16" y="104">runtimeMode=advanced</text>
+  </g>
+
+  <path class="arrow-green" d="M545 260 L605 260"/>
+
+  <g transform="translate(610 202)">
+    <rect class="node green" x="0" y="0" width="230" height="116"/>
+    <rect class="tag-green" x="16" y="16" width="58" height="22" rx="11"/><text class="tag-text" x="29" y="31" fill="#ffffff">已走通</text>
+    <text class="node-title" x="16" y="62">项目空间</text>
+    <text class="node-line" x="16" y="84">当前项目：权限管理系统</text>
+    <text class="node-code" x="16" y="104">project-store.currentProject</text>
+  </g>
+
+  <path class="arrow-green" d="M845 260 L905 260"/>
+
+  <g transform="translate(910 202)">
+    <rect class="node green" x="0" y="0" width="238" height="116"/>
+    <rect class="tag-green" x="16" y="16" width="58" height="22" rx="11"/><text class="tag-text" x="29" y="31" fill="#ffffff">已走通</text>
+    <text class="node-title" x="16" y="62">项目启动输入</text>
+    <text class="node-line" x="16" y="84">办公室底部输入框提交</text>
+    <text class="node-code" x="16" y="104">submitUnifiedLaunch()</text>
+  </g>
+
+  <path class="arrow-green" d="M1153 260 L1215 260"/>
+  <text class="label" x="1164" y="248">评估路线</text>
+
+  <g transform="translate(1220 202)">
+    <rect class="node green" x="0" y="0" width="230" height="116"/>
+    <rect class="tag-green" x="16" y="16" width="58" height="22" rx="11"/><text class="tag-text" x="29" y="31" fill="#ffffff">已走通</text>
+    <text class="node-title" x="16" y="62">路线评估</text>
+    <text class="node-line" x="16" y="84">短指令/缺少目标约束</text>
+    <text class="node-code" x="16" y="104">evaluateLaunchRoute()</text>
+  </g>
+
+  <path class="arrow-amber" d="M1455 260 L1515 260"/>
+
+  <g transform="translate(1520 202)">
+    <rect class="node amber" x="0" y="0" width="206" height="116"/>
+    <rect class="tag-amber" x="16" y="16" width="58" height="22" rx="11"/><text class="tag-text" x="29" y="31" fill="#ffffff">当前</text>
+    <text class="node-title" x="16" y="62">Clarifying</text>
+    <text class="node-line" x="16" y="84">3 个 open questions</text>
+    <text class="node-code" x="16" y="104">missionId = null</text>
+  </g>
+
+  <!-- Lane 2 -->
+  <rect class="lane" x="36" y="396" width="1728" height="180" rx="22"/>
+  <text class="lane-title" x="62" y="428">2. 项目记忆与权限边界</text>
+  <text class="lane-sub" x="62" y="450">项目空间既有浏览器侧过渡缓存，也有服务端项目/资源接口；真正带 projectId 的任务会做登录用户归属校验。</text>
+
+  <g transform="translate(78 480)">
+    <rect class="node green" x="0" y="0" width="250" height="70"/>
+    <text class="node-title" x="16" y="28">浏览器项目缓存</text>
+    <text class="node-code" x="16" y="52">localStorage project-store v1</text>
+  </g>
+  <path class="arrow-green arrow-thin" d="M333 515 L415 515"/>
+
+  <g transform="translate(420 480)">
+    <rect class="node green" x="0" y="0" width="245" height="70"/>
+    <text class="node-title" x="16" y="28">服务端项目 API</text>
+    <text class="node-code" x="16" y="52">/api/projects requireAuth</text>
+  </g>
+  <path class="arrow-green arrow-thin" d="M670 515 L750 515"/>
+
+  <g transform="translate(755 480)">
+    <rect class="node green" x="0" y="0" width="230" height="70"/>
+    <text class="node-title" x="16" y="28">MySQL 权限数据</text>
+    <text class="node-code" x="16" y="52">users / sessions / projects</text>
+  </g>
+  <path class="arrow-green arrow-thin" d="M990 515 L1070 515"/>
+
+  <g transform="translate(1075 480)">
+    <rect class="node green" x="0" y="0" width="265" height="70"/>
+    <text class="node-title" x="16" y="28">项目资源包</text>
+    <text class="node-code" x="16" y="52">project_resources JSON</text>
+  </g>
+  <path class="arrow-amber arrow-thin" d="M1345 515 L1425 515"/>
+
+  <g transform="translate(1430 480)">
+    <rect class="node amber" x="0" y="0" width="290" height="70"/>
+    <text class="node-title" x="16" y="28">当前项目证据</text>
+    <text class="node-line" x="16" y="52">Clarify project waypoints / questions</text>
+  </g>
+
+  <!-- Lane 3 -->
+  <rect class="lane" x="36" y="600" width="1728" height="225" rx="22"/>
+  <text class="lane-title" x="62" y="632">3. 澄清门：当前真正卡住的位置</text>
+  <text class="lane-sub" x="62" y="654">当前系统没有直接创建任务，而是先生成澄清会话；只有问题回答完整后才会继续创建 mission。</text>
+
+  <g transform="translate(78 690)">
+    <rect class="node green" x="0" y="0" width="260" height="92"/>
+    <text class="node-title" x="16" y="30">NL Command Store</text>
+    <text class="node-line" x="16" y="54">保存 currentCommand/currentPlan</text>
+    <text class="node-code" x="16" y="76">submitTaskHubCommand()</text>
+  </g>
+  <path class="arrow-green" d="M343 736 L425 736"/>
+
+  <g transform="translate(430 690)">
+    <rect class="node green" x="0" y="0" width="300" height="92"/>
+    <text class="node-title" x="16" y="30">任务意图分析</text>
+    <text class="node-line" x="16" y="54">检查目标、时间线、约束</text>
+    <text class="node-code" x="16" y="76">resolveTaskHubAnalysis()</text>
+  </g>
+  <path class="arrow-amber" d="M735 736 L815 736"/>
+
+  <g transform="translate(820 682)">
+    <rect class="node amber" x="0" y="0" width="320" height="108"/>
+    <rect class="tag-amber" x="16" y="16" width="82" height="22" rx="11"/><text class="tag-text" x="30" y="31" fill="#ffffff">阻塞点</text>
+    <text class="node-title" x="16" y="58">Clarification Dialog</text>
+    <text class="node-line" x="16" y="82">status=active，plan=draft</text>
+    <text class="node-code" x="16" y="102">needs_clarification</text>
+  </g>
+  <path class="arrow-amber" d="M1145 736 L1230 736"/>
+
+  <g transform="translate(1235 682)">
+    <rect class="node amber" x="0" y="0" width="240" height="108"/>
+    <text class="node-title" x="16" y="32">下一步输入</text>
+    <text class="node-line" x="16" y="58">回答 3 个问题</text>
+    <text class="node-line" x="16" y="82">补齐目标/边界/验收</text>
+  </g>
+  <path class="arrow-gray" d="M1480 736 L1562 736"/>
+
+  <g transform="translate(1567 682)">
+    <rect class="node gray" x="0" y="0" width="160" height="108"/>
+    <text class="node-title" x="16" y="34">解除阻塞</text>
+    <text class="node-line" x="16" y="60">全部回答后</text>
+    <text class="node-code" x="16" y="84">createMission()</text>
+  </g>
+
+  <!-- Lane 4 -->
+  <rect class="lane" x="36" y="850" width="1728" height="225" rx="22"/>
+  <text class="lane-title" x="62" y="882">4. 任务创建与执行器调度：已实现，但当前尚未进入</text>
+  <text class="lane-sub" x="62" y="904">澄清完成后，前端会调用 /api/tasks；后端创建 mission，必要时生成执行计划并下发 Lobster executor。</text>
+
+  <g transform="translate(78 940)">
+    <rect class="node gray" x="0" y="0" width="250" height="92"/>
+    <text class="node-title" x="16" y="30">创建任务 API</text>
+    <text class="node-line" x="16" y="54">校验登录与 project owner</text>
+    <text class="node-code" x="16" y="76">POST /api/tasks</text>
+  </g>
+  <path class="arrow-gray" d="M333 986 L415 986"/>
+
+  <g transform="translate(420 940)">
+    <rect class="node gray" x="0" y="0" width="250" height="92"/>
+    <text class="node-title" x="16" y="30">Mission Runtime</text>
+    <text class="node-line" x="16" y="54">创建任务记录与阶段</text>
+    <text class="node-code" x="16" y="76">missionRuntime.createTask()</text>
+  </g>
+  <path class="arrow-gray" d="M675 986 L755 986"/>
+
+  <g transform="translate(760 940)">
+    <rect class="node gray" x="0" y="0" width="235" height="92"/>
+    <text class="node-title" x="16" y="30">项目挂接</text>
+    <text class="node-line" x="16" y="54">把 mission 写入资源包</text>
+    <text class="node-code" x="16" y="76">resourceType=mission</text>
+  </g>
+  <path class="arrow-gray" d="M1000 986 L1080 986"/>
+
+  <g transform="translate(1085 940)">
+    <rect class="node gray" x="0" y="0" width="250" height="92"/>
+    <text class="node-title" x="16" y="30">自动调度判断</text>
+    <text class="node-line" x="16" y="54">autoDispatch=true 时继续</text>
+    <text class="node-code" x="16" y="76">shouldAutoDispatchMission()</text>
+  </g>
+  <path class="arrow-gray" d="M1340 986 L1420 986"/>
+
+  <g transform="translate(1425 940)">
+    <rect class="node gray" x="0" y="0" width="295" height="92"/>
+    <text class="node-title" x="16" y="30">执行计划构建</text>
+    <text class="node-line" x="16" y="54">receive → understand → plan</text>
+    <text class="node-code" x="16" y="76">buildExecutionPlan()</text>
+  </g>
+
+  <!-- Lane 5 -->
+  <rect class="lane" x="36" y="1098" width="1728" height="178" rx="22"/>
+  <text class="lane-title" x="62" y="1130">5. 执行器与实时更新：回调链路已接好</text>
+  <text class="lane-sub" x="62" y="1152">一旦 mission 被调度，执行器事件会回到服务器，再通过 Socket.IO 刷新任务中心、项目证据、日志与截图。</text>
+
+  <g transform="translate(78 1182)">
+    <rect class="node blue" x="0" y="0" width="240" height="70"/>
+    <text class="node-title" x="16" y="28">Executor Client</text>
+    <text class="node-code" x="16" y="52">dispatchPlan()</text>
+  </g>
+  <path class="arrow-blue arrow-thin" d="M323 1217 L402 1217"/>
+
+  <g transform="translate(407 1182)">
+    <rect class="node blue" x="0" y="0" width="210" height="70"/>
+    <text class="node-title" x="16" y="28">Lobster Executor</text>
+    <text class="node-line" x="16" y="52">真实/Mock 执行</text>
+  </g>
+  <path class="arrow-blue arrow-thin" d="M622 1217 L702 1217"/>
+
+  <g transform="translate(707 1182)">
+    <rect class="node blue" x="0" y="0" width="260" height="70"/>
+    <text class="node-title" x="16" y="28">执行器回调</text>
+    <text class="node-code" x="16" y="52">POST /api/executor/events</text>
+  </g>
+  <path class="arrow-blue arrow-thin" d="M972 1217 L1052 1217"/>
+
+  <g transform="translate(1057 1182)">
+    <rect class="node blue" x="0" y="0" width="270" height="70"/>
+    <text class="node-title" x="16" y="28">Mission 状态更新</text>
+    <text class="node-line" x="16" y="52">running / waiting / done / failed</text>
+  </g>
+  <path class="arrow-blue arrow-thin" d="M1332 1217 L1412 1217"/>
+
+  <g transform="translate(1417 1182)">
+    <rect class="node blue" x="0" y="0" width="300" height="70"/>
+    <text class="node-title" x="16" y="28">前端实时刷新</text>
+    <text class="node-code" x="16" y="52">mission_event + tasks-store.refresh()</text>
+  </g>
+
+  <!-- Cross-lane connectors -->
+  <path class="arrow-amber" d="M1623 318 C1623 410 980 515 980 682"/>
+  <text class="label" x="1115" y="430">当前：只记录路线/澄清证据，不创建 mission</text>
+
+  <path class="arrow-gray" d="M1645 790 C1645 835 205 846 205 938"/>
+  <text class="label" x="1190" y="840">澄清完成后才进入后端任务创建</text>
+
+  <path class="arrow-gray" d="M1572 1032 C1572 1084 198 1090 198 1180"/>
+  <text class="label" x="1152" y="1088">autoDispatch 才会进入执行器</text>
+
+  <path class="arrow-blue" d="M1568 1182 C1588 1116 1310 1072 1185 1034"/>
+  <text class="label" x="1340" y="1100">回写 missionRuntime 并广播</text>
+
+  <!-- Summary Panel -->
+  <g transform="translate(1135 612)">
+    <rect x="0" y="0" width="585" height="186" rx="20" fill="#ffffff" stroke="#e2e8f0" filter="url(#shadow)"/>
+    <text class="node-title" x="22" y="36">当前结论</text>
+    <circle cx="29" cy="67" r="5" fill="#16a34a"/><text class="node-line" x="44" y="72">已走到：登录态 → 项目空间 → 路线评估 → 澄清问题生成。</text>
+    <circle cx="29" cy="101" r="5" fill="#d97706"/><text class="node-line" x="44" y="106">当前停在 Clarifying，missionId 还是 null，没有进入 /api/tasks。</text>
+    <circle cx="29" cy="135" r="5" fill="#64748b"/><text class="node-line" x="44" y="140">下一步：回答 3 个澄清问题，系统才会 createMission。</text>
+    <circle cx="29" cy="169" r="5" fill="#2563eb"/><text class="node-line" x="44" y="174">创建并 autoDispatch 后，执行器回调会驱动实时任务面板。</text>
+  </g>
+
+  <!-- Footer -->
+  <line class="divider" x1="48" y1="1290" x2="1752" y2="1290"/>
+  <text class="small" x="48" y="1310">生成时间：2026-05-03。图中“当前”基于高级模式项目空间的 Clarifying 状态；SVG 只是说明图，真正执行不会读取本文件。</text>
+</svg>

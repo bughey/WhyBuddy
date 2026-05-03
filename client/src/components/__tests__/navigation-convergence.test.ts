@@ -14,12 +14,18 @@ import {
   MORE_NAV_ITEMS,
   OFFICE_PATH,
   PRIMARY_NAV_ITEMS,
+  PROJECTS_PATH,
   REPLAY_PATH_PREFIX,
   getCompatibilityRedirect,
+  getActiveSidebarId,
   getDebugPath,
+  getMobileTabItems,
   getPrimaryNavigationId,
   getReplayPath,
+  getSidebarNavItems,
   isLowFrequencyPath,
+  isProjectDetailPath,
+  resolveSidebarHref,
   resolveDebugTab,
 } from "../navigation-config";
 
@@ -116,6 +122,43 @@ describe("navigation convergence config", () => {
     expect(getReplayPath("mission/with/slash")).toBe(
       "/replay/mission/with/slash"
     );
+  });
+
+  it("keeps project space as a single-entry sidebar before a project is opened", () => {
+    expect(getSidebarNavItems(PROJECTS_PATH).map(item => item.id)).toEqual([
+      "projects",
+    ]);
+    expect(getMobileTabItems(PROJECTS_PATH).map(item => item.id)).toEqual([
+      "projects",
+    ]);
+    expect(getActiveSidebarId(PROJECTS_PATH)).toBe("projects");
+    expect(isProjectDetailPath(PROJECTS_PATH)).toBe(false);
+  });
+
+  it("switches to project-internal workbench navigation inside a project", () => {
+    const projectPath = `${PROJECTS_PATH}/project-1`;
+    const items = getSidebarNavItems(projectPath);
+
+    expect(items.map(item => item.id)).toEqual([
+      "autopilot",
+      "tasks",
+      "knowledge",
+      "datasource",
+      "dashboard",
+      "marketplace",
+      "notifications",
+      "settings",
+    ]);
+    expect(getMobileTabItems(projectPath).map(item => item.id)).toEqual([
+      "autopilot",
+      "tasks",
+      "knowledge",
+      "settings",
+    ]);
+    expect(getActiveSidebarId(projectPath)).toBe("autopilot");
+    expect(isProjectDetailPath(projectPath)).toBe(true);
+    expect(resolveSidebarHref(items[0], projectPath)).toBe(projectPath);
+    expect(items.some(item => item.id === "projects")).toBe(false);
   });
 
   it("treats debug, lineage, and legacy command center routes as low-frequency paths", () => {

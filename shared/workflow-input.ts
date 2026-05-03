@@ -24,6 +24,7 @@ export interface WorkflowInputAttachment {
 export interface WorkflowInputProjectionContext {
   sessionId?: string;
   sourceApp?: string;
+  projectId?: string;
 }
 
 function normalizeDirectiveText(value: string) {
@@ -148,14 +149,16 @@ export function normalizeWorkflowInputProjection(
   const candidate = value as Partial<WorkflowInputProjectionContext>;
   const sessionId = normalizeProjectionText(candidate.sessionId);
   const sourceApp = normalizeProjectionText(candidate.sourceApp);
+  const projectId = normalizeProjectionText(candidate.projectId);
 
-  if (!sessionId && !sourceApp) {
+  if (!sessionId && !sourceApp && !projectId) {
     return undefined;
   }
 
   return {
     ...(sessionId ? { sessionId } : {}),
     ...(sourceApp ? { sourceApp } : {}),
+    ...(projectId ? { projectId } : {}),
   };
 }
 

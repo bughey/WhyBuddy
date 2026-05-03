@@ -1,0 +1,361 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1220" viewBox="0 0 1800 1220" role="img" aria-labelledby="title desc">
+  <title id="title">Cube Pets Office ToC Auth Login Architecture Implementation Overlay</title>
+  <desc id="desc">Based on the provided login architecture diagram. Green boxes are implemented in the current repository, amber boxes are equivalent or partial implementations, and gray boxes are deferred or intentionally not migrated.</desc>
+  <defs>
+    <linearGradient id="hero" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#123B63"/>
+      <stop offset="1" stop-color="#0E7C66"/>
+    </linearGradient>
+    <marker id="arrowDone" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L8,3 z" fill="#118A4F"/>
+    </marker>
+    <marker id="arrowPartial" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L8,3 z" fill="#B56A00"/>
+    </marker>
+    <marker id="arrowDeferred" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L8,3 z" fill="#9AA5B5"/>
+    </marker>
+    <style>
+      .bg { fill: #f5f7fb; }
+      .hero { fill: url(#hero); }
+      .title { font: 700 30px "Microsoft YaHei", "Segoe UI", Arial, sans-serif; fill: #0f172a; }
+      .hero-title { font: 700 26px "Microsoft YaHei", "Segoe UI", Arial, sans-serif; fill: #fff; }
+      .subtitle { font: 14px "Microsoft YaHei", "Segoe UI", Arial, sans-serif; fill: #53657f; }
+      .hero-subtitle { font: 14px "Microsoft YaHei", "Segoe UI", Arial, sans-serif; fill: #d9ecff; }
+      .panel { fill: #fff; stroke: #cfd8e6; stroke-width: 1.5; }
+      .panel-blue { fill: #edf6ff; stroke: #6aa7ff; stroke-width: 1.5; }
+      .panel-green { fill: #ecfbf3; stroke: #57bd7c; stroke-width: 1.5; }
+      .panel-amber { fill: #fff7e8; stroke: #ffb44f; stroke-width: 1.5; }
+      .panel-purple { fill: #f4f0ff; stroke: #9b7bff; stroke-width: 1.5; }
+      .panel-gray { fill: #f3f5f8; stroke: #aab4c2; stroke-width: 1.5; stroke-dasharray: 6 6; }
+      .panel-title { font: 700 18px "Microsoft YaHei", "Segoe UI", Arial, sans-serif; fill: #1f2a44; }
+      .panel-note { font: 12px "Microsoft YaHei", "Segoe UI", Arial, sans-serif; fill: #5d6b82; }
+      .box { rx: 8; ry: 8; stroke-width: 1.4; }
+      .done { fill: #e8f8ef; stroke: #1fa463; }
+      .partial { fill: #fff4de; stroke: #e09422; }
+      .deferred { fill: #f2f5f8; stroke: #a6b1c0; stroke-dasharray: 5 5; }
+      .not { fill: #fff1f2; stroke: #f06b7e; stroke-dasharray: 5 5; }
+      .box-title { font: 700 14px "Microsoft YaHei", "Segoe UI", Arial, sans-serif; fill: #172033; }
+      .box-sub { font: 11px "Microsoft YaHei", "Segoe UI", Arial, sans-serif; fill: #53657f; }
+      .tiny { font: 10px "Microsoft YaHei", "Segoe UI", Arial, sans-serif; fill: #65748b; }
+      .source { font: 12px "Consolas", "Microsoft YaHei", monospace; fill: #26364e; }
+      .status { font: 700 11px "Microsoft YaHei", "Segoe UI", Arial, sans-serif; fill: #fff; }
+      .pill-done { fill: #1fa463; }
+      .pill-partial { fill: #e09422; }
+      .pill-deferred { fill: #8a96a8; }
+      .arrow-done { fill: none; stroke: #118A4F; stroke-width: 2; marker-end: url(#arrowDone); }
+      .arrow-partial { fill: none; stroke: #B56A00; stroke-width: 1.8; marker-end: url(#arrowPartial); stroke-dasharray: 6 5; }
+      .arrow-deferred { fill: none; stroke: #9AA5B5; stroke-width: 1.6; marker-end: url(#arrowDeferred); stroke-dasharray: 5 6; }
+      .legend { font: 12px "Microsoft YaHei", "Segoe UI", Arial, sans-serif; fill: #475569; }
+    </style>
+  </defs>
+
+  <rect class="bg" width="1800" height="1220"/>
+
+  <rect x="32" y="24" width="1736" height="76" rx="20" class="hero"/>
+  <text x="64" y="58" class="hero-title">登录模块详细架构逻辑图 - 当前实现覆盖版</text>
+  <text x="64" y="82" class="hero-subtitle">绿色=当前仓库已实现；橙色=等价替代/部分实现；灰色=本轮不迁移或后置。基于 ToC Auth / Project Owner / Admin Gate 当前工作树生成。</text>
+  <text x="1428" y="58" class="hero-subtitle">MVP 57 / 59</text>
+  <text x="1428" y="82" class="hero-subtitle">Auth 12 / 14 · Project 15 / 15 · Admin 15 / 15</text>
+
+  <g transform="translate(36 122)">
+    <rect width="214" height="1000" rx="14" class="panel"/>
+    <text x="20" y="34" class="panel-title">当前实现源码锚点</text>
+    <text x="20" y="62" class="panel-note">绿色模块的直接证据</text>
+
+    <circle cx="20" cy="96" r="5" fill="#1fa463"/>
+    <text x="34" y="101" class="source">shared/auth.ts</text>
+    <circle cx="20" cy="124" r="5" fill="#1fa463"/>
+    <text x="34" y="129" class="source">server/auth/*</text>
+    <circle cx="20" cy="152" r="5" fill="#1fa463"/>
+    <text x="34" y="157" class="source">server/routes/auth.ts</text>
+    <circle cx="20" cy="180" r="5" fill="#1fa463"/>
+    <text x="34" y="185" class="source">server/routes/admin.ts</text>
+    <circle cx="20" cy="208" r="5" fill="#1fa463"/>
+    <text x="34" y="213" class="source">server/routes/projects.ts</text>
+    <circle cx="20" cy="236" r="5" fill="#1fa463"/>
+    <text x="34" y="241" class="source">server/routes/tasks.ts</text>
+    <circle cx="20" cy="264" r="5" fill="#1fa463"/>
+    <text x="34" y="269" class="source">server/persistence/*</text>
+    <circle cx="20" cy="292" r="5" fill="#1fa463"/>
+    <text x="34" y="297" class="source">client/src/lib/auth-store.ts</text>
+    <circle cx="20" cy="320" r="5" fill="#1fa463"/>
+    <text x="34" y="325" class="source">client/src/pages/auth/*</text>
+    <circle cx="20" cy="348" r="5" fill="#1fa463"/>
+    <text x="34" y="353" class="source">client/src/pages/admin/*</text>
+    <circle cx="20" cy="376" r="5" fill="#1fa463"/>
+    <text x="34" y="381" class="source">client/src/App.tsx</text>
+
+    <rect x="16" y="416" width="182" height="106" rx="10" class="done box"/>
+    <text x="30" y="442" class="box-title">已实现事实源</text>
+    <text x="30" y="466" class="box-sub">MySQL users / sessions</text>
+    <text x="30" y="486" class="box-sub">projects / project_resources</text>
+    <text x="30" y="506" class="box-sub">httpOnly cookie session</text>
+
+    <rect x="16" y="548" width="182" height="132" rx="10" class="partial box"/>
+    <text x="30" y="574" class="box-title">等价替代</text>
+    <text x="30" y="598" class="box-sub">Vue/Pinia → React/Zustand</text>
+    <text x="30" y="618" class="box-sub">Token cache → DB session</text>
+    <text x="30" y="638" class="box-sub">Tenant → Project owner</text>
+    <text x="30" y="658" class="box-sub">/adminapi → /api/admin</text>
+
+    <rect x="16" y="706" width="182" height="170" rx="10" class="deferred box"/>
+    <text x="30" y="732" class="box-title">未迁移/后置</text>
+    <text x="30" y="756" class="box-sub">短信验证码登录</text>
+    <text x="30" y="776" class="box-sub">微信/小程序扫码登录</text>
+    <text x="30" y="796" class="box-sub">tenant/department/position</text>
+    <text x="30" y="816" class="box-sub">user-group/dynamic menu</text>
+    <text x="30" y="836" class="box-sub">后台独立 token/cache</text>
+    <text x="30" y="856" class="box-sub">ToB RBAC/IP 策略</text>
+
+    <text x="20" y="928" class="tiny">生成时间：2026-05-02</text>
+    <text x="20" y="950" class="tiny">文件：docs/toc-auth-project-admin-login-architecture-implemented-2026-05-02.svg</text>
+  </g>
+
+  <g transform="translate(275 122)">
+    <rect width="470" height="240" rx="16" class="panel-blue"/>
+    <text x="24" y="34" class="panel-title">PC 用户端登录入口</text>
+    <text x="24" y="56" class="panel-note">当前为 React + Zustand，登录/注册共用 /login 页面</text>
+    <rect x="24" y="82" width="128" height="54" class="done box"/>
+    <text x="44" y="106" class="box-title">邮箱密码登录</text>
+    <text x="48" y="126" class="box-sub">email + password</text>
+    <rect x="170" y="82" width="128" height="54" class="done box"/>
+    <text x="205" y="106" class="box-title">注册账号</text>
+    <text x="196" y="126" class="box-sub">email/password/name</text>
+    <rect x="316" y="82" width="128" height="54" class="done box"/>
+    <text x="346" y="106" class="box-title">登录态恢复</text>
+    <text x="340" y="126" class="box-sub">/api/auth/me</text>
+    <rect x="24" y="156" width="128" height="54" class="done box"/>
+    <text x="44" y="180" class="box-title">未登录跳转</text>
+    <text x="38" y="200" class="box-sub">workspace → /login</text>
+    <rect x="170" y="156" width="128" height="54" class="partial box"/>
+    <text x="210" y="180" class="box-title">状态存储</text>
+    <text x="196" y="200" class="box-sub">Zustand 替代 Pinia</text>
+    <rect x="316" y="156" width="128" height="54" class="deferred box"/>
+    <text x="352" y="180" class="box-title">验证码/扫码</text>
+    <text x="344" y="200" class="box-sub">本轮不实现</text>
+  </g>
+
+  <g transform="translate(775 122)">
+    <rect width="470" height="240" rx="16" class="panel-blue"/>
+    <text x="24" y="34" class="panel-title">管理后台登录入口</text>
+    <text x="24" y="56" class="panel-note">后台复用同一 DB-backed session，通过 role gate 进入 /admin</text>
+    <rect x="24" y="82" width="128" height="54" class="done box"/>
+    <text x="50" y="106" class="box-title">/admin 路由组</text>
+    <text x="46" y="126" class="box-sub">Overview/Users/...</text>
+    <rect x="170" y="82" width="128" height="54" class="done box"/>
+    <text x="198" y="106" class="box-title">Admin Shell</text>
+    <text x="190" y="126" class="box-sub">sidebar gated</text>
+    <rect x="316" y="82" width="128" height="54" class="done box"/>
+    <text x="342" y="106" class="box-title">isAdmin helper</text>
+    <text x="332" y="126" class="box-sub">admin/super_admin</text>
+    <rect x="24" y="156" width="128" height="54" class="done box"/>
+    <text x="50" y="180" class="box-title">前端拒绝态</text>
+    <text x="50" y="200" class="box-sub">non-admin denied</text>
+    <rect x="170" y="156" width="128" height="54" class="partial box"/>
+    <text x="198" y="180" class="box-title">后台登录页</text>
+    <text x="184" y="200" class="box-sub">复用 /login</text>
+    <rect x="316" y="156" width="128" height="54" class="deferred box"/>
+    <text x="342" y="180" class="box-title">动态菜单</text>
+    <text x="344" y="200" class="box-sub">不迁移</text>
+  </g>
+
+  <g transform="translate(1275 122)">
+    <rect width="490" height="240" rx="16" class="panel-green"/>
+    <text x="24" y="34" class="panel-title">登录 API 入口与路由</text>
+    <text x="24" y="56" class="panel-note">Express router + Login/Auth middleware + owner/admin guards</text>
+    <rect x="24" y="82" width="138" height="50" class="done box"/>
+    <text x="52" y="104" class="box-title">POST /auth/login</text>
+    <text x="58" y="122" class="box-sub">邮箱密码登录</text>
+    <rect x="176" y="82" width="138" height="50" class="done box"/>
+    <text x="198" y="104" class="box-title">POST /auth/register</text>
+    <text x="218" y="122" class="box-sub">注册账号</text>
+    <rect x="328" y="82" width="138" height="50" class="done box"/>
+    <text x="368" y="104" class="box-title">GET /auth/me</text>
+    <text x="354" y="122" class="box-sub">恢复当前用户</text>
+    <rect x="24" y="150" width="138" height="50" class="done box"/>
+    <text x="46" y="172" class="box-title">POST /auth/refresh</text>
+    <text x="46" y="190" class="box-sub">续期 lastSeen</text>
+    <rect x="176" y="150" width="138" height="50" class="done box"/>
+    <text x="206" y="172" class="box-title">POST /auth/logout</text>
+    <text x="214" y="190" class="box-sub">撤销 session</text>
+    <rect x="328" y="150" width="138" height="50" class="done box"/>
+    <text x="360" y="172" class="box-title">/api/admin/*</text>
+    <text x="350" y="190" class="box-sub">requireAdmin</text>
+  </g>
+
+  <g transform="translate(275 394)">
+    <rect width="470" height="252" rx="16" class="panel-amber"/>
+    <text x="24" y="34" class="panel-title">用户端校验与安全</text>
+    <text x="24" y="56" class="panel-note">替代原图 LoginAccountValidate / RegisterValidate 的 ToC 版本</text>
+    <rect x="24" y="84" width="190" height="54" class="done box"/>
+    <text x="78" y="108" class="box-title">邮箱格式校验</text>
+    <text x="68" y="128" class="box-sub">normalizeAuthEmail</text>
+    <rect x="244" y="84" width="190" height="54" class="done box"/>
+    <text x="300" y="108" class="box-title">密码长度校验</text>
+    <text x="292" y="128" class="box-sub">min 8 chars</text>
+    <rect x="24" y="158" width="190" height="54" class="done box"/>
+    <text x="72" y="182" class="box-title">密码 Hash</text>
+    <text x="62" y="202" class="box-sub">scrypt + salt</text>
+    <rect x="244" y="158" width="190" height="54" class="done box"/>
+    <text x="300" y="182" class="box-title">重复邮箱保护</text>
+    <text x="294" y="202" class="box-sub">unique + 409</text>
+  </g>
+
+  <g transform="translate(775 394)">
+    <rect width="470" height="252" rx="16" class="panel-amber"/>
+    <text x="24" y="34" class="panel-title">用户 LoginLogic</text>
+    <text x="24" y="56" class="panel-note">当前已落为 server/routes/auth.ts + session-service</text>
+    <rect x="24" y="84" width="190" height="54" class="done box"/>
+    <text x="72" y="108" class="box-title">账号密码登录</text>
+    <text x="62" y="128" class="box-sub">findByEmail + verify</text>
+    <rect x="244" y="84" width="190" height="54" class="partial box"/>
+    <text x="300" y="108" class="box-title">租户过滤</text>
+    <text x="292" y="128" class="box-sub">ToC 中移除</text>
+    <rect x="24" y="158" width="190" height="54" class="done box"/>
+    <text x="76" y="182" class="box-title">注册创建用户</text>
+    <text x="62" y="202" class="box-sub">users.create</text>
+    <rect x="244" y="158" width="190" height="54" class="done box"/>
+    <text x="300" y="182" class="box-title">返回用户资料</text>
+    <text x="284" y="202" class="box-sub">CurrentUser + cookie</text>
+  </g>
+
+  <g transform="translate(1275 394)">
+    <rect width="490" height="252" rx="16" class="panel-amber"/>
+    <text x="24" y="34" class="panel-title">后台登录校验与逻辑</text>
+    <text x="24" y="56" class="panel-note">后台不再使用独立 admin token，统一 session + role gate</text>
+    <rect x="24" y="84" width="138" height="54" class="done box"/>
+    <text x="58" y="108" class="box-title">终端校验</text>
+    <text x="52" y="128" class="box-sub">cookie session</text>
+    <rect x="176" y="84" width="138" height="54" class="done box"/>
+    <text x="210" y="108" class="box-title">管理员权限</text>
+    <text x="198" y="128" class="box-sub">requireAdmin</text>
+    <rect x="328" y="84" width="138" height="54" class="partial box"/>
+    <text x="362" y="108" class="box-title">登录限制</text>
+    <text x="352" y="128" class="box-sub">disabled user</text>
+    <rect x="24" y="158" width="138" height="54" class="done box"/>
+    <text x="58" y="182" class="box-title">后台身份</text>
+    <text x="44" y="202" class="box-sub">name/avatar/role</text>
+    <rect x="176" y="158" width="138" height="54" class="done box"/>
+    <text x="214" y="182" class="box-title">只读数据</text>
+    <text x="198" y="202" class="box-sub">users/projects/runs</text>
+    <rect x="328" y="158" width="138" height="54" class="deferred box"/>
+    <text x="360" y="182" class="box-title">多点登录</text>
+    <text x="358" y="202" class="box-sub">后置策略</text>
+  </g>
+
+  <g transform="translate(275 678)">
+    <rect width="620" height="232" rx="16" class="panel-purple"/>
+    <text x="24" y="34" class="panel-title">Token、Session 与缓存模型</text>
+    <text x="24" y="56" class="panel-note">当前权限事实源是 MySQL session；Redis 是可选增强，不作为登录事实源</text>
+    <rect x="24" y="88" width="132" height="54" class="done box"/>
+    <text x="52" y="112" class="box-title">SessionService</text>
+    <text x="48" y="132" class="box-sub">create/resolve</text>
+    <rect x="174" y="88" width="132" height="54" class="done box"/>
+    <text x="214" y="112" class="box-title">sessions 表</text>
+    <text x="194" y="132" class="box-sub">hash/expiry/revoke</text>
+    <rect x="324" y="88" width="132" height="54" class="done box"/>
+    <text x="360" y="112" class="box-title">httpOnly Cookie</text>
+    <text x="360" y="132" class="box-sub">sameSite=lax</text>
+    <rect x="474" y="88" width="122" height="54" class="done box"/>
+    <text x="510" y="112" class="box-title">Refresh</text>
+    <text x="496" y="132" class="box-sub">lastSeen/expiry</text>
+    <rect x="24" y="160" width="132" height="42" class="done box"/>
+    <text x="52" y="184" class="box-title">Logout revoke</text>
+    <rect x="174" y="160" width="132" height="42" class="done box"/>
+    <text x="198" y="184" class="box-title">禁用用户阻断</text>
+    <rect x="324" y="160" width="132" height="42" class="partial box"/>
+    <text x="352" y="184" class="box-title">Redis 可选</text>
+    <rect x="474" y="160" width="122" height="42" class="deferred box"/>
+    <text x="494" y="184" class="box-title">独立 admin cache</text>
+  </g>
+
+  <g transform="translate(925 678)">
+    <rect width="380" height="232" rx="16" class="panel-green"/>
+    <text x="24" y="34" class="panel-title">租户识别与后续请求鉴权</text>
+    <text x="24" y="56" class="panel-note">原 tenant/RBAC 在 ToC 中收敛为个人项目 owner guard</text>
+    <rect x="24" y="88" width="150" height="54" class="done box"/>
+    <text x="58" y="112" class="box-title">Project owner</text>
+    <text x="48" y="132" class="box-sub">ownerUserId=currentUser</text>
+    <rect x="198" y="88" width="150" height="54" class="done box"/>
+    <text x="230" y="112" class="box-title">项目资源继承</text>
+    <text x="218" y="132" class="box-sub">bundle/write guard</text>
+    <rect x="24" y="160" width="150" height="42" class="done box"/>
+    <text x="48" y="184" class="box-title">任务 projectId 绑定</text>
+    <rect x="198" y="160" width="150" height="42" class="deferred box"/>
+    <text x="224" y="184" class="box-title">Tenant/RBAC/IP</text>
+  </g>
+
+  <g transform="translate(1330 678)">
+    <rect width="435" height="232" rx="16" class="panel-blue"/>
+    <text x="24" y="34" class="panel-title">持久化数据与外部依赖</text>
+    <text x="24" y="56" class="panel-note">MySQL 已落地；短信/微信外部服务未接入本 MVP</text>
+    <rect x="24" y="88" width="118" height="54" class="done box"/>
+    <text x="54" y="112" class="box-title">users</text>
+    <text x="40" y="132" class="box-sub">账号主体</text>
+    <rect x="158" y="88" width="118" height="54" class="done box"/>
+    <text x="192" y="112" class="box-title">sessions</text>
+    <text x="174" y="132" class="box-sub">登录会话</text>
+    <rect x="292" y="88" width="118" height="54" class="done box"/>
+    <text x="326" y="112" class="box-title">projects</text>
+    <text x="306" y="132" class="box-sub">个人项目</text>
+    <rect x="24" y="160" width="118" height="42" class="done box"/>
+    <text x="44" y="184" class="box-title">project_resources</text>
+    <rect x="158" y="160" width="118" height="42" class="deferred box"/>
+    <text x="188" y="184" class="box-title">短信服务</text>
+    <rect x="292" y="160" width="118" height="42" class="deferred box"/>
+    <text x="322" y="184" class="box-title">微信服务</text>
+  </g>
+
+  <g transform="translate(275 942)">
+    <rect width="620" height="126" rx="16" class="panel-gray"/>
+    <text x="24" y="34" class="panel-title">微信 / 小程序扫码登录分支</text>
+    <text x="24" y="56" class="panel-note">原图中的 uuid、polling、confirmMnpLogin、checkMnpLogin、返回 token，本轮均未实现。</text>
+    <rect x="24" y="82" width="112" height="32" class="deferred box"/>
+    <text x="50" y="103" class="box-title">生成 uuid</text>
+    <rect x="152" y="82" width="112" height="32" class="deferred box"/>
+    <text x="186" y="103" class="box-title">小程序码</text>
+    <rect x="280" y="82" width="112" height="32" class="deferred box"/>
+    <text x="312" y="103" class="box-title">扫码确认</text>
+    <rect x="408" y="82" width="112" height="32" class="deferred box"/>
+    <text x="438" y="103" class="box-title">PC 轮询</text>
+  </g>
+
+  <g transform="translate(925 942)">
+    <rect width="840" height="126" rx="16" class="panel-gray"/>
+    <text x="24" y="34" class="panel-title">明确不迁移的 web-main 能力</text>
+    <text x="24" y="56" class="panel-note">这些能力不是当前 ToC MVP 的权限事实源；如需要 ToB/RBAC，另开 spec。</text>
+    <rect x="24" y="82" width="132" height="32" class="deferred box"/>
+    <text x="58" y="103" class="box-title">tenant</text>
+    <rect x="174" y="82" width="132" height="32" class="deferred box"/>
+    <text x="206" y="103" class="box-title">department</text>
+    <rect x="324" y="82" width="132" height="32" class="deferred box"/>
+    <text x="364" y="103" class="box-title">position</text>
+    <rect x="474" y="82" width="132" height="32" class="deferred box"/>
+    <text x="510" y="103" class="box-title">user-group</text>
+    <rect x="624" y="82" width="164" height="32" class="deferred box"/>
+    <text x="664" y="103" class="box-title">dynamic menu</text>
+  </g>
+
+  <path class="arrow-done" d="M427 230 C500 230 520 230 590 230"/>
+  <path class="arrow-done" d="M745 230 C805 230 1210 220 1276 207"/>
+  <path class="arrow-done" d="M1510 230 C1510 322 1190 370 1010 478"/>
+  <path class="arrow-done" d="M1010 606 C930 648 700 672 586 766"/>
+  <path class="arrow-done" d="M1438 323 C1438 368 1438 374 1438 436"/>
+  <path class="arrow-done" d="M1010 530 C1058 598 1088 650 1112 766"/>
+  <path class="arrow-done" d="M1112 766 C1210 780 1260 780 1340 782"/>
+  <path class="arrow-partial" d="M950 230 C950 300 970 340 1010 394"/>
+  <path class="arrow-deferred" d="M590 294 C520 390 506 818 506 946"/>
+  <path class="arrow-deferred" d="M1148 812 C1238 884 1330 920 1438 946"/>
+
+  <g transform="translate(36 1140)">
+    <rect width="1730" height="52" rx="14" fill="#ffffff" stroke="#cfd8e6"/>
+    <circle cx="26" cy="26" r="6" fill="#1fa463"/>
+    <text x="40" y="31" class="legend">已实现：当前代码中有直接服务端/前端/测试证据</text>
+    <circle cx="372" cy="26" r="6" fill="#e09422"/>
+    <text x="386" y="31" class="legend">等价替代或部分实现：原图概念已换成 ToC MVP 的更小边界</text>
+    <circle cx="810" cy="26" r="6" fill="#8a96a8"/>
+    <text x="824" y="31" class="legend">未迁移/后置：不阻塞本次 ToC Auth + Project + Admin MVP</text>
+    <text x="1330" y="31" class="legend">Generated from repository snapshot and current Kiro task status.</text>
+  </g>
+</svg>

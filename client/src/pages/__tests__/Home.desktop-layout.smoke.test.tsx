@@ -8,12 +8,21 @@ vi.mock("lucide-react", () => {
   );
 
   return {
+    ArrowLeft: Icon,
     ArrowRight: Icon,
+    CheckCircle2: Icon,
+    Clock3: Icon,
+    FileText: Icon,
     FolderKanban: Icon,
+    Pencil: Icon,
     Plus: Icon,
+    Search: Icon,
     Settings2: Icon,
+    Sparkles: Icon,
+    Trash2: Icon,
     Upload: Icon,
     Waves: Icon,
+    X: Icon,
   };
 });
 
@@ -58,7 +67,7 @@ const telemetryState = {
 
 function selectFrom<T extends Record<string, unknown>, R>(
   state: T,
-  selector: (state: T) => R,
+  selector: (state: T) => R
 ) {
   return selector(state);
 }
@@ -97,6 +106,8 @@ const projectState = {
   evidence: [] as any[],
   createProject: vi.fn(),
   selectProject: vi.fn(),
+  updateProject: vi.fn(),
+  archiveProject: vi.fn(),
   addProjectArtifact: vi.fn(),
 };
 
@@ -104,7 +115,10 @@ vi.mock("@/lib/project-store", () => ({
   selectCurrentProject: (state: typeof projectState) =>
     state.projects.find(project => project.id === state.currentProjectId) ??
     null,
-  selectProjectBundle: (state: typeof projectState, projectId: string | null) =>
+  selectProjectBundle: (
+    state: typeof projectState,
+    projectId: string | null
+  ) =>
     projectId
       ? {
           project: state.projects.find(project => project.id === projectId),
@@ -118,9 +132,7 @@ vi.mock("@/lib/project-store", () => ({
           artifacts: state.artifacts.filter(
             item => item.projectId === projectId
           ),
-          evidence: state.evidence.filter(
-            item => item.projectId === projectId
-          ),
+          evidence: state.evidence.filter(item => item.projectId === projectId),
         }
       : null,
   useProjectStore: (selector: (state: typeof projectState) => unknown) =>
@@ -136,9 +148,9 @@ vi.mock("@/hooks/useWorkflowRuntimeBootstrap", () => ({
 }));
 
 vi.mock("@/hooks/useViewportTier", async () => {
-  const actual = await vi.importActual<typeof import("@/hooks/useViewportTier")>(
-    "@/hooks/useViewportTier",
-  );
+  const actual = await vi.importActual<
+    typeof import("@/hooks/useViewportTier")
+  >("@/hooks/useViewportTier");
 
   return {
     ...actual,
@@ -192,7 +204,13 @@ vi.mock("@/lib/deploy-target", () => ({
 }));
 
 vi.mock("@/components/AppSidebar", () => ({
-  AppSidebar: ({ collapsed, embedded }: { collapsed: boolean; embedded?: boolean }) => (
+  AppSidebar: ({
+    collapsed,
+    embedded,
+  }: {
+    collapsed: boolean;
+    embedded?: boolean;
+  }) => (
     <aside
       data-testid="app-sidebar"
       data-collapsed={collapsed ? "true" : "false"}
@@ -231,9 +249,9 @@ vi.mock("@/components/office/OfficeTaskCockpit", () => ({
 }));
 
 vi.mock("@/components/ue-overlay", async () => {
-  const actual = await vi.importActual<typeof import("@/components/ue-overlay")>(
-    "@/components/ue-overlay",
-  );
+  const actual = await vi.importActual<
+    typeof import("@/components/ue-overlay")
+  >("@/components/ue-overlay");
 
   return {
     ...actual,
@@ -249,10 +267,7 @@ vi.mock("@/components/ue-overlay", async () => {
       children: ReactNode;
       viewportWidth?: number;
     }) => (
-      <div
-        data-testid="ue-overlay-chrome"
-        data-viewport-width={viewportWidth}
-      >
+      <div data-testid="ue-overlay-chrome" data-viewport-width={viewportWidth}>
         <div data-testid="ue-overlay-sidebar-slot">{sidebar}</div>
         <div data-testid="ue-overlay-media-layer">{mediaLayer}</div>
         <div data-testid="ue-overlay-panel-slot">{children}</div>
@@ -266,7 +281,9 @@ vi.mock("@/components/WorkflowPanel", () => ({ WorkflowPanel: () => null }));
 vi.mock("@/components/TelemetryDashboard", () => ({
   TelemetryDashboard: () => null,
 }));
-vi.mock("@/components/GitHubRepoBadge", () => ({ GitHubRepoBadge: () => null }));
+vi.mock("@/components/GitHubRepoBadge", () => ({
+  GitHubRepoBadge: () => null,
+}));
 vi.mock("@/components/LoadingScreen", () => ({ LoadingScreen: () => null }));
 vi.mock("@/components/scene/AgentDetailDrawer", () => ({
   AgentDetailDrawer: () => null,
@@ -284,11 +301,11 @@ vi.mock("@/lib/utils", () => ({
 
 let currentViewportWidth = 1440;
 
-async function renderDesktopHome(width: number) {
+async function renderDesktopHome(width: number, projectId?: string) {
   currentViewportWidth = width;
   const { default: Home } = await import("../Home");
 
-  return renderToStaticMarkup(<Home />);
+  return renderToStaticMarkup(<Home projectId={projectId} />);
 }
 
 describe("Home desktop first-screen layout smoke", () => {
@@ -357,7 +374,7 @@ describe("Home desktop first-screen layout smoke", () => {
   });
 
   it.each([1280, 1440, 1728])(
-    "keeps sidebar, Scene3D, central cockpit, and toolbar visible at %ipx",
+    "keeps project space, Scene3D, project cards, and toolbar visible at %ipx",
     async width => {
       const markup = await renderDesktopHome(width);
 
@@ -366,7 +383,31 @@ describe("Home desktop first-screen layout smoke", () => {
       expect(markup).toContain('data-testid="app-sidebar"');
       expect(markup).toContain('data-embedded="true"');
       expect(markup).toContain('data-testid="scene-3d"');
+      expect(markup).toContain('data-testid="home-project-hub"');
+      expect(markup).toContain('data-testid="home-project-search"');
+      expect(markup).toContain('data-testid="home-project-card"');
+      expect(markup).toContain('data-testid="home-project-edit"');
+      expect(markup).toContain('data-testid="home-project-delete"');
+      expect(markup).toContain("Project Space");
+      expect(markup).toContain("Open Autopilot");
+      expect(markup).not.toContain('data-testid="office-task-cockpit"');
+    }
+  );
+
+  it.each([1280, 1440, 1728])(
+    "keeps the selected project autopilot visible at %ipx",
+    async width => {
+      const markup = await renderDesktopHome(width, "project-1");
+
+      expect(markup).toContain('data-testid="ue-overlay-chrome"');
+      expect(markup).toContain(`data-viewport-width="${width}"`);
+      expect(markup).toContain('data-testid="app-sidebar"');
+      expect(markup).toContain('data-embedded="true"');
+      expect(markup).toContain('data-testid="scene-3d"');
       expect(markup).toContain('data-testid="office-task-cockpit"');
+      expect(markup).toContain('data-testid="home-back-to-project-space"');
+      expect(markup).toContain("Autopilot");
+      expect(markup).toContain("Back to Project Space");
       expect(markup).toContain("Execution details");
       expect(markup).toContain("Open Workflow");
       expect(markup).toContain("Runtime Config");
@@ -378,7 +419,7 @@ describe("Home desktop first-screen layout smoke", () => {
       expect(markup).toContain("Recommended FSD Route");
       expect(markup).toContain("medium risk");
       expect(markup).not.toContain("task-detail-full-screen");
-    },
+    }
   );
 
   it("only collapses the embedded sidebar below the desktop breakpoint", async () => {

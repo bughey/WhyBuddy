@@ -625,10 +625,75 @@ async function startServer() {
   app.use("/api/replay", replayRoutes);
   const reputationRoutes = (await import("./routes/reputation.js")).default;
   app.use("/api", reputationRoutes);
-  app.use("/api/tasks", createTaskRouter(missionRuntime));
   app.use("/api/decision-templates", createDecisionTemplatesRouter());
   app.use("/api/planets", createPlanetRouter(missionRuntime));
   app.use("/api/feishu", createFeishuRouter());
+  const { readPersistenceConfig } = await import("./persistence/config.js");
+  const { createMysqlQueryExecutor } = await import("./persistence/mysql.js");
+  const {
+    createEmailLoginTokensRepository,
+    createProjectResourcesRepository,
+    createProjectsRepository,
+    createSessionsRepository,
+    createUsersRepository,
+  } = await import("./persistence/repositories.js");
+  const { createEmailCodeService } = await import("./auth/email-code-service.js");
+  const { createEmailCodeMailer, readEmailMailerConfig } = await import("./auth/email-mailer.js");
+  const { createAuthMiddleware } = await import("./auth/middleware.js");
+  const { createSessionService } = await import("./auth/session-service.js");
+  const { createAdminRouter } = await import("./routes/admin.js");
+  const { createAuthRouter } = await import("./routes/auth.js");
+  const { createProjectsRouter } = await import("./routes/projects.js");
+  const persistenceConfig = readPersistenceConfig();
+  const authDb = createMysqlQueryExecutor(persistenceConfig.database.mysql);
+  const projectsRepository = createProjectsRepository(authDb);
+  const projectResourcesRepository = createProjectResourcesRepository(authDb);
+  const usersRepository = createUsersRepository(authDb);
+  const sessionsRepository = createSessionsRepository(authDb);
+  const emailLoginTokensRepository = createEmailLoginTokensRepository(authDb);
+  const emailCodeMailer = createEmailCodeMailer(readEmailMailerConfig());
+  const emailCodeService = createEmailCodeService({
+    mailer: emailCodeMailer,
+    ttlSeconds: parsePositiveInteger(process.env.EMAIL_CODE_TTL_SECONDS, 600),
+    pepper: process.env.EMAIL_CODE_PEPPER,
+  });
+  const sessionService = createSessionService({
+    repositories: {
+      users: usersRepository,
+      sessions: sessionsRepository,
+    },
+    cookieName: persistenceConfig.session.cookieName,
+    ttlDays: persistenceConfig.session.ttlDays,
+    secureCookie: process.env.NODE_ENV === "production",
+  });
+  const authMiddleware = createAuthMiddleware(sessionService);
+
+  app.use(
+    "/api/tasks",
+    createTaskRouter(missionRuntime, {
+      requireAuth: authMiddleware.requireAuth,
+      projects: projectsRepository,
+      projectResources: projectResourcesRepository,
+    }),
+  );
+  app.use(
+    "/api/auth",
+    createAuthRouter({
+      users: usersRepository,
+      sessions: sessionsRepository,
+      sessionService,
+      emailLoginTokens: emailLoginTokensRepository,
+      emailCodeService,
+    }),
+  );
+  app.use(
+    "/api/projects",
+    createProjectsRouter({
+      requireAuth: authMiddleware.requireAuth,
+      projects: projectsRepository,
+      resources: projectResourcesRepository,
+    }),
+  );
   app.use(
     "/api/knowledge",
     createKnowledgeRouter({
@@ -639,6 +704,15 @@ async function startServer() {
     }),
   );
   app.use("/api/admin/knowledge", createKnowledgeAdminRouter({ graphStore, ontologyRegistry, reviewQueue }));
+  app.use(
+    "/api/admin",
+    createAdminRouter({
+      requireAuth: authMiddleware.requireAuth,
+      requireAdmin: authMiddleware.requireAdmin,
+      users: usersRepository,
+      projects: projectsRepository,
+    }),
+  );
   app.use("/api/audit", createAuditRouter({
     chain: auditChain,
     query: auditQuery,

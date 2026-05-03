@@ -1,0 +1,329 @@
+import express, { type Request } from "express";
+
+import {
+  normalizeAuthEmail,
+  type AuthErrorResponse,
+  type AuthResponse,
+  type LoginRequest,
+  type RegisterRequest,
+  type SendEmailLoginCodeRequest,
+  type SendEmailLoginCodeResponse,
+  type VerifyEmailLoginCodeRequest,
+} from "../../shared/auth.js";
+import { createAuthMiddleware } from "../auth/middleware.js";
+import type { AuthenticatedRequest } from "../auth/types.js";
+import type { EmailCodeService } from "../auth/email-code-service.js";
+import { hashPassword, verifyPassword } from "../auth/password.js";
+import type { SessionService } from "../auth/session-service.js";
+import { toCurrentUser } from "../auth/session-service.js";
+import type {
+  EmailLoginTokenPurpose,
+  SessionRecord,
+  UserRecord,
+  UserRole,
+  UserStatus,
+} from "../persistence/repositories.js";
+
+type AuthJson = AuthResponse | SendEmailLoginCodeResponse | AuthErrorResponse;
+
+export interface AuthUsersRepository {
+  findById(userId: string): Promise<UserRecord | null>;
+  findByEmail(email: string): Promise<UserRecord | null>;
+  create(input: {
+    email: string;
+    passwordHash?: string | null;
+    displayName?: string | null;
+    avatarUrl?: string | null;
+    role?: UserRole;
+    status?: UserStatus;
+    emailVerifiedAt?: Date | null;
+  }): Promise<UserRecord>;
+  updateLastLogin(userId: string, ip?: string | null): Promise<void>;
+  markEmailVerified?(userId: string, verifiedAt?: Date): Promise<void>;
+}
+
+export interface AuthSessionsRepository {
+  create(input: {
+    userId: string;
+    tokenHash: string;
+    ip?: string | null;
+    userAgent?: string | null;
+    expiresAt: Date;
+  }): Promise<SessionRecord>;
+}
+
+export interface AuthEmailLoginTokensRepository {
+  create(input: {
+    email: string;
+    userId?: string | null;
+    purpose?: EmailLoginTokenPurpose;
+    tokenHash: string;
+    requestIp?: string | null;
+    userAgent?: string | null;
+    expiresAt: Date;
+  }): Promise<string>;
+  findValidByTokenHash(
+    tokenHash: string,
+    purpose: EmailLoginTokenPurpose,
+    now?: Date,
+  ): Promise<{ id: string; emailNormalized: string; userId: string | null } | null>;
+  markConsumed(tokenId: string): Promise<void>;
+  countCreatedSince?(email: string, purpose: EmailLoginTokenPurpose, since: Date): Promise<number>;
+}
+
+export interface AuthRouterDeps {
+  users: AuthUsersRepository;
+  sessions: AuthSessionsRepository;
+  sessionService: SessionService;
+  emailLoginTokens?: AuthEmailLoginTokensRepository;
+  emailCodeService?: EmailCodeService;
+}
+
+function jsonError(error: string): AuthErrorResponse {
+  return { success: false, error };
+}
+
+function isDuplicateEmailError(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false;
+  const value = error as { code?: string; errno?: number; message?: string };
+  return value.code === "ER_DUP_ENTRY" || value.errno === 1062 || /duplicate/i.test(value.message ?? "");
+}
+
+function getClientIp(request: Request): string | null {
+  const forwardedFor = request.header("x-forwarded-for")?.split(",")[0]?.trim();
+  return forwardedFor || request.ip || null;
+}
+
+function getUserAgent(request: Request): string | null {
+  return request.header("user-agent")?.slice(0, 512) ?? null;
+}
+
+function parseDisplayName(value: unknown): string | null {
+  return typeof value === "string" && value.trim() ? value.trim().slice(0, 120) : null;
+}
+
+function validateEmail(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const email = normalizeAuthEmail(value);
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? email : null;
+}
+
+function validatePassword(value: unknown): string | null {
+  return typeof value === "string" && value.length >= 8 ? value : null;
+}
+
+function validateEmailCode(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const code = value.trim();
+  return /^\d{6}$/.test(code) ? code : null;
+}
+
+export function createAuthRouter(deps: AuthRouterDeps) {
+  const router = express.Router();
+  const auth = createAuthMiddleware(deps.sessionService);
+
+  router.post("/register", async (request, response) => {
+    const body = (request.body ?? {}) as Partial<RegisterRequest>;
+    const email = validateEmail(body.email);
+    const password = validatePassword(body.password);
+
+    if (!email || !password) {
+      response.status(400).json(jsonError("邮箱格式无效或密码长度不足"));
+      return;
+    }
+
+    const existing = await deps.users.findByEmail(email);
+    if (existing) {
+      response.status(409).json(jsonError("邮箱已注册"));
+      return;
+    }
+
+    try {
+      const user = await deps.users.create({
+        email,
+        passwordHash: await hashPassword(password),
+        displayName: parseDisplayName(body.displayName),
+        emailVerifiedAt: null,
+      });
+      const { token } = await deps.sessionService.createSession({
+        userId: user.id,
+        ip: getClientIp(request),
+        userAgent: getUserAgent(request),
+      });
+
+      deps.sessionService.writeSessionCookie(response, token);
+      response.status(201).json({ success: true, user: toCurrentUser(user) } satisfies AuthJson);
+    } catch (error) {
+      if (isDuplicateEmailError(error)) {
+        response.status(409).json(jsonError("邮箱已注册"));
+        return;
+      }
+      throw error;
+    }
+  });
+
+  router.post("/login", async (request, response) => {
+    const body = (request.body ?? {}) as Partial<LoginRequest>;
+    const email = validateEmail(body.email);
+    const password = typeof body.password === "string" ? body.password : "";
+    const loginError = jsonError("邮箱或密码错误");
+
+    if (!email || !password) {
+      response.status(401).json(loginError);
+      return;
+    }
+
+    const user = await deps.users.findByEmail(email);
+    if (!user || !(await verifyPassword(password, user.passwordHash))) {
+      response.status(401).json(loginError);
+      return;
+    }
+
+    if (user.status !== "active") {
+      response.status(403).json(jsonError("账号已禁用"));
+      return;
+    }
+
+    const { token } = await deps.sessionService.createSession({
+      userId: user.id,
+      ip: getClientIp(request),
+      userAgent: getUserAgent(request),
+    });
+    await deps.users.updateLastLogin(user.id, getClientIp(request));
+
+    deps.sessionService.writeSessionCookie(response, token);
+    response.json({ success: true, user: toCurrentUser(user) } satisfies AuthJson);
+  });
+
+  router.post("/email-code/send", async (request, response) => {
+    if (!deps.emailLoginTokens || !deps.emailCodeService) {
+      response.status(503).json(jsonError("Email code login is not enabled."));
+      return;
+    }
+
+    const body = (request.body ?? {}) as Partial<SendEmailLoginCodeRequest>;
+    const email = validateEmail(body.email);
+
+    if (!email) {
+      response.status(400).json(jsonError("Email format is invalid."));
+      return;
+    }
+
+    const user = await deps.users.findByEmail(email);
+    if (!user || user.status !== "active") {
+      response.json({
+        success: true,
+        expiresInSeconds: deps.emailCodeService.ttlSeconds,
+      } satisfies AuthJson);
+      return;
+    }
+
+    const recentCount = await deps.emailLoginTokens.countCreatedSince?.(
+      email,
+      "login",
+      new Date(deps.emailCodeService.now().getTime() - 10 * 60 * 1000),
+    );
+    if (recentCount != null && recentCount >= 5) {
+      response.json({
+        success: true,
+        expiresInSeconds: deps.emailCodeService.ttlSeconds,
+      } satisfies AuthJson);
+      return;
+    }
+
+    const code = deps.emailCodeService.generateCode();
+    await deps.emailLoginTokens.create({
+      email,
+      userId: user.id,
+      purpose: "login",
+      tokenHash: deps.emailCodeService.hashCode(email, code),
+      requestIp: getClientIp(request),
+      userAgent: getUserAgent(request),
+      expiresAt: deps.emailCodeService.expiresAt(),
+    });
+    await deps.emailCodeService.sendLoginCode({ email: user.email, code });
+
+    response.json({
+      success: true,
+      expiresInSeconds: deps.emailCodeService.ttlSeconds,
+    } satisfies AuthJson);
+  });
+
+  router.post("/email-code/login", async (request, response) => {
+    if (!deps.emailLoginTokens || !deps.emailCodeService) {
+      response.status(503).json(jsonError("Email code login is not enabled."));
+      return;
+    }
+
+    const body = (request.body ?? {}) as Partial<VerifyEmailLoginCodeRequest>;
+    const email = validateEmail(body.email);
+    const code = validateEmailCode(body.code);
+    const loginError = jsonError("Email or code is invalid.");
+
+    if (!email || !code) {
+      response.status(401).json(loginError);
+      return;
+    }
+
+    const token = await deps.emailLoginTokens.findValidByTokenHash(
+      deps.emailCodeService.hashCode(email, code),
+      "login",
+    );
+    if (!token || token.emailNormalized !== email) {
+      response.status(401).json(loginError);
+      return;
+    }
+
+    const user = token.userId
+      ? await deps.users.findById(token.userId)
+      : await deps.users.findByEmail(email);
+    if (!user || user.emailNormalized !== email) {
+      response.status(401).json(loginError);
+      return;
+    }
+
+    if (user.status !== "active") {
+      await deps.emailLoginTokens.markConsumed(token.id);
+      response.status(403).json(jsonError("Account is disabled."));
+      return;
+    }
+
+    await deps.emailLoginTokens.markConsumed(token.id);
+    const emailVerifiedAt = user.emailVerifiedAt ?? deps.emailCodeService.now();
+    if (!user.emailVerifiedAt) {
+      await deps.users.markEmailVerified?.(user.id, emailVerifiedAt);
+    }
+    const { token: sessionToken } = await deps.sessionService.createSession({
+      userId: user.id,
+      ip: getClientIp(request),
+      userAgent: getUserAgent(request),
+    });
+    await deps.users.updateLastLogin(user.id, getClientIp(request));
+
+    deps.sessionService.writeSessionCookie(response, sessionToken);
+    response.json({
+      success: true,
+      user: toCurrentUser({ ...user, emailVerifiedAt }),
+    } satisfies AuthJson);
+  });
+
+  router.get("/me", auth.requireAuth, (request, response) => {
+    const authRequest = request as AuthenticatedRequest;
+    response.json({ success: true, user: authRequest.user } satisfies AuthJson);
+  });
+
+  router.post("/refresh", auth.requireAuth, async (request, response) => {
+    const authRequest = request as AuthenticatedRequest;
+    await deps.sessionService.refreshSession(authRequest.sessionId);
+    response.json({ success: true, user: authRequest.user } satisfies AuthJson);
+  });
+
+  router.post("/logout", auth.requireAuth, async (request, response) => {
+    const authRequest = request as AuthenticatedRequest;
+    await deps.sessionService.revokeSession(authRequest.sessionId);
+    deps.sessionService.clearCookie(response);
+    response.json({ success: true });
+  });
+
+  return router;
+}
