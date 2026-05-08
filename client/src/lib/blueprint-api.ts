@@ -4926,3 +4926,24 @@ export async function recordBlueprintArtifactFeedback(
     data: normalizeBlueprintArtifactFeedbackResponse(result.data, jobId),
   };
 }
+
+
+// ---------------------------------------------------------------------------
+// wt2 任务 2 注记（autopilot-blueprint-refactor-split）：
+//
+// 本文件仍然是 blueprint SDK 的**物理真相源**，所有实物（endpoint 常量、normalizer、
+// fetch 函数）都在这里。已通过 `./blueprint-api/` 子目录暴露了 8 个子域 re-export 视图：
+//
+//   - @/lib/blueprint-api/intake
+//   - @/lib/blueprint-api/clarification
+//   - @/lib/blueprint-api/jobs
+//   - @/lib/blueprint-api/agent-crew
+//   - @/lib/blueprint-api/routeset
+//   - @/lib/blueprint-api/spec-documents
+//   - @/lib/blueprint-api/downstream
+//   - @/lib/blueprint-api/artifact-replay
+//   - @/lib/blueprint-api/index（全量 barrel）
+//
+// 两种 import 方式都合法；`@/lib/blueprint-api` 继续命中本文件，向后兼容（需求 6.4）。
+// 后续物理迁移时把对应实物搬进子模块，本文件与各子模块同时保留 re-export 不破坏下游。
+// ---------------------------------------------------------------------------
