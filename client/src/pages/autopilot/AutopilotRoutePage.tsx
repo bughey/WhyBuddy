@@ -2038,6 +2038,8 @@ export function AutopilotSpecTreeHandoffPanel({
     return null;
   }
 
+  const isReviewing = job.handoffState === "reviewing";
+
   const content = (
     <>
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -2060,6 +2062,21 @@ export function AutopilotSpecTreeHandoffPanel({
               "This is not the end of the run. Route orchestration has handed off into the SPEC tree, and Agent Crew, Runtime Bridge, effect preview, and prompt packaging continue from here."
             )}
           </p>
+          {isReviewing ? (
+            <div
+              className="mt-3 inline-flex items-center gap-2 rounded-[8px] border border-emerald-300 bg-emerald-100 px-3 py-2 text-xs font-black text-emerald-800"
+              role="status"
+              aria-live="polite"
+              data-testid="autopilot-reviewing-hint"
+            >
+              <CheckCircle2 className="size-3.5" aria-hidden="true" />
+              {t(
+                locale,
+                "可操作：确认并继续 · 改动节点 · 改选路线 · 重新生成",
+                "Actions: confirm and continue · edit node · change route · regenerate"
+              )}
+            </div>
+          ) : null}
         </div>
         <Button
           asChild
@@ -2589,3 +2606,37 @@ export default function AutopilotRoutePage() {
     </main>
   );
 }
+
+
+// ---------------------------------------------------------------------------
+// wt3 任务 3 注记（autopilot-blueprint-refactor-split）：
+//
+// 本文件仍为 AutopilotRoutePage 的**物理真相源**（约 2469 行），包含：
+//   - 五个阶段面板（input / clarification / routeset / selection / fabric）
+//     内联组件：AutopilotWorkflowRail、ClarificationPanel、RouteOption、
+//     AgentCrewSummary、AutopilotSpecTreeHandoffPanel
+//   - 三个辅助组件：AutopilotConsolePanel、AutopilotVisualStage、AutopilotMissionHud
+//
+// 方案 B 下 `./stages/` 目录已经建立：
+//   ./stages/InputStage.tsx
+//   ./stages/ClarificationStage.tsx
+//   ./stages/RouteSetStage.tsx
+//   ./stages/SelectionStage.tsx
+//   ./stages/FabricStage.tsx
+//   ./stages/ConsolePanel.tsx
+//   ./stages/AutopilotVisualStage.tsx
+//   ./stages/AutopilotWorkflowRail.tsx
+//   ./stages/index.ts
+//
+// 其中 `SelectionStage.tsx` 已经 re-export 了现有的 AutopilotSpecTreeHandoffPanel；
+// 其余文件目前是占位，等物理抽离时填入真实 export。
+//
+// 物理迁移路径（后续 iteration）：
+// 1. 逐个把本文件内的阶段组件标记 `export`（不删除本地使用）；
+// 2. 在对应 stages/*.tsx 中改为 `export { ... } from "../AutopilotRoutePage.js"`；
+// 3. 把组件 **实物** 搬到 stages/*.tsx，本文件保留 barrel re-export；
+// 4. 最终 AutopilotRoutePage.tsx 只保留阶段编排与 hook 接线。
+//
+// 当前任务 3 不做物理瘦身：目的是保证 wt3 不 break 现有 UI，同时把目录结构建好，
+// 让后续拆分零破坏下游（需求 2.5、2.7、6.2）。
+// ---------------------------------------------------------------------------
