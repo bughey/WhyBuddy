@@ -1309,6 +1309,7 @@ function AutopilotWorkflowRail({
   answerDrafts,
   routeSet,
   selection,
+  specTree,
   latestJob,
   selectingRouteId,
   creatingIntake,
@@ -1345,6 +1346,7 @@ function AutopilotWorkflowRail({
   answerDrafts: Record<string, string>;
   routeSet: BlueprintRouteSet | null;
   selection: BlueprintRouteSelection | null;
+  specTree: BlueprintSpecTree | null;
   latestJob: BlueprintGenerationJob | null;
   selectingRouteId: string | null;
   creatingIntake: boolean;
@@ -2533,6 +2535,7 @@ export default function AutopilotRoutePage() {
             answerDrafts={answerDrafts}
             routeSet={routeSet}
             selection={selection}
+            specTree={specTree}
             latestJob={latestJob}
             selectingRouteId={selectingRouteId}
             creatingIntake={creatingIntake}
