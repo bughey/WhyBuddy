@@ -22,3 +22,6 @@ export type { SpecTreePanelProps } from "./SpecTreePanel";
 
 export { SpecDocumentsPanel } from "./SpecDocumentsPanel";
 export type { SpecDocumentsPanelProps } from "./SpecDocumentsPanel";
+
+export { EffectPreviewPanel } from "./EffectPreviewPanel";
+export type { EffectPreviewPanelProps } from "./EffectPreviewPanel";

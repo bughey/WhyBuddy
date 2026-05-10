@@ -1,10 +1,14 @@
 /**
- * Effect preview workbench 面板占位。
+ * `@/pages/specs/panels/EffectPreviewPanel` shim
  *
- * 当前实现：`EffectPreviewWorkbenchPanel` 内联在 `../BlueprintProgressPanel.tsx`（local function）。
+ * Canonical 位置在 `@/pages/autopilot/right-rail/panels/EffectPreviewPanel`。
  *
- * 对应需求 2.6、6.2。
+ * 对应 spec：`.kiro/specs/autopilot-right-rail-stage-panels/`
+ * - 需求 1.4 / 6.1 / 8.1（canonical re-export；shim identity 对齐）
+ * - 需求 2.4（`EffectPreviewPanel` 只接受 `{ jobId, job, specTree, effectPreviews,
+ *   agentCrew, capabilityEvidence, locale }` + 面板私有字段
+ *   `documents / initialPreviews / onPreviewsChange`）
  */
 
-export const EFFECT_PREVIEW_PANEL_PLACEHOLDER =
-  "see client/src/pages/specs/BlueprintProgressPanel.tsx (EffectPreviewWorkbenchPanel)";
+export { EffectPreviewPanel } from "@/pages/autopilot/right-rail/panels/EffectPreviewPanel";
+export type { EffectPreviewPanelProps } from "@/pages/autopilot/right-rail/panels/EffectPreviewPanel";

@@ -50,7 +50,7 @@
   - 严格约束：不得修改 `client/src/pages/specs/SpecDocumentWorkbenchPanel.tsx`（Requirement 9.2）
   - _需求：Requirement 1、2.3、3、5、6.1、7、8、9、10_
 
-- [ ] 4. 抽离 `EffectPreviewPanel`（对应 `effect_preview`）
+- [x] 4. 抽离 `EffectPreviewPanel`（对应 `effect_preview`）
   - 新增 `client/src/pages/autopilot/right-rail/panels/EffectPreviewPanel.tsx`
   - 从 `BlueprintProgressPanel.tsx::EffectPreviewWorkbenchPanel`（~行 2084–2502）完整搬运
   - 定义 `EffectPreviewPanelProps = Pick<AutopilotRightRailProps, "jobId" | "job" | "specTree" | "effectPreviews" | "agentCrew" | "capabilityEvidence" | "locale"> & { documents?: BlueprintSpecDocument[]; initialPreviews?: BlueprintEffectPreview[]; onPreviewsChange?: (p: BlueprintEffectPreview[]) => void }`
