@@ -1,12 +1,15 @@
 /**
- * SPEC tree workbench 面板占位。
+ * `@/pages/specs/panels/SpecTreePanel` shim
  *
- * 当前实现：SPEC tree 子面板由 `../SpecTreeWorkbenchPanel.tsx` 提供，
- * 这里作为 panels 目录下的精确入口：
+ * Canonical 位置在 `@/pages/autopilot/right-rail/panels/SpecTreePanel`。
+ * 同时保留 `SpecTreeWorkbenchPanel` alias 以兼容历史 import。
  *
- *   import { SpecTreeWorkbenchPanel } from "@/pages/specs/panels/SpecTreePanel";
- *
- * 对应需求 2.6。
+ * 对应 spec：`.kiro/specs/autopilot-right-rail-stage-panels/`
+ * - 需求 1.4 / 6.1 / 8.1（canonical re-export；shim identity 对齐）
+ * - 需求 9.1（不修改 `SpecTreeWorkbenchPanel.tsx`，通过 alias re-export 兼容）
  */
 
+export { SpecTreePanel } from "@/pages/autopilot/right-rail/panels/SpecTreePanel";
+export type { SpecTreePanelProps } from "@/pages/autopilot/right-rail/panels/SpecTreePanel";
+// 兼容历史调用方：`SpecTreeWorkbenchPanel` 仍指向原外部组件
 export { default as SpecTreeWorkbenchPanel } from "../SpecTreeWorkbenchPanel.js";

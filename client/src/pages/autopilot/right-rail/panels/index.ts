@@ -6,7 +6,7 @@
  * - 需求 1.3（named export，不引入 default / index.tsx 混用）
  * - 需求 8.1–8.3（canonical panels 单向依赖守卫）
  *
- * 每接入一个新面板都在此 re-export；当前阶段只有 `AgentCrewFabricPanel` 进入。
+ * 每接入一个新面板都在此 re-export。
  */
 
 export { AgentCrewFabricPanel } from "./AgentCrewFabricPanel";
@@ -16,3 +16,9 @@ export type {
   BlueprintRoleEventProjectionItem,
   BlueprintRoleEventConsumerId,
 } from "./AgentCrewFabricPanel";
+
+export { SpecTreePanel } from "./SpecTreePanel";
+export type { SpecTreePanelProps } from "./SpecTreePanel";
+
+export { SpecDocumentsPanel } from "./SpecDocumentsPanel";
+export type { SpecDocumentsPanelProps } from "./SpecDocumentsPanel";

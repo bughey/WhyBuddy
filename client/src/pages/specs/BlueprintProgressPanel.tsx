@@ -85,9 +85,11 @@ import type {
   BlueprintSpecTreeVersionSnapshot,
 } from "@shared/blueprint/contracts";
 
-import SpecTreeWorkbenchPanel from "./SpecTreeWorkbenchPanel";
-import SpecDocumentWorkbenchPanel from "./SpecDocumentWorkbenchPanel";
-import { AgentCrewFabricPanel } from "@/pages/autopilot/right-rail/panels";
+import {
+  AgentCrewFabricPanel,
+  SpecDocumentsPanel,
+  SpecTreePanel,
+} from "@/pages/autopilot/right-rail/panels";
 
 function blueprintCopy(value: string | undefined): string {
   return translateBlueprintCopy(value, useAppStore.getState().locale);
@@ -5548,10 +5550,11 @@ export function BlueprintProgressPanel({
       ) : null}
 
       {showSpecTreePreview && specTree ? (
-        <SpecTreeWorkbenchPanel
+        <SpecTreePanel
+          jobId={latestJob?.id ?? ""}
           specTree={specTree}
           selection={selection}
-          jobId={latestJob?.id}
+          locale={locale}
           versions={specTreeVersions}
           onSpecTreeChange={setSpecTree}
           onSpecTreeVersionsChange={setSpecTreeVersions}
@@ -5559,9 +5562,10 @@ export function BlueprintProgressPanel({
       ) : null}
 
       {showSpecDocumentWorkbench && specTree ? (
-        <SpecDocumentWorkbenchPanel
+        <SpecDocumentsPanel
+          jobId={latestJob?.id ?? ""}
           specTree={specTree}
-          jobId={latestJob?.id}
+          locale={locale}
           initialDocuments={specDocuments}
           onDocumentsChange={setSpecDocuments}
         />

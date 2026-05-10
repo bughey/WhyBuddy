@@ -22,7 +22,7 @@
 
 import type { FC } from "react";
 
-import { AgentCrewFabricPanel } from "./panels";
+import { AgentCrewFabricPanel, SpecDocumentsPanel, SpecTreePanel } from "./panels";
 import { resolveRailSubStage } from "./resolve-rail-sub-stage";
 import {
   RAIL_SUB_STAGE_ORDER,
@@ -144,6 +144,19 @@ export const AutopilotRightRail: FC<AutopilotRightRailProps> = (props) => {
                           capabilities={capabilities}
                           capabilityInvocations={capabilityInvocations}
                           capabilityEvidence={capabilityEvidence}
+                          locale={locale}
+                        />
+                      ) : subStage === "spec_tree" ? (
+                        <SpecTreePanel
+                          jobId={jobId}
+                          specTree={specTree}
+                          selection={selection}
+                          locale={locale}
+                        />
+                      ) : subStage === "spec_documents" ? (
+                        <SpecDocumentsPanel
+                          jobId={jobId}
+                          specTree={specTree}
                           locale={locale}
                         />
                       ) : (

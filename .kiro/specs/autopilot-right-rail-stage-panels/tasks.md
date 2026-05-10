@@ -29,7 +29,7 @@
   - 本任务**新增** `specs/panels/AgentCrewFabricPanel.tsx` 作为单行 re-export（此文件历史上不存在，新建为 `export { AgentCrewFabricPanel } from "@/pages/autopilot/right-rail/panels/AgentCrewFabricPanel";`），并在 `specs/panels/index.ts` 中补 barrel 导出
   - _需求：Requirement 1、2.1、3、5、6.1、7、8、10_
 
-- [ ] 2. 抽离 `SpecTreePanel`（对应 `spec_tree`，wrap `SpecTreeWorkbenchPanel`）
+- [x] 2. 抽离 `SpecTreePanel`（对应 `spec_tree`，wrap `SpecTreeWorkbenchPanel`）
   - 新增 `client/src/pages/autopilot/right-rail/panels/SpecTreePanel.tsx` 作为**薄 wrapper**：import `SpecTreeWorkbenchPanel` from `@/pages/specs/SpecTreeWorkbenchPanel`
   - 定义 `SpecTreePanelProps = Pick<AutopilotRightRailProps, "jobId" | "specTree" | "selection" | "locale"> & { versions?; onSpecTreeChange?; onSpecTreeVersionsChange? }`
   - `specTree === null` 时渲染与 `BlueprintProgressPanel` 当前空态一致的 DOM（复制 `BlueprintProgressPanel` 在渲染 SpecTree 段时对 `specTree == null` 的降级段落）
@@ -40,7 +40,7 @@
   - 严格约束：不得修改 `client/src/pages/specs/SpecTreeWorkbenchPanel.tsx` 的任何代码（Requirement 9.1）
   - _需求：Requirement 1、2.2、3、5、6.1、7、8、9、10_
 
-- [ ] 3. 抽离 `SpecDocumentsPanel`（对应 `spec_documents`，wrap `SpecDocumentWorkbenchPanel`）
+- [x] 3. 抽离 `SpecDocumentsPanel`（对应 `spec_documents`，wrap `SpecDocumentWorkbenchPanel`）
   - 新增 `client/src/pages/autopilot/right-rail/panels/SpecDocumentsPanel.tsx`，与任务 2 同构：wrap `SpecDocumentWorkbenchPanel`
   - 定义 `SpecDocumentsPanelProps = Pick<AutopilotRightRailProps, "jobId" | "specTree" | "locale"> & { /* 保留 BlueprintProgressPanel 现有通过额外 prop 注入的回调，如果有 */ }`
   - `BlueprintProgressPanel.tsx` 把原 `<SpecDocumentWorkbenchPanel .../>` 调用改为 `<SpecDocumentsPanel .../>`

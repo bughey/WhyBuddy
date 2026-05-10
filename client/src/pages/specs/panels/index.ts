@@ -1,12 +1,26 @@
 /**
  * `client/src/pages/specs/panels/` barrel（wt4 任务 1，方案 B）。
  *
- * SpecTreePanel 与 SpecDocumentsPanel 是 re-export 已经存在的外部工作台面板；
- * 其余 9 个 panel 因为实物还内联在 BlueprintProgressPanel.tsx，用占位常量标记。
+ * SpecTreePanel 与 SpecDocumentsPanel 的 canonical 组件位于
+ * `@/pages/autopilot/right-rail/panels/`，本 barrel 通过 re-export 指向
+ * canonical 路径（对应 `.kiro/specs/autopilot-right-rail-stage-panels/`
+ * 的需求 1.4 / 6.1 / 8.1）。
+ *
+ * 为兼容历史 import，保留 `SpecTreeWorkbenchPanel` / `SpecDocumentWorkbenchPanel`
+ * 别名指向原外部组件（需求 9.1 / 9.2）。
+ *
+ * 其余 panel 因为实物仍内联在 BlueprintProgressPanel.tsx，用占位常量标记。
  *
  * 对应需求 2.6、2.7、6.2。
  */
 
+// Canonical re-export：指向 autopilot/right-rail/panels 下的薄 wrapper
+export { SpecTreePanel } from "./SpecTreePanel.js";
+export type { SpecTreePanelProps } from "./SpecTreePanel.js";
+export { SpecDocumentsPanel } from "./SpecDocumentsPanel.js";
+export type { SpecDocumentsPanelProps } from "./SpecDocumentsPanel.js";
+
+// 兼容历史调用方：`SpecTreeWorkbenchPanel` / `SpecDocumentWorkbenchPanel` 仍指向原外部组件
 export { SpecTreeWorkbenchPanel } from "./SpecTreePanel.js";
 export { SpecDocumentWorkbenchPanel } from "./SpecDocumentsPanel.js";
 
