@@ -77,6 +77,10 @@ import { createDefaultRoleSystemArchitectureCapabilityPolicy } from "./role-syst
 import type { AgentCrewStageActivationPolicy } from "./agent-crew-stage-activation/policy.js";
 import { createDefaultAgentCrewStageActivationPolicy } from "./agent-crew-stage-activation/policy.js";
 import type { AgentCrewStageActivationDriver } from "./agent-crew-stage-activation/driver.js";
+import type { SpecDocumentsLlmPolicy } from "./spec-documents/policy.js";
+import { createDefaultSpecDocumentsLlmPolicy } from "./spec-documents/policy.js";
+import type { SpecDocumentsLlmService } from "./spec-documents/service.js";
+import { createSpecDocumentsLlmService } from "./spec-documents/service.js";
 
 /**
  * Role System Architecture capability policy interface.
@@ -463,6 +467,38 @@ export interface BlueprintServiceContext {
    * See design §2.D2.
    */
   agentCrewStageActivationDriver?: AgentCrewStageActivationDriver;
+  /**
+   * Optional: SPEC Documents LLM service policy.
+   *
+   * Controls schema upper bounds (sections / body / title length), redaction
+   * patterns, retry attempts and timeout ceiling for the SPEC Documents LLM
+   * driven generation path. When omitted, {@link buildBlueprintServiceContext}
+   * wires {@link createDefaultSpecDocumentsLlmPolicy}.
+   *
+   * @see `.kiro/specs/autopilot-spec-documents-llm/design.md` §4.3
+   */
+  specDocumentsLlmPolicy?: SpecDocumentsLlmPolicy;
+  /**
+   * Optional: SPEC Documents LLM service instance (per-document LLM driver).
+   *
+   * A pure async function that takes a single `(nodeId, type)` pair and drives
+   * the six-tier LLM fallback flow (not-enabled / apiKey-missing / callJson
+   * throw / non-json / schema-fail / happy) before returning either
+   * `generationSource="llm"` with LLM-derived title/summary/content + digests,
+   * `generationSource="llm_fallback"` with a redacted error, or
+   * `generationSource="template"` (LLM was not attempted).
+   *
+   * When omitted, {@link buildBlueprintServiceContext} wires a default via
+   * `createSpecDocumentsLlmService(ctx)` after `ctx` is fully built so the
+   * service closes over the finalized `llm` / `logger` / `now` /
+   * `specDocumentsLlmPolicy`. The service performs its own tier-1 / tier-2
+   * early-exit (via `BLUEPRINT_SPEC_DOCUMENTS_LLM_ENABLED !== "true"` or
+   * empty `apiKey`), so always wiring a default instance does not incur LLM
+   * traffic in default deployments.
+   *
+   * @see `.kiro/specs/autopilot-spec-documents-llm/design.md` §2.D2 / §4.2 / §4.6
+   */
+  specDocumentsLlmService?: SpecDocumentsLlmService;
 }
 
 /**
@@ -563,6 +599,24 @@ export interface BlueprintServiceContextDeps {
    * it at each job start.
    */
   agentCrewStageActivationDriver?: AgentCrewStageActivationDriver;
+  /**
+   * Optional override for the SPEC Documents LLM policy. When omitted,
+   * {@link buildBlueprintServiceContext} wires
+   * {@link createDefaultSpecDocumentsLlmPolicy}.
+   *
+   * @see `.kiro/specs/autopilot-spec-documents-llm/design.md` §4.3
+   */
+  specDocumentsLlmPolicy?: SpecDocumentsLlmPolicy;
+  /**
+   * Optional override for the SPEC Documents LLM service. When omitted,
+   * {@link buildBlueprintServiceContext} wires
+   * {@link createSpecDocumentsLlmService} using the fully-constructed context
+   * so the service sees the same `llm` / `logger` / `now` /
+   * `specDocumentsLlmPolicy` that the rest of the app uses.
+   *
+   * @see `.kiro/specs/autopilot-spec-documents-llm/design.md` §2.D2 / §4.6
+   */
+  specDocumentsLlmService?: SpecDocumentsLlmService;
 }
 
 /**
@@ -651,6 +705,10 @@ export function buildBlueprintServiceContext(
     deps.agentCrewStageActivationPolicy ??
     createDefaultAgentCrewStageActivationPolicy();
 
+  // SPEC Documents LLM policy default (pure data, dependency-free).
+  const specDocumentsLlmPolicy =
+    deps.specDocumentsLlmPolicy ?? createDefaultSpecDocumentsLlmPolicy();
+
   const baseCtx: BlueprintServiceContext = {
     now,
     blueprintStores: deps.blueprintStores ?? createDefaultBlueprintStores(),
@@ -704,6 +762,10 @@ export function buildBlueprintServiceContext(
     // default-assembled (per-job lifecycle; design §2.D2).
     agentCrewStageActivationPolicy,
     agentCrewStageActivationDriver: deps.agentCrewStageActivationDriver,
+    // SPEC Documents LLM: policy eagerly resolved, service late-bound below
+    // (needs finalized `ctx` for `llm` / `logger` / `now` closure).
+    specDocumentsLlmPolicy,
+    specDocumentsLlmService: deps.specDocumentsLlmService,
   };
 
   // Task 13.1 / 13.3 最后一步：用 baseCtx 构造默认 docker bridge（或透传注入的 bridge）。
@@ -741,6 +803,16 @@ export function buildBlueprintServiceContext(
   // rationale.
   ctx.routeSetLlmGenerator =
     deps.routeSetLlmGenerator ?? createRouteSetLlmGenerator(ctx);
+
+  // SPEC Documents LLM service late-bind: service closure needs
+  // ctx.specDocumentsLlmPolicy / ctx.llm / ctx.logger / ctx.now to be fully
+  // resolved. The service performs its own tier-1 (env var not enabled) and
+  // tier-2 (apiKey missing) early-exit to the template path, so always wiring
+  // a default instance does not incur LLM traffic in default deployments.
+  // See `.kiro/specs/autopilot-spec-documents-llm/design.md` §4.6.
+  if (!ctx.specDocumentsLlmService) {
+    ctx.specDocumentsLlmService = createSpecDocumentsLlmService(ctx);
+  }
   return ctx;
 }
 
