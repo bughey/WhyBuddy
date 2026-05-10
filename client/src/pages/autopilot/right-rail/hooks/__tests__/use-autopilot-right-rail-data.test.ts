@@ -1544,3 +1544,158 @@ describe("deriveArtifactFeedbackFromJob (Spec 4 Task 5)", () => {
     expect(result.map(item => item.id)).toEqual(["older", "newer"]);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Task 6：SSE + polling 生命周期 helpers
+// ---------------------------------------------------------------------------
+
+const {
+  isJobAutoRefreshEnabled,
+  computePollingBackoff,
+  extractStageFromSSEPayload,
+} = __testing__;
+
+describe("isJobAutoRefreshEnabled (Spec 4 Task 6)", () => {
+  it("undefined 时启用(默认间隔)", () => {
+    expect(isJobAutoRefreshEnabled(undefined)).toBe(true);
+  });
+
+  it("正整数时启用", () => {
+    expect(isJobAutoRefreshEnabled(15000)).toBe(true);
+    expect(isJobAutoRefreshEnabled(1)).toBe(true);
+  });
+
+  it("0 / 负数 / NaN / Infinity 时禁用", () => {
+    expect(isJobAutoRefreshEnabled(0)).toBe(false);
+    expect(isJobAutoRefreshEnabled(-1)).toBe(false);
+    expect(isJobAutoRefreshEnabled(-15000)).toBe(false);
+    expect(isJobAutoRefreshEnabled(Number.NaN)).toBe(false);
+    expect(isJobAutoRefreshEnabled(Number.POSITIVE_INFINITY)).toBe(false);
+  });
+});
+
+describe("computePollingBackoff (Spec 4 Task 6)", () => {
+  it("attempt < 3 时使用 base interval", () => {
+    expect(computePollingBackoff(15000, 0)).toBe(15000);
+    expect(computePollingBackoff(15000, 1)).toBe(15000);
+    expect(computePollingBackoff(15000, 2)).toBe(15000);
+  });
+
+  it("attempt >= 3 时按 base * 2^(attempt - 2) 退避", () => {
+    expect(computePollingBackoff(15000, 3)).toBe(30000);
+    expect(computePollingBackoff(15000, 4)).toBe(60000);
+    expect(computePollingBackoff(15000, 5)).toBe(120000);
+  });
+
+  it("达到 120s 上限后截断", () => {
+    expect(computePollingBackoff(15000, 6)).toBe(120000);
+    expect(computePollingBackoff(15000, 10)).toBe(120000);
+    expect(computePollingBackoff(30000, 3)).toBe(60000);
+    expect(computePollingBackoff(30000, 4)).toBe(120000);
+  });
+
+  it("非法 base interval 返回 0", () => {
+    expect(computePollingBackoff(0, 0)).toBe(0);
+    expect(computePollingBackoff(-1000, 3)).toBe(0);
+    expect(computePollingBackoff(Number.NaN, 3)).toBe(0);
+  });
+
+  it("maxIntervalMs 可自定义", () => {
+    expect(computePollingBackoff(1000, 4, 10000)).toBe(4000);
+    expect(computePollingBackoff(1000, 6, 10000)).toBe(10000);
+  });
+});
+
+describe("extractStageFromSSEPayload (Spec 4 Task 6)", () => {
+  it("顶层 stage 字段", () => {
+    expect(extractStageFromSSEPayload({ stage: "spec_tree" })).toBe("spec_tree");
+    expect(
+      extractStageFromSSEPayload({ stage: "engineering_landing", other: 1 })
+    ).toBe("engineering_landing");
+  });
+
+  it("嵌套 job.stage 字段", () => {
+    expect(
+      extractStageFromSSEPayload({ job: { stage: "prompt_packaging" } })
+    ).toBe("prompt_packaging");
+  });
+
+  it("顶层 stage 优先于 job.stage", () => {
+    expect(
+      extractStageFromSSEPayload({
+        stage: "preview",
+        job: { stage: "input" },
+      })
+    ).toBe("preview");
+  });
+
+  it("无 stage / 非字符串 stage / 非对象 payload → null", () => {
+    expect(extractStageFromSSEPayload(null)).toBeNull();
+    expect(extractStageFromSSEPayload(undefined)).toBeNull();
+    expect(extractStageFromSSEPayload("not-an-object")).toBeNull();
+    expect(extractStageFromSSEPayload(42)).toBeNull();
+    expect(extractStageFromSSEPayload({})).toBeNull();
+    expect(extractStageFromSSEPayload({ stage: 123 })).toBeNull();
+    expect(extractStageFromSSEPayload({ job: null })).toBeNull();
+    expect(extractStageFromSSEPayload({ job: { stage: 123 } })).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Task 6：JOB_CHANGED 清空 pendingRequestId 的护栏（确保 SSE refetch 之后切换 job
+// 不会让老 job 的 in-flight 请求污染新 job 字段）。
+// ---------------------------------------------------------------------------
+
+describe("rightRailDataReducer · JOB_CHANGED clears pending requests (Spec 4 Task 6)", () => {
+  it("切换 jobId 后所有字段的 pendingRequestId 归零", () => {
+    const initial = buildInitialReducerState("job-1", undefined, null);
+    const started = rightRailDataReducer(initial, {
+      type: "FETCH_STARTED",
+      jobId: "job-1",
+      fields: WAVE_1_FIELDS,
+      requestId: 42,
+    });
+    expect(started.job.pendingRequestId).toBe(42);
+    expect(started.job.loading).toBe(true);
+
+    const changed = rightRailDataReducer(started, {
+      type: "JOB_CHANGED",
+      jobId: "job-2",
+      initialData: undefined,
+      cachedFields: null,
+    });
+
+    expect(changed.currentJobId).toBe("job-2");
+    for (const field of WAVE_1_FIELDS) {
+      expect(changed[field].pendingRequestId).toBeNull();
+      expect(changed[field].loading).toBe(false);
+    }
+  });
+
+  it("切回历史 jobId 时仍重置 pendingRequestId 并从 cachedFields seed data", () => {
+    const initial = buildInitialReducerState("job-2", undefined, null);
+    const started = rightRailDataReducer(initial, {
+      type: "FETCH_STARTED",
+      jobId: "job-2",
+      fields: ["capabilities"],
+      requestId: 99,
+    });
+    expect(started.capabilities.pendingRequestId).toBe(99);
+
+    const changed = rightRailDataReducer(started, {
+      type: "JOB_CHANGED",
+      jobId: "job-1",
+      initialData: undefined,
+      cachedFields: {
+        job: makeJob("job-1"),
+        capabilities: [{ id: "cap-1" } as never],
+      },
+    });
+
+    expect(changed.currentJobId).toBe("job-1");
+    expect(changed.job.data?.id).toBe("job-1");
+    expect(changed.capabilities.data).toEqual([{ id: "cap-1" }]);
+    expect(changed.capabilities.pendingRequestId).toBeNull();
+    expect(changed.capabilities.loading).toBe(false);
+  });
+});

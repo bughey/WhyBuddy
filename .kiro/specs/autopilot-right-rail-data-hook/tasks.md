@@ -77,7 +77,7 @@
   - **验收**:Wave 4 3 个字段按规则懒加载;不引入新的后端调用
   - _需求:Requirement 2.1、2.2、Requirement 3.1、Requirement 12.5_
 
-- [ ] 6. 实现 jobId / 生命周期管理:invalidate、AbortController、SSE + polling
+- [x] 6. 实现 jobId / 生命周期管理:invalidate、AbortController、SSE + polling
   - `jobId` 变化时通过 `JOB_CHANGED` reducer action 重置所有字段 `data = initialData?.[field] ?? null`、`error = null`、`loading = false`
   - 所有 in-flight 请求通过 `AbortController.abort()` 取消
   - 切换到一个 `jobId` 然后切回(`[a, b, a]`)时,从 `cacheRef.current.get(a)` 读取已缓存字段 seed view;W1 `job` 始终重新发起确认指针(详见 `design.md` 切回策略)

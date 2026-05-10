@@ -62,6 +62,7 @@ import {
   fetchBlueprintEngineeringLanding,
   fetchBlueprintEngineeringRuns,
   fetchBlueprintJobCapabilities,
+  fetchBlueprintJobEventStreamUrl,
   fetchBlueprintPromptPackages,
   fetchLatestBlueprintGenerationJob,
   normalizeBlueprintAgentCrew,
@@ -796,6 +797,72 @@ export function shouldLoadField(
     default:
       return false;
   }
+}
+
+/**
+ * Task 6：判断 SSE + polling 自动刷新是否启用。
+ *
+ * 规则（与 `design.md`「SSE / polling 实现」章节一致，Requirement 5.5）：
+ * - `undefined` / 正整数 → 启用（undefined 使用默认间隔 15000ms）。
+ * - `0` / 负数 / `NaN` → 禁用（测试或手动触发场景）。
+ */
+export function isJobAutoRefreshEnabled(
+  pollingIntervalMs: number | undefined
+): boolean {
+  if (pollingIntervalMs === undefined) return true;
+  if (!Number.isFinite(pollingIntervalMs)) return false;
+  return pollingIntervalMs > 0;
+}
+
+/**
+ * Task 6：根据连续失败次数计算下一次 polling 的间隔（毫秒）。
+ *
+ * 语义（Requirement 5.4）：
+ * - `attempt < 3`：使用 base interval，不退避；
+ * - `attempt >= 3`：使用 `base * 2^(attempt - 2)`，上限 120000ms。
+ *
+ * 以 attempt=3 为例（`base = 15000`）：15s * 2^1 = 30s；
+ * attempt=4 → 60s；attempt=5 → 120s（被上限截断）。
+ */
+export function computePollingBackoff(
+  baseIntervalMs: number,
+  attempt: number,
+  maxIntervalMs = 120000
+): number {
+  if (!Number.isFinite(baseIntervalMs) || baseIntervalMs <= 0) {
+    return 0;
+  }
+  const safeAttempt = Math.max(0, Math.floor(attempt));
+  if (safeAttempt < 3) {
+    return Math.min(baseIntervalMs, maxIntervalMs);
+  }
+  const exponent = safeAttempt - 2;
+  const nextInterval = baseIntervalMs * Math.pow(2, exponent);
+  return Math.min(nextInterval, maxIntervalMs);
+}
+
+/**
+ * Task 6：从 SSE `message` 事件 payload 中提取 `job.stage`。
+ *
+ * 服务端 `/api/blueprint/jobs/:id/events/stream` 的 payload 形状可能是：
+ *   1. `{ stage: "spec_tree", ... }`
+ *   2. `{ job: { stage: "spec_tree", ... }, ... }`
+ * 其它 payload 一律忽略。
+ *
+ * 返回值：
+ * - 合法字符串 → 原样返回（未对 stage 联合体做 narrow；由调用方决定是否 narrow）；
+ * - 其它 → `null`。
+ */
+export function extractStageFromSSEPayload(payload: unknown): string | null {
+  if (!payload || typeof payload !== "object") return null;
+  const record = payload as Record<string, unknown>;
+  if (typeof record.stage === "string") return record.stage;
+  const job = record.job;
+  if (job && typeof job === "object") {
+    const jobStage = (job as Record<string, unknown>).stage;
+    if (typeof jobStage === "string") return jobStage;
+  }
+  return null;
 }
 
 // ---------------------------------------------------------------------------
@@ -1604,13 +1671,253 @@ export function useAutopilotRightRailData(
 
   // Wave 4 共享 retry：触发 W4 effect 重跑。
   // Task 5 实现范围：`artifactEntries / artifactReplays` 共享此 retry；
-  // `artifactFeedback` 由于是 W1 派生，retry 复用 `retryWave1`（在 view 映射中绑定）。
+  // `artifactFeedback` 由于是 W1 派生，retry 复用 `retryWave1`(在 view 映射中绑定)。
   const retryWave4 = useCallback(() => {
     if (!hasJob) return;
     bumpW4Retry();
   }, [hasJob]);
 
-  // 预先计算 Wave 2 字段的 gate 状态，view 映射中直接复用。
+  // -------------------------------------------------------------------------
+  // Task 6：SSE + polling 生命周期管理
+  //
+  // 职责（Requirement 5）：
+  //   1. 当 `jobId` 非空且自动刷新启用（`isJobAutoRefreshEnabled(pollingIntervalMs)`）时,
+  //      通过 `fetchBlueprintJobEventStreamUrl(jobId)` 建立 `EventSource` 订阅。
+  //   2. 每次收到 `message` 事件,解析 `job.stage`,若与上一次 stage 不同则:
+  //        - 调用 `options.onJobStageChange?.(next, prev)`;
+  //        - 触发 targeted W1 refetch(复用 reducer 的 `FETCH_STARTED / FULFILLED /
+  //          REJECTED` 路径,独立 requestId);下游 W2/W3/W4 effect 依赖 `state.job.data`
+  //          / `jobStage`,W1 成功后会自动级联重跑。
+  //   3. SSE 不可用(浏览器不支持 / 构造抛错) 或 `error` 事件且 `readyState === CLOSED`
+  //      时降级为 polling:`setTimeout` 周期性调用 `fetchLatestBlueprintGenerationJob()`。
+  //   4. Polling 失败退避(Requirement 5.4):
+  //        - `attempt < 3` 使用 `baseInterval`;
+  //        - `attempt >= 3` 使用 `min(base * 2^(attempt - 2), 120000)`。
+  //   5. `pollingIntervalMs === 0` 或负数 / `NaN` → 完全禁用 SSE + polling
+  //      (Requirement 5.5,测试或手动触发场景)。
+  //   6. 组件 unmount 时:`source.close()` + `clearTimeout(pollingTimer)` + `closed = true`
+  //      让 in-flight polling callback 自动短路。
+  //
+  // 设计决策:
+  //   - 依赖数组只放 `[trimmedJobId, hasJob, autoRefreshEnabled, baseIntervalMs]`。
+  //     `options.onJobStageChange / onFieldError` 的身份变化通过 ref 透传,避免订阅重建。
+  //   - `state.job.data?.stage` 不进依赖:订阅建立后 stage 变化完全由 SSE `message` 事件
+  //     驱动,若把 stage 放入依赖会在每次 stage 变化时关闭并重开 SSE 造成断流。
+  //   - Targeted refetch 不走 `retryWave1()`(它只 bump counter 不改 W1 effect 依赖),而是
+  //     直接 dispatch 独立 requestId 的 W1 fetch:与 W1 effect 共享 reducer 路径,
+  //     Ignore_Stale_Policy 保证 stale 响应被正确丢弃。
+  //   - 跨 `jobId` 的 in-flight SSE refetch 也会被 reducer 层拦截(`action.jobId !==
+  //     state.currentJobId`)。
+  // -------------------------------------------------------------------------
+  const pollingIntervalMs = options?.pollingIntervalMs;
+  const autoRefreshEnabled = isJobAutoRefreshEnabled(pollingIntervalMs);
+  const baseIntervalMs = pollingIntervalMs ?? 15000;
+  // 保留最新 onJobStageChange 引用（不进 effect 依赖），避免订阅重建。
+  const onJobStageChangeRef =
+    useRef<UseAutopilotRightRailDataOptions["onJobStageChange"]>(undefined);
+  onJobStageChangeRef.current = options?.onJobStageChange;
+  const onFieldErrorRef =
+    useRef<UseAutopilotRightRailDataOptions["onFieldError"]>(undefined);
+  onFieldErrorRef.current = options?.onFieldError;
+
+  useEffect(() => {
+    if (!hasJob) return;
+    if (!autoRefreshEnabled) return;
+
+    let closed = false;
+    let source: EventSource | null = null;
+    let pollingTimer: ReturnType<typeof setTimeout> | null = null;
+    let pollingAttempt = 0;
+    // 闭包捕获的 prev stage：effect 初建时取 cache 中已知 job.stage（若 reducer 状态已经
+    // seed），之后完全由 SSE / polling 解析结果更新；refetch 触发后 W1 的 FETCH_FULFILLED
+    // 会异步更新 reducer 的 `state.job.data?.stage`，但 `prevStage` 只反映订阅层感知到的
+    // stage 序列，避免外部 render 影响。
+    const cachedJob = cacheRef.current.get(trimmedJobId)?.job as
+      | BlueprintGenerationJob
+      | null
+      | undefined;
+    let prevStage: string | null =
+      cachedJob && typeof cachedJob.stage === "string" ? cachedJob.stage : null;
+
+    const triggerTargetedRefetch = () => {
+      if (closed) return;
+      // 独立 requestId 的 W1 fetch；reducer 的 Ignore_Stale_Policy 会确保同字段 in-flight
+      // 请求不会被老响应覆盖。
+      const requestId = nextRequestId();
+      dispatch({
+        type: "FETCH_STARTED",
+        jobId: trimmedJobId,
+        fields: WAVE_1_FIELDS,
+        requestId,
+      });
+      void (async () => {
+        try {
+          const result = await fetchLatestBlueprintGenerationJob();
+          if (closed) return;
+          if (!result.ok) {
+            dispatch({
+              type: "FETCH_REJECTED",
+              jobId: trimmedJobId,
+              requestId,
+              fields: WAVE_1_FIELDS,
+              error: result.error,
+            });
+            onFieldErrorRef.current?.("job", result.error);
+            return;
+          }
+          const receivedJobId = result.data.job?.id;
+          if (!receivedJobId || receivedJobId !== trimmedJobId) {
+            dispatch({
+              type: "FETCH_FULFILLED",
+              jobId: trimmedJobId,
+              requestId,
+              fieldUpdates: {
+                job: null,
+                routeSet: null,
+                selection: null,
+                specTree: null,
+              },
+            });
+            return;
+          }
+          dispatch({
+            type: "FETCH_FULFILLED",
+            jobId: trimmedJobId,
+            requestId,
+            fieldUpdates: deriveWave1FieldUpdates(result.data),
+          });
+          const entry: PartialCacheEntry =
+            cacheRef.current.get(trimmedJobId) ?? {};
+          entry.job = result.data.job ?? null;
+          entry.routeSet = result.data.routeSet ?? null;
+          entry.selection = result.data.selection ?? null;
+          entry.specTree = result.data.specTree ?? null;
+          cacheRef.current.set(trimmedJobId, entry);
+        } catch (rawError) {
+          if (closed) return;
+          const error = coerceApiRequestError(
+            rawError,
+            "/api/blueprint/jobs/latest"
+          );
+          dispatch({
+            type: "FETCH_REJECTED",
+            jobId: trimmedJobId,
+            requestId,
+            fields: WAVE_1_FIELDS,
+            error,
+          });
+          onFieldErrorRef.current?.("job", error);
+        }
+      })();
+    };
+
+    const handleStageFromPayload = (rawStage: unknown): void => {
+      if (typeof rawStage !== "string") return;
+      if (rawStage === prevStage) return;
+      const previous = prevStage as BlueprintGenerationJob["stage"] | null;
+      prevStage = rawStage;
+      // stage 变化 → 通知 consumer + targeted refetch。stage 的联合体 narrow 交给
+      // onJobStageChange 的调用方；reducer 应用 FETCH_FULFILLED 时会以后端权威值为准。
+      onJobStageChangeRef.current?.(
+        rawStage as BlueprintGenerationJob["stage"],
+        previous
+      );
+      triggerTargetedRefetch();
+    };
+
+    const scheduleNextPoll = () => {
+      if (closed) return;
+      const interval = computePollingBackoff(baseIntervalMs, pollingAttempt);
+      pollingTimer = setTimeout(() => {
+        if (closed) return;
+        void (async () => {
+          try {
+            const result = await fetchLatestBlueprintGenerationJob();
+            if (closed) return;
+            if (!result.ok) {
+              pollingAttempt += 1;
+              scheduleNextPoll();
+              return;
+            }
+            const receivedStage = result.data.job?.stage;
+            const receivedJobId = result.data.job?.id;
+            if (receivedJobId === trimmedJobId && receivedStage) {
+              handleStageFromPayload(receivedStage);
+            }
+            pollingAttempt = 0;
+            scheduleNextPoll();
+          } catch {
+            if (closed) return;
+            pollingAttempt += 1;
+            scheduleNextPoll();
+          }
+        })();
+      }, interval);
+    };
+
+    const startPolling = () => {
+      if (closed) return;
+      if (pollingTimer !== null) return;
+      scheduleNextPoll();
+    };
+
+    const startSSE = () => {
+      if (closed) return;
+      if (typeof EventSource === "undefined") {
+        startPolling();
+        return;
+      }
+      try {
+        const url = fetchBlueprintJobEventStreamUrl(trimmedJobId);
+        source = new EventSource(url);
+      } catch {
+        source = null;
+        startPolling();
+        return;
+      }
+
+      source.addEventListener("message", (event: MessageEvent) => {
+        if (closed) return;
+        try {
+          const payload = JSON.parse(event.data);
+          const nextStage = extractStageFromSSEPayload(payload);
+          handleStageFromPayload(nextStage);
+        } catch {
+          // 忽略畸形 payload（非 JSON 或解析异常）。
+        }
+      });
+
+      source.addEventListener("error", () => {
+        if (closed) return;
+        // 仅在 EventSource 定型为 CLOSED 时降级为 polling；short-lived 网络抖动让浏览器
+        // 自行重连。
+        if (source && source.readyState === EventSource.CLOSED) {
+          source.close();
+          source = null;
+          startPolling();
+        }
+      });
+    };
+
+    startSSE();
+
+    return () => {
+      closed = true;
+      if (source) {
+        source.close();
+        source = null;
+      }
+      if (pollingTimer !== null) {
+        clearTimeout(pollingTimer);
+        pollingTimer = null;
+      }
+    };
+    // 依赖只放 trimmedJobId / hasJob / autoRefreshEnabled / baseIntervalMs；`options.onJobStageChange`
+    // 和 `options.onFieldError` 的身份变化通过 ref 透传，不触发订阅重建。
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [trimmedJobId, hasJob, autoRefreshEnabled, baseIntervalMs]);
+
+  // 预先计算 Wave 2 字段的 gate 状态,view 映射中直接复用。
   const wave2GateOpen = useMemo(() => {
     return shouldLoadField("agentCrew", {
       currentSubStage,
@@ -1820,4 +2127,8 @@ export const __testing__ = {
   coerceApiRequestError,
   // Task 5：Wave 4 helpers
   deriveArtifactFeedbackFromJob,
+  // Task 6：SSE + polling helpers
+  isJobAutoRefreshEnabled,
+  computePollingBackoff,
+  extractStageFromSSEPayload,
 };
