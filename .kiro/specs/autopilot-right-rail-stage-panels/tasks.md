@@ -118,7 +118,7 @@
   - 该测试在任务 1–8 全部完成前即可写入，先用 mock narrow 函数；每次面板抽离合入后同步扩充 8 个 case
   - _需求：Requirement 2.1–2.8、Requirement 8_
 
-- [ ] 10. **[Edge-case]** Shim identity 测试 + Rendering parity 测试
+- [-] 10. **[Edge-case]** Shim identity 测试 + Rendering parity 测试
   - 在 `client/src/pages/autopilot/right-rail/panels/__tests__/shim-identity.test.ts` 中，对 8 个面板分别断言：
     ```ts
     import * as shim from "@/pages/specs/panels/<Name>Panel";
