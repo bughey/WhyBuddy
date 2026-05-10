@@ -66,11 +66,11 @@ describe("illegal env var values fall back to 30_000 (task 2.3)", () => {
     ).toBe(30_000);
   });
 
-  it("falls back to 30_000 for over-ceiling value '99999'", () => {
-    vi.stubEnv("BLUEPRINT_PROMPT_PACKAGE_LLM_TIMEOUT_MS", "99999");
+  it("clamps over-ceiling value '999999' to 180_000", () => {
+    vi.stubEnv("BLUEPRINT_PROMPT_PACKAGE_LLM_TIMEOUT_MS", "999999");
     expect(
       createDefaultPromptPackageLlmPolicy().maxInvocationTimeoutMs,
-    ).toBe(30_000);
+    ).toBe(180_000);
   });
 
   it("falls back to 30_000 for zero value '0'", () => {

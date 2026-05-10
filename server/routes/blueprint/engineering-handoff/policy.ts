@@ -70,6 +70,7 @@ export interface EngineeringHandoffLlmPolicy {
 // ---------------------------------------------------------------------------
 
 const DEFAULT_MAX_INVOCATION_TIMEOUT_MS = 30_000;
+const MAX_OVERRIDE_INVOCATION_TIMEOUT_MS = 180_000;
 
 const DEFAULT_REDACTION_KEYWORDS: readonly string[] = [
   "authorization",
@@ -116,12 +117,12 @@ function resolveEnvMaxInvocationTimeoutMs(): number {
     return DEFAULT_MAX_INVOCATION_TIMEOUT_MS;
   }
   const parsed = Number.parseInt(raw, 10);
-  // Must be a positive integer AND <= 30_000
+  // Must be a positive integer AND <= MAX_OVERRIDE_INVOCATION_TIMEOUT_MS (3 min ceiling)
   if (
     !Number.isFinite(parsed) ||
     parsed <= 0 ||
     parsed !== Math.floor(parsed) ||
-    parsed > DEFAULT_MAX_INVOCATION_TIMEOUT_MS
+    parsed > MAX_OVERRIDE_INVOCATION_TIMEOUT_MS
   ) {
     return DEFAULT_MAX_INVOCATION_TIMEOUT_MS;
   }

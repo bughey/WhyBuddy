@@ -93,10 +93,10 @@ describe("createDefaultRoleSystemArchitectureCapabilityPolicy", () => {
       expect(policy.maxInvocationTimeoutMs).toBe(15_000);
     });
 
-    it("clamps to 30000 when env var exceeds maximum", () => {
-      vi.stubEnv("BLUEPRINT_ROLE_CAPABILITY_BRIDGE_TIMEOUT_MS", "99999");
+    it("clamps to MAX (180_000) when env var exceeds maximum", () => {
+      vi.stubEnv("BLUEPRINT_ROLE_CAPABILITY_BRIDGE_TIMEOUT_MS", "999999");
       const policy = createDefaultRoleSystemArchitectureCapabilityPolicy();
-      expect(policy.maxInvocationTimeoutMs).toBe(30_000);
+      expect(policy.maxInvocationTimeoutMs).toBe(180_000);
     });
 
     it("falls back to 30000 when env var is non-numeric", () => {

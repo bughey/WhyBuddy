@@ -59,7 +59,7 @@ export interface PromptPackageLlmPolicy {
 }
 
 const DEFAULT_TIMEOUT_MS = 30_000;
-const MAX_TIMEOUT_MS = 30_000;
+const MAX_TIMEOUT_MS = 180_000;
 const TIMEOUT_ENV_VAR = "BLUEPRINT_PROMPT_PACKAGE_LLM_TIMEOUT_MS";
 
 function resolveTimeoutOverride(): number {

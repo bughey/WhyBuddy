@@ -62,7 +62,7 @@ export function createDefaultSpecDocumentsLlmPolicy(): SpecDocumentsLlmPolicy {
     maxInvocationTimeoutMs:
       Number.isFinite(timeoutOverride) &&
       timeoutOverride > 0 &&
-      timeoutOverride <= 30_000
+      timeoutOverride <= 180_000
         ? timeoutOverride
         : 30_000,
     temperature: 0.2,

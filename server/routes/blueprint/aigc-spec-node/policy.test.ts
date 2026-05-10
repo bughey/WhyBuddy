@@ -137,10 +137,10 @@ describe("BLUEPRINT_AIGC_NODE_CAPABILITY_BRIDGE_TIMEOUT_MS override (task 6.5)",
     expect(p.maxInvocationTimeoutMs).toBe(15_000);
   });
 
-  it("clamps an over-ceiling override back to 30_000", () => {
-    vi.stubEnv("BLUEPRINT_AIGC_NODE_CAPABILITY_BRIDGE_TIMEOUT_MS", "99999");
+  it("clamps an over-ceiling override back to 180_000 ceiling", () => {
+    vi.stubEnv("BLUEPRINT_AIGC_NODE_CAPABILITY_BRIDGE_TIMEOUT_MS", "999999");
     const p = createDefaultAigcSpecNodeCapabilityPolicy();
-    expect(p.maxInvocationTimeoutMs).toBe(30_000);
+    expect(p.maxInvocationTimeoutMs).toBe(180_000);
   });
 
   it("falls back to 30_000 when override is not numeric", () => {

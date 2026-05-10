@@ -176,10 +176,10 @@ describe("BLUEPRINT_MCP_CAPABILITY_BRIDGE_TIMEOUT_MS override", () => {
     ).toBe(30_000);
   });
 
-  it("clamps override values above 120_000 to the upper bound", () => {
+  it("clamps override values above 180_000 to the upper bound", () => {
     vi.stubEnv("BLUEPRINT_MCP_CAPABILITY_BRIDGE_TIMEOUT_MS", "999999");
     expect(
       createDefaultMcpGithubCapabilityPolicy().maxInvocationTimeoutMs,
-    ).toBe(120_000);
+    ).toBe(180_000);
   });
 });

@@ -54,7 +54,7 @@ export interface McpGithubCapabilityPolicyCheckResult {
 const DEFAULT_MAX_INVOCATION_TIMEOUT_MS = 30_000;
 /** Hard lower/upper bounds on the env-override invocation timeout. */
 const MIN_INVOCATION_TIMEOUT_MS = 1_000;
-const MAX_INVOCATION_TIMEOUT_MS = 120_000;
+const MAX_INVOCATION_TIMEOUT_MS = 180_000;
 /** Default response body ceiling: 1 MiB. */
 const DEFAULT_MAX_RESPONSE_BODY_BYTES = 1_048_576;
 

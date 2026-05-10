@@ -21,7 +21,7 @@ describe("createDefaultSpecDocumentsLlmPolicy", () => {
   });
 
   it("falls back to 30_000 for invalid env var values", () => {
-    const invalidValues = ["abc", "-1", "99999", "0"];
+    const invalidValues = ["abc", "-1", "999999", "0"];
     for (const val of invalidValues) {
       process.env.BLUEPRINT_SPEC_DOCUMENTS_LLM_TIMEOUT_MS = val;
       const policy = createDefaultSpecDocumentsLlmPolicy();

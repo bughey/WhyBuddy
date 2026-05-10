@@ -37,7 +37,7 @@ describe("EngineeringHandoffLlmPolicy", () => {
 
     // 2.3 — invalid env var values fall back to 30_000
     it("falls back to 30_000 for invalid env var values", () => {
-      const invalidValues = ["abc", "-1", "99999", "0"];
+      const invalidValues = ["abc", "-1", "999999", "0"];
       for (const val of invalidValues) {
         process.env[ENV_KEY] = val;
         const policy = createDefaultEngineeringHandoffLlmPolicy();

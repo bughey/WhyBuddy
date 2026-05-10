@@ -38,9 +38,9 @@ describe("createDefaultEffectPreviewLlmPolicy", () => {
     expect(policy.maxInvocationTimeoutMs).toBe(5_000);
   });
 
-  // 2.3 Invalid env var values fall back to 30_000
-  it('falls back to 30_000 for invalid env var values ("abc" / "-1" / "99999" / "0")', () => {
-    const invalidValues = ["abc", "-1", "99999", "0"];
+  // 2.3 Invalid env var values fall back to 30_000 (NaN / negative / zero)
+  it('falls back to 30_000 for invalid env var values ("abc" / "-1" / "0")', () => {
+    const invalidValues = ["abc", "-1", "0"];
     for (const value of invalidValues) {
       vi.stubEnv("BLUEPRINT_EFFECT_PREVIEW_LLM_TIMEOUT_MS", value);
       const policy = createDefaultEffectPreviewLlmPolicy();

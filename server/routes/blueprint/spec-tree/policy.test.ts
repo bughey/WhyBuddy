@@ -39,7 +39,7 @@ describe("createDefaultSpecTreeLlmPolicy", () => {
     expect(policy.maxInvocationTimeoutMs).toBe(5_000);
   });
 
-  it.each(["abc", "-1", "99999", "0"])(
+  it.each(["abc", "-1", "999999", "0"])(
     "非法环境变量值 '%s' 回退到 30_000",
     (value) => {
       process.env[ENV_KEY] = value;
