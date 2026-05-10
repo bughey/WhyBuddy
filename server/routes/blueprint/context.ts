@@ -74,6 +74,10 @@ import {
 } from "./aigc-spec-node/policy.js";
 import { createRoleSystemArchitectureCapabilityBridge } from "./role-system-architecture/bridge.js";
 import { createDefaultRoleSystemArchitectureCapabilityPolicy } from "./role-system-architecture/policy.js";
+import { createDefaultPromptPackageLlmPolicy } from "./prompt-package/policy.js";
+import { createPromptPackageLlmService } from "./prompt-package/service.js";
+import type { PromptPackageLlmPolicy } from "./prompt-package/policy.js";
+import type { PromptPackageLlmService } from "./prompt-package/service.js";
 import type { AgentCrewStageActivationPolicy } from "./agent-crew-stage-activation/policy.js";
 import { createDefaultAgentCrewStageActivationPolicy } from "./agent-crew-stage-activation/policy.js";
 import type { AgentCrewStageActivationDriver } from "./agent-crew-stage-activation/driver.js";
@@ -449,6 +453,26 @@ export interface BlueprintServiceContext {
    */
   roleSystemArchitectureCapabilityBridge?: RoleSystemArchitectureCapabilityBridge;
   /**
+   * Optional: Prompt Package LLM policy (security / schema upper bounds /
+   * redaction config). When not injected, `buildBlueprintServiceContext` will
+   * wire `createDefaultPromptPackageLlmPolicy()`. Field stays optional for
+   * backwards compatibility with custom ctx shapes assembled directly.
+   *
+   * @see .kiro/specs/autopilot-prompt-package-llm/design.md §D2 / §4.3
+   */
+  promptPackageLlmPolicy?: PromptPackageLlmPolicy;
+  /**
+   * Optional: Prompt Package LLM service instance. When not injected,
+   * `buildBlueprintServiceContext` will wire `createPromptPackageLlmService(ctx)`.
+   * The service performs its own tier-1 early-exit when
+   * `BLUEPRINT_PROMPT_PACKAGE_LLM_ENABLED !== "true"` or when the resolved
+   * apiKey is empty, so always wiring a service instance does not incur LLM
+   * traffic in default deployments (design §D10 → test default = prod behavior).
+   *
+   * @see .kiro/specs/autopilot-prompt-package-llm/design.md §D1 / §4.2
+   */
+  promptPackageLlmService?: PromptPackageLlmService;
+  /**
    * Agent Crew Stage Activation policy (pure data, stateless).
    * Controls event suppression, idempotence, redaction rules and schema
    * version allow-list. Defaults to `createDefaultAgentCrewStageActivationPolicy()`
@@ -551,6 +575,18 @@ export interface BlueprintServiceContextDeps {
    */
   roleSystemArchitectureCapabilityBridge?: RoleSystemArchitectureCapabilityBridge;
   /**
+   * Optional override for the Prompt Package LLM policy. When omitted,
+   * {@link buildBlueprintServiceContext} wires
+   * {@link createDefaultPromptPackageLlmPolicy}.
+   */
+  promptPackageLlmPolicy?: PromptPackageLlmPolicy;
+  /**
+   * Optional override for the Prompt Package LLM service. When omitted,
+   * {@link buildBlueprintServiceContext} wires
+   * `createPromptPackageLlmService(ctx)` after ctx is fully assembled.
+   */
+  promptPackageLlmService?: PromptPackageLlmService;
+  /**
    * Optional override for the Agent Crew Stage Activation policy.
    * When omitted, {@link buildBlueprintServiceContext} wires
    * {@link createDefaultAgentCrewStageActivationPolicy}.
@@ -651,6 +687,10 @@ export function buildBlueprintServiceContext(
     deps.agentCrewStageActivationPolicy ??
     createDefaultAgentCrewStageActivationPolicy();
 
+  // Prompt Package LLM policy default (pure data, dependency-free).
+  const promptPackagePolicy =
+    deps.promptPackageLlmPolicy ?? createDefaultPromptPackageLlmPolicy();
+
   const baseCtx: BlueprintServiceContext = {
     now,
     blueprintStores: deps.blueprintStores ?? createDefaultBlueprintStores(),
@@ -700,6 +740,9 @@ export function buildBlueprintServiceContext(
       createDefaultRoleSystemArchitectureCapabilityPolicy(),
     roleSystemArchitectureCapabilityBridge:
       deps.roleSystemArchitectureCapabilityBridge,
+    // Prompt Package LLM: policy eagerly resolved, service late-bound.
+    promptPackageLlmPolicy: promptPackagePolicy,
+    promptPackageLlmService: deps.promptPackageLlmService,
     // Agent Crew Stage Activation: policy eagerly resolved, driver NOT
     // default-assembled (per-job lifecycle; design §2.D2).
     agentCrewStageActivationPolicy,
@@ -733,6 +776,12 @@ export function buildBlueprintServiceContext(
   if (!ctx.roleSystemArchitectureCapabilityBridge) {
     ctx.roleSystemArchitectureCapabilityBridge =
       createRoleSystemArchitectureCapabilityBridge(ctx);
+  }
+
+  // Prompt Package LLM service late-bind: service closure needs
+  // ctx.promptPackageLlmPolicy / ctx.llm / ctx.logger to be in place.
+  if (!ctx.promptPackageLlmService) {
+    ctx.promptPackageLlmService = createPromptPackageLlmService(ctx);
   }
 
   // RouteSet LLM generator late-bind: the default generator needs the fully
