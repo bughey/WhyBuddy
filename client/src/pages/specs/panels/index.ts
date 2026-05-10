@@ -33,9 +33,11 @@ export type { EffectPreviewPanelProps } from "./EffectPreviewPanel.js";
 export { PromptPackagePanel } from "./PromptPackagePanel.js";
 export type { PromptPackagePanelProps } from "./PromptPackagePanel.js";
 
+export { RuntimeCapabilityPanel } from "./RuntimeCapabilityPanel.js";
+export type { RuntimeCapabilityPanelProps } from "./RuntimeCapabilityPanel.js";
+
 export { PROGRESS_HEADER_PANEL_PLACEHOLDER } from "./ProgressHeaderPanel.js";
 export { JOB_LEDGER_PANEL_PLACEHOLDER } from "./JobLedgerPanel.js";
-export { RUNTIME_CAPABILITY_PANEL_PLACEHOLDER } from "./RuntimeCapabilityPanel.js";
 export { ENGINEERING_LANDING_PANEL_PLACEHOLDER } from "./EngineeringLandingPanel.js";
 export { ARTIFACT_MEMORY_PANEL_PLACEHOLDER } from "./ArtifactMemoryPanel.js";
 export { ROUTE_CANDIDATE_CARD_PLACEHOLDER } from "./RouteCandidateCard.js";

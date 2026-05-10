@@ -74,7 +74,7 @@
   - 在 `<AutopilotRightRail>` 的 `case "prompt_package"` 渲染 `<PromptPackagePanel jobId={jobId} specTree={specTree} effectPreviews={effectPreviews} locale={locale} />`
   - _需求：Requirement 1、2.5、3、5、6.1、7、8、10_
 
-- [ ] 6. 抽离 `RuntimeCapabilityPanel`（对应 `runtime_capability`）
+- [x] 6. 抽离 `RuntimeCapabilityPanel`（对应 `runtime_capability`）
   - 新增 `client/src/pages/autopilot/right-rail/panels/RuntimeCapabilityPanel.tsx`
   - 从 `BlueprintProgressPanel.tsx::RuntimeCapabilityBridgeWorkbenchPanel`（~行 2973–3660）完整搬运（保留函数体内所有 state / effect / callback）
   - 定义 `RuntimeCapabilityPanelProps = Pick<AutopilotRightRailProps, "jobId" | "specTree" | "capabilities" | "capabilityInvocations" | "capabilityEvidence" | "agentCrew" | "locale"> & { initialCapabilities?; initialAgentCrew?; initialInvocations?; initialEvidence?; onCapabilitiesChange?; onAgentCrewChange?; onInvocationsChange?; onEvidenceChange? }`

@@ -28,3 +28,6 @@ export type { EffectPreviewPanelProps } from "./EffectPreviewPanel";
 
 export { PromptPackagePanel } from "./PromptPackagePanel";
 export type { PromptPackagePanelProps } from "./PromptPackagePanel";
+
+export { RuntimeCapabilityPanel } from "./RuntimeCapabilityPanel";
+export type { RuntimeCapabilityPanelProps } from "./RuntimeCapabilityPanel";
