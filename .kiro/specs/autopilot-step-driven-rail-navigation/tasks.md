@@ -187,7 +187,7 @@
   - **验收**：所有新增 testid 都有至少一条测试覆盖；旧 testid 断言不回归
   - _需求：Requirement 9.1、9.2、9.5_
 
-- [ ] 12. 端到端回归与 parity 验证
+- [x] 12. 端到端回归与 parity 验证
   - `node --run check` 通过，不扩大现有 TypeScript 基线错误数
   - `npm exec vitest run client/src/pages/specs client/src/pages/autopilot` 全部通过，特别包含：
     - Spec 1 `resolve-rail-sub-stage.property.test.ts`（P1/P2/P3 三条 resolver PBT）
