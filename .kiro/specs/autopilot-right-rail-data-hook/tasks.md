@@ -132,7 +132,7 @@
   - **验收**:fabric 右栏数据仍然正确展示;非 fabric 阶段行为完全不变;Spec 3 的 3 条 edge-case 测试继续通过
   - _需求:Requirement 6.1、6.6、Requirement 11.2、11.5_
 
-- [ ] 10. 在 `BlueprintProgressPanel.tsx` 中接入 hook(Phase A 兼容模式)
+- [x] 10. 在 `BlueprintProgressPanel.tsx` 中接入 hook(Phase A 兼容模式)
   - 在文件顶部新增 `import { useAutopilotRightRailData } from "@/pages/autopilot/right-rail/hooks";`
   - 在组件函数体顶部调用:
     ```ts

@@ -95,6 +95,7 @@ import {
   SpecDocumentsPanel,
   SpecTreePanel,
 } from "@/pages/autopilot/right-rail/panels";
+import { useAutopilotRightRailData } from "@/pages/autopilot/right-rail/hooks";
 
 function blueprintCopy(value: string | undefined): string {
   return translateBlueprintCopy(value, useAppStore.getState().locale);
@@ -1931,6 +1932,62 @@ export function BlueprintProgressPanel({
   const [generationError, setGenerationError] =
     useState<ApiRequestError | null>(null);
 
+  // Spec 4 Task 10：Phase A 接入右栏数据层 hook。
+  //
+  // 策略（方案 A —— 最小侵入）：
+  //  - hook 与现有 useState 共存，作为桥接层；旧 `initial*` / `on*Change` 对外 API 完全不变。
+  //  - `skipLazyLoad: autoLoad === true` 让 `/specs` 深链路径（SpecCenterPage / autoLoad=true）
+  //    拉满 Wave 1-4；`autoLoad=false` 路径（测试与受控用法）hook gate 不打开，保持
+  //    `data = initialData ?? null`，避免打破现有 `renderToStaticMarkup` 快照断言。
+  //  - `initialData` 从本组件的 local state 读取（而不是 props 上的 `initial*`），因为 local
+  //    state 的初始值来源于 `initial*`（见下方 useState(initialXxx ?? ...) 调用），两者在首次
+  //    render 语义等价；后续 render 若 `initial*` 发生变化，autoLoad=false useEffect 仍然负责
+  //    把它们同步回 local state（见 ~行 2048），local state 再作为下一次 render 传给 hook 的
+  //    `initialData`，最终仍然到达 view.XXX.data。
+  //  - `on*Change` 回调直接接到对应的 `setXxx` setter；hook fetch 成功（仅 autoLoad=true 路径
+  //    会触发）时把结果写回 local state，驱动下游 canonical panel。
+  //  - hook 返回值 `view` 本身**不读**：Phase A 的 canonical panel 仍然消费 local state（而不是
+  //    `view.XXX.data`），保证 Spec 2 rendering-parity 快照不抖动；hook 充当纯粹的 fetch
+  //    orchestrator + on*Change 驱动源。
+  //  - 不提供 `currentSubStage`：`/specs` 路径不基于 fabric sub-stage gate，autoLoad=true 时由
+  //    `skipLazyLoad` 直接打开 Wave 1-4。
+  const effectiveJobId = latestJob?.id ?? "";
+  useAutopilotRightRailData(effectiveJobId, {
+    initialData: {
+      job: latestJob,
+      routeSet,
+      selection,
+      specTree,
+      agentCrew,
+      capabilities,
+      capabilityInvocations,
+      capabilityEvidence,
+      effectPreviews,
+      promptPackages,
+      landingPlans: engineeringLandingPlans,
+      engineeringRuns,
+      artifactEntries: artifactLedgerEntries,
+      artifactReplays,
+      artifactFeedback,
+    },
+    skipLazyLoad: autoLoad === true,
+    onJobChange: setLatestJob,
+    onRouteSetChange: setRouteSet,
+    onSelectionChange: setSelection,
+    onSpecTreeChange: setSpecTree,
+    onAgentCrewChange: setAgentCrew,
+    onCapabilitiesChange: setCapabilities,
+    onCapabilityInvocationsChange: setCapabilityInvocations,
+    onCapabilityEvidenceChange: setCapabilityEvidence,
+    onEffectPreviewsChange: setEffectPreviews,
+    onPromptPackagesChange: setPromptPackages,
+    onLandingPlansChange: setEngineeringLandingPlans,
+    onEngineeringRunsChange: setEngineeringRuns,
+    onArtifactEntriesChange: setArtifactLedgerEntries,
+    onArtifactReplaysChange: setArtifactReplays,
+    onArtifactFeedbackChange: setArtifactFeedback,
+  });
+
   const loadProgress = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -2004,34 +2061,18 @@ export function BlueprintProgressPanel({
         }
 
         if (latestResult.ok) {
-          setLatestJob(latestResult.data.job);
-          setRouteSet(latestResult.data.routeSet ?? null);
-          setSelection(latestResult.data.selection ?? null);
-          setSpecTree(latestResult.data.specTree ?? null);
+          // Spec 4 Task 10：hook 覆盖的 15 个字段(job / routeSet / selection / specTree /
+          // agentCrew / capabilities / capabilityInvocations / capabilityEvidence /
+          // effectPreviews / promptPackages / landingPlans / engineeringRuns /
+          // artifactEntries / artifactReplays / artifactFeedback)的 setter 已从本分支删除;
+          // 由 `useAutopilotRightRailData`(autoLoad=true 路径 skipLazyLoad=true)接管 fetch
+          // 与 on*Change 回写。此处仅保留 hook 不覆盖的派生字段:specTreeVersions /
+          // specDocuments / clarificationSession。
           setSpecTreeVersions(readLatestSpecTreeVersions(latestResult.data));
           setSpecDocuments(latestResult.data.specDocuments ?? []);
-          setEffectPreviews(readLatestEffectPreviews(latestResult.data));
-          setPromptPackages(readLatestPromptPackages(latestResult.data));
-          setCapabilities(readLatestCapabilities(latestResult.data));
-          setAgentCrew(readLatestAgentCrew(latestResult.data));
           setClarificationSession(
             readLatestClarificationSession(latestResult.data)
           );
-          setCapabilityInvocations(
-            readLatestCapabilityInvocations(latestResult.data)
-          );
-          setCapabilityEvidence(
-            readLatestCapabilityEvidence(latestResult.data)
-          );
-          setEngineeringLandingPlans(
-            readLatestEngineeringLandingPlans(latestResult.data)
-          );
-          setEngineeringRuns(readLatestEngineeringRuns(latestResult.data));
-          setArtifactLedgerEntries(
-            readLatestArtifactLedgerEntries(latestResult.data)
-          );
-          setArtifactReplays(readLatestArtifactReplays(latestResult.data));
-          setArtifactFeedback(readLatestArtifactFeedback(latestResult.data));
         } else {
           setGenerationError(latestResult.error);
         }
