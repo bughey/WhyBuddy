@@ -163,7 +163,7 @@
   - **验收**:`/specs` 页面行为与 Spec 3 完成后一致;8 个 canonical 面板渲染 DOM parity 保持;`initial*` / `on*Change` props 仍被外部调用方识别
   - _需求:Requirement 6.2、6.3、6.4、6.5、6.7、Requirement 7.3、7.4、Requirement 11.1、11.4_
 
-- [ ] 11. **[PBT]** 编写 fast-check 属性测试(3 条)+ unit 测试补全
+- [x] 11. **[PBT]** 编写 fast-check 属性测试(3 条)+ unit 测试补全
   - 新建 `client/src/pages/autopilot/right-rail/hooks/__tests__/use-autopilot-right-rail-data.property.test.ts`
   - **P1 — Idempotent fetch dedupe**:
     - 生成器:`jobId ∈ string(非空)`、`consumerCount ∈ [2, 5]`
