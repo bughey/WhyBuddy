@@ -178,7 +178,7 @@
   - **验收**：失败时 fast-check 能输出最小化计数示例；测试不依赖真实 `window.history` 泄漏（`beforeEach` 重置）；`matchMedia` / `scrollIntoView` 通过 `vi.stubGlobal` 或等价手段 mock
   - _需求：Requirement 10.1、10.2、10.3、10.4、10.5、10.6、10.7_
 
-- [ ] 11. 测试文件与 testid 断言扩展（确保新 testid 有测试覆盖）
+- [x] 11. 测试文件与 testid 断言扩展（确保新 testid 有测试覆盖）
   - 在 `use-right-rail-sub-stage-state.test.ts` 或集成测试中补断言：`autopilot-right-rail-sticky-toggle`、`autopilot-right-rail-keyboard-hint`、`autopilot-right-rail-drawer-trigger`、`autopilot-right-rail-drawer`、`autopilot-right-rail-collapse-toggle`、`autopilot-right-rail-scroll-container`、`autopilot-right-rail-sr-announcer`、`autopilot-right-rail-sub-stage-tab-<subStage>`（8 个）都至少被 `queryByTestId` 或等价断言一次
   - 在 `AutopilotRoutePage.test.tsx`（若适用）补一个 smoke 断言：fabric 阶段下 `autopilot-right-rail-scroll-container` 存在、`onSubStageChange` prop 非 no-op（通过 props-narrowing 或等价手段）
   - 不删除、不重命名 Spec 1-4 已有 testid；Spec 2 的 rendering-parity 测试继续通过

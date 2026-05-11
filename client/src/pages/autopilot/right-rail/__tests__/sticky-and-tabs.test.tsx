@@ -189,4 +189,45 @@ describe("AutopilotRightRail Task 6 — sticky toggle + tabs + sr-announcer", ()
     expect(zh).toContain("智能体矩阵");
     expect(en).toContain("Agent crew");
   });
+
+  it("renders the scroll container under fabric stage (Task 3 testid)", () => {
+    const markup = renderRail();
+    expect(markup).toContain(
+      'data-testid="autopilot-right-rail-scroll-container"',
+    );
+  });
+
+  it("renders the keyboard hint with dismiss button under fabric stage (Task 4 testid)", () => {
+    const markup = renderRail({ locale: "zh-CN" });
+    expect(markup).toContain(
+      'data-testid="autopilot-right-rail-keyboard-hint"',
+    );
+    expect(markup).toContain("快捷键：[ / ] 切换子阶段");
+  });
+
+  it("does NOT render scroll-container / keyboard-hint in non-fabric stage", () => {
+    const markup = renderToStaticMarkup(
+      <AutopilotRightRail
+        jobId=""
+        currentStage="input"
+        job={null}
+        routeSet={null}
+        selection={null}
+        specTree={null}
+        agentCrew={null}
+        capabilities={[]}
+        capabilityInvocations={[]}
+        capabilityEvidence={[]}
+        effectPreviews={[]}
+        locale="zh-CN"
+        onSubStageChange={() => {}}
+      />,
+    );
+    expect(markup).not.toContain(
+      'data-testid="autopilot-right-rail-scroll-container"',
+    );
+    expect(markup).not.toContain(
+      'data-testid="autopilot-right-rail-keyboard-hint"',
+    );
+  });
 });
