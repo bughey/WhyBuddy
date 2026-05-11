@@ -191,7 +191,7 @@
   - **验收**:失败时 fast-check 能输出最小化计数示例;PBT 不依赖真实网络或真实 SSE(通过 mock `@/lib/blueprint-api` 与 `vi.stubGlobal("EventSource", MockEventSource)`)
   - _需求:Requirement 10.1、10.2、10.3、10.4、10.5、10.6、10.7_
 
-- [ ] 12. 端到端回归与 parity 验证(`/autopilot` + `/specs`)
+- [x] 12. 端到端回归与 parity 验证(`/autopilot` + `/specs`)
   - `node --run check` 通过,不扩大现有 TypeScript 基线错误数
   - `npm exec vitest run client/src/pages/specs client/src/pages/autopilot` 全部通过;特别包含:
     - Spec 1 `resolve-rail-sub-stage.property.test.ts`(P1/P2/P3 三条 resolver PBT)
