@@ -18,6 +18,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 
 import { Scene3D } from "@/components/Scene3D";
+import { HoloDrawer } from "@/components/HoloDrawer";
 import { SPECS_PATH } from "@/components/navigation-config";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -64,12 +65,44 @@ import {
   RightRailSubStageContext,
   useAutopilotRightRailData,
   useRightRailSubStageState,
+  useViewportTier,
   type AutopilotRailSubStage,
   type RightRailDataView,
   type RightRailSubStageContextValue,
+  type ViewportTier,
 } from "./right-rail";
 
 const GITHUB_URL_PATTERN = /^https:\/\/github\.com\/[^/\s]+\/[^/\s]+/i;
+
+/**
+ * Spec 5 Task 8 — Viewport_Tier 分支的 i18n 文案。
+ *
+ * - `drawerTrigger`：`<md` 下展开 drawer 的按钮文案
+ * - `drawerTitle`：`<HoloDrawer>` 标题
+ * - `expand / collapse`：`md-xl` 档右栏折叠按钮在两种状态下的文案
+ */
+const DRAWER_TIER_COPY: Record<
+  AppLocale,
+  {
+    drawerTrigger: string;
+    drawerTitle: string;
+    expand: string;
+    collapse: string;
+  }
+> = {
+  "zh-CN": {
+    drawerTrigger: "展开右栏",
+    drawerTitle: "Autopilot 右栏",
+    expand: "展开右栏",
+    collapse: "折叠右栏",
+  },
+  "en-US": {
+    drawerTrigger: "Expand rail",
+    drawerTitle: "Autopilot rail",
+    expand: "Expand rail",
+    collapse: "Collapse rail",
+  },
+};
 
 type FlowStatus = "waiting" | "active" | "done" | "blocked";
 
@@ -1254,6 +1287,11 @@ function AutopilotWorkflowRail({
   rightRailView,
   fabricSubStage,
   subStageContext,
+  viewportTier,
+  drawerOpen,
+  onDrawerOpenChange,
+  rightRailCollapsed,
+  onRightRailCollapsedChange,
 }: {
   locale: AppLocale;
   targetText: string;
@@ -1324,6 +1362,23 @@ function AutopilotWorkflowRail({
    *   sticky toggle 与 Task 4 的键盘快捷键依赖此 Context）。
    */
   subStageContext: RightRailSubStageContextValue;
+  /**
+   * Spec 5 Task 8：`useViewportTier()` 计算出的当前响应式档位。
+   *
+   * 由父组件在顶层调用 `useViewportTier()` 后透传，保证 tier 在全组件树共享一个口径。
+   * sub-component 根据此值决定渲染三档：drawer / side-collapsible / side-fixed。
+   */
+  viewportTier: ViewportTier;
+  /**
+   * Spec 5 Task 8：drawer 模式下的 open state（由父组件持有，便于 tier 切换时自动关闭）。
+   */
+  drawerOpen: boolean;
+  onDrawerOpenChange: (open: boolean) => void;
+  /**
+   * Spec 5 Task 8：side-collapsible 模式下右栏折叠 state。
+   */
+  rightRailCollapsed: boolean;
+  onRightRailCollapsedChange: (collapsed: boolean) => void;
 }) {
   const primaryRoute =
     routeSet?.routes.find(route => route.id === routeSet.primaryRouteId) ??
@@ -1579,7 +1634,35 @@ function AutopilotWorkflowRail({
             ))}
           </div>
         );
-      case "fabric":
+      case "fabric": {
+        // Spec 5 Task 8 — Viewport_Tier 三档分支。
+        // - drawer（<md）：右列不渲染；drawer trigger + <HoloDrawer> 包裹
+        // - side-collapsible（md-xl）：顶部 collapse toggle；collapsed 时隐藏
+        // - side-fixed（≥xl）：Spec 3 现状，不显示 trigger / toggle
+        const tier = viewportTier;
+        const drawerCopy = DRAWER_TIER_COPY[locale] ?? DRAWER_TIER_COPY["en-US"];
+        const railElement = (
+          <RightRailSubStageContext.Provider value={subStageContext}>
+            <AutopilotRightRail
+              jobId={rightRailView.job.data?.id ?? latestJob?.id ?? ""}
+              currentStage="fabric"
+              currentSubStage={subStageContext.effectiveSubStage ?? fabricSubStage}
+              job={rightRailView.job.data}
+              routeSet={rightRailView.routeSet.data}
+              selection={rightRailView.selection.data}
+              specTree={rightRailView.specTree.data}
+              agentCrew={rightRailView.agentCrew.data}
+              capabilities={rightRailView.capabilities.data ?? []}
+              capabilityInvocations={
+                rightRailView.capabilityInvocations.data ?? []
+              }
+              capabilityEvidence={rightRailView.capabilityEvidence.data ?? []}
+              effectPreviews={rightRailView.effectPreviews.data ?? []}
+              locale={locale}
+              onSubStageChange={subStageContext.setPinnedSubStage}
+            />
+          </RightRailSubStageContext.Provider>
+        );
         return (
           <div className="grid gap-3" data-testid="autopilot-fabric-step">
             {selection ? (
@@ -1599,28 +1682,61 @@ function AutopilotWorkflowRail({
                 )}
               </div>
             )}
-            <RightRailSubStageContext.Provider value={subStageContext}>
-              <AutopilotRightRail
-                jobId={rightRailView.job.data?.id ?? latestJob?.id ?? ""}
-                currentStage="fabric"
-                currentSubStage={subStageContext.effectiveSubStage ?? fabricSubStage}
-                job={rightRailView.job.data}
-                routeSet={rightRailView.routeSet.data}
-                selection={rightRailView.selection.data}
-                specTree={rightRailView.specTree.data}
-                agentCrew={rightRailView.agentCrew.data}
-                capabilities={rightRailView.capabilities.data ?? []}
-                capabilityInvocations={
-                  rightRailView.capabilityInvocations.data ?? []
+
+            {/* Drawer tier：触发按钮 + <HoloDrawer> */}
+            {tier === "drawer" ? (
+              <>
+                <button
+                  type="button"
+                  data-testid="autopilot-right-rail-drawer-trigger"
+                  onClick={() => onDrawerOpenChange(true)}
+                  className="rounded border border-border px-3 py-1 text-xs"
+                >
+                  {drawerCopy.drawerTrigger}
+                </button>
+                <HoloDrawer
+                  open={drawerOpen}
+                  onClose={() => onDrawerOpenChange(false)}
+                  title={drawerCopy.drawerTitle}
+                  width={400}
+                >
+                  <div data-testid="autopilot-right-rail-drawer">
+                    {railElement}
+                  </div>
+                </HoloDrawer>
+              </>
+            ) : null}
+
+            {/* Side-collapsible tier：顶部折叠按钮 */}
+            {tier === "side-collapsible" ? (
+              <button
+                type="button"
+                data-testid="autopilot-right-rail-collapse-toggle"
+                aria-expanded={!rightRailCollapsed}
+                onClick={() => onRightRailCollapsedChange(!rightRailCollapsed)}
+                className="rounded border border-border px-3 py-1 text-xs"
+              >
+                {rightRailCollapsed
+                  ? drawerCopy.expand
+                  : drawerCopy.collapse}
+              </button>
+            ) : null}
+
+            {/* Side tiers：railElement 直接在行内渲染（collapsed 时隐藏） */}
+            {tier !== "drawer" ? (
+              <div
+                className={
+                  tier === "side-collapsible" && rightRailCollapsed
+                    ? "hidden"
+                    : undefined
                 }
-                capabilityEvidence={rightRailView.capabilityEvidence.data ?? []}
-                effectPreviews={rightRailView.effectPreviews.data ?? []}
-                locale={locale}
-                onSubStageChange={subStageContext.setPinnedSubStage}
-              />
-            </RightRailSubStageContext.Provider>
+              >
+                {railElement}
+              </div>
+            ) : null}
           </div>
         );
+      }
       case "projection":
         return (
           <div className="grid gap-3" data-testid="autopilot-projection-step">
@@ -2227,6 +2343,20 @@ export default function AutopilotRoutePage() {
     resolvedSubStage: fabricSubStage,
   });
   const effectiveSubStage = subStageState.effectiveSubStage;
+
+  // Spec 5 Task 8 — Viewport_Tier 三档断点 state。
+  // - drawer（<md）：右栏降级为 <HoloDrawer>；drawerOpen 由用户交互触发
+  // - side-collapsible（md-xl）：右栏可折叠；rightRailCollapsed 由用户交互触发
+  // - side-fixed（≥xl）：Spec 3 现状，无 trigger / toggle
+  // tier 从 drawer 切走时自动关闭 drawer，避免 side 模式下残留 drawer 状态。
+  const viewportTier = useViewportTier();
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [rightRailCollapsed, setRightRailCollapsed] = useState(false);
+  useEffect(() => {
+    if (viewportTier !== "drawer" && drawerOpen) {
+      setDrawerOpen(false);
+    }
+  }, [viewportTier, drawerOpen]);
   const rightRailView = useAutopilotRightRailData(latestJob?.id ?? "", {
     initialData: {
       job: latestJob,
@@ -2588,6 +2718,11 @@ export default function AutopilotRoutePage() {
             rightRailView={rightRailView}
             fabricSubStage={fabricSubStage}
             subStageContext={subStageState}
+            viewportTier={viewportTier}
+            drawerOpen={drawerOpen}
+            onDrawerOpenChange={setDrawerOpen}
+            rightRailCollapsed={rightRailCollapsed}
+            onRightRailCollapsedChange={setRightRailCollapsed}
           />
         </div>
       </div>

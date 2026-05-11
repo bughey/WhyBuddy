@@ -132,7 +132,7 @@
   - **验收**：`onSubStageChange` 不再是 no-op；URL / pin / scroll / 数据 gate 共用一个 `effectiveSubStage`；非 fabric 阶段完全不受影响
   - _需求：Requirement 6.1、6.2、6.3、6.4、Requirement 7.1、7.2、7.3、7.5、Requirement 11.2、11.5_
 
-- [ ] 8. 在 `AutopilotRoutePage.tsx` 中接入 drawer trigger + collapse toggle + Viewport_Tier 分支
+- [x] 8. 在 `AutopilotRoutePage.tsx` 中接入 drawer trigger + collapse toggle + Viewport_Tier 分支
   - 在 fabric 分支内，根据 Task 5 新增的 `useViewportTier()`，按 Viewport_Tier 渲染三档：
     - `"drawer"`：渲染 drawer trigger 按钮（靠近 3D 场景顶部或 `AutopilotSpecTreeHandoffPanel` 旁）+ `<HoloDrawer>` 包裹 `<AutopilotRightRail>`
     - `"side-collapsible"`：400px 右列 + collapse toggle
