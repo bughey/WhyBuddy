@@ -61,6 +61,7 @@ const {
   deriveAgentCrewFromJob,
   mergeCapabilities,
   deriveArtifactFeedbackFromJob,
+  shouldTriggerPerFieldRetry,
 } = __testing__;
 
 // ---------------------------------------------------------------------------
@@ -1697,5 +1698,158 @@ describe("rightRailDataReducer · JOB_CHANGED clears pending requests (Spec 4 Ta
     expect(changed.capabilities.data).toEqual([{ id: "cap-1" }]);
     expect(changed.capabilities.pendingRequestId).toBeNull();
     expect(changed.capabilities.loading).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Task 7：Per-field retry helper — shouldTriggerPerFieldRetry
+// ---------------------------------------------------------------------------
+
+describe("shouldTriggerPerFieldRetry（Task 7：per-field retry 门限判定）", () => {
+  const baseParams = {
+    hasJob: true,
+    currentSubStage: "artifact_memory" as const,
+    jobStage: "engineering_landing" as BlueprintGenerationJob["stage"],
+    skipLazyLoad: false,
+    pendingRequestId: null,
+  };
+
+  it("jobId 为空（hasJob=false）时所有字段 retry 均为 no-op", () => {
+    for (const field of ALL_FIELD_NAMES) {
+      expect(
+        shouldTriggerPerFieldRetry(field, {
+          ...baseParams,
+          hasJob: false,
+        })
+      ).toBe(false);
+    }
+  });
+
+  it("W1 字段（job/routeSet/selection/specTree）始终不受懒加载 gate 影响", () => {
+    for (const field of ["job", "routeSet", "selection", "specTree"] as const) {
+      // gate 明显关闭（input 阶段且无 sub-stage），仍应允许 retry。
+      expect(
+        shouldTriggerPerFieldRetry(field, {
+          hasJob: true,
+          currentSubStage: undefined,
+          jobStage: "input" as BlueprintGenerationJob["stage"],
+          skipLazyLoad: false,
+          pendingRequestId: null,
+        })
+      ).toBe(true);
+    }
+  });
+
+  it("W1 派生字段（agentCrew、artifactFeedback）也不受懒加载 gate 影响", () => {
+    for (const field of ["agentCrew", "artifactFeedback"] as const) {
+      expect(
+        shouldTriggerPerFieldRetry(field, {
+          hasJob: true,
+          currentSubStage: undefined,
+          jobStage: "input" as BlueprintGenerationJob["stage"],
+          skipLazyLoad: false,
+          pendingRequestId: null,
+        })
+      ).toBe(true);
+    }
+  });
+
+  it("W1 字段在 pendingRequestId !== null 时 retry 为 no-op（in-flight guard）", () => {
+    for (const field of ["job", "routeSet", "selection", "specTree"] as const) {
+      expect(
+        shouldTriggerPerFieldRetry(field, {
+          hasJob: true,
+          currentSubStage: undefined,
+          jobStage: "input" as BlueprintGenerationJob["stage"],
+          skipLazyLoad: false,
+          pendingRequestId: 42,
+        })
+      ).toBe(false);
+    }
+  });
+
+  it("W2 fetch 字段在 gate 打开且 in-flight guard 通过时允许 retry", () => {
+    for (const field of WAVE_2_FETCH_FIELDS) {
+      expect(shouldTriggerPerFieldRetry(field, baseParams)).toBe(true);
+    }
+  });
+
+  it("W2 fetch 字段在 gate 关闭时 retry 为 no-op（非 fabric 阶段）", () => {
+    for (const field of WAVE_2_FETCH_FIELDS) {
+      expect(
+        shouldTriggerPerFieldRetry(field, {
+          hasJob: true,
+          currentSubStage: undefined,
+          jobStage: "input" as BlueprintGenerationJob["stage"],
+          skipLazyLoad: false,
+          pendingRequestId: null,
+        })
+      ).toBe(false);
+    }
+  });
+
+  it("W2 fetch 字段在 pendingRequestId !== null 时 retry 为 no-op（in-flight guard）", () => {
+    for (const field of WAVE_2_FETCH_FIELDS) {
+      expect(
+        shouldTriggerPerFieldRetry(field, {
+          ...baseParams,
+          pendingRequestId: 17,
+        })
+      ).toBe(false);
+    }
+  });
+
+  it("W3 fetch 字段按子阶段 gate 判定（effect_preview 打开 effectPreviews，但不打开 landingPlans）", () => {
+    expect(
+      shouldTriggerPerFieldRetry("effectPreviews", {
+        hasJob: true,
+        currentSubStage: "effect_preview",
+        jobStage: "effect_preview" as BlueprintGenerationJob["stage"],
+        skipLazyLoad: false,
+        pendingRequestId: null,
+      })
+    ).toBe(true);
+    expect(
+      shouldTriggerPerFieldRetry("landingPlans", {
+        hasJob: true,
+        currentSubStage: "effect_preview",
+        jobStage: "effect_preview" as BlueprintGenerationJob["stage"],
+        skipLazyLoad: false,
+        pendingRequestId: null,
+      })
+    ).toBe(false);
+  });
+
+  it("W4 fetch 字段在 artifact_memory 子阶段或 engineering_landing stage 下允许 retry", () => {
+    for (const field of WAVE_4_FETCH_FIELDS) {
+      expect(
+        shouldTriggerPerFieldRetry(field, {
+          hasJob: true,
+          currentSubStage: "artifact_memory",
+          jobStage: "engineering_landing" as BlueprintGenerationJob["stage"],
+          skipLazyLoad: false,
+          pendingRequestId: null,
+        })
+      ).toBe(true);
+    }
+  });
+
+  it("skipLazyLoad=true 时即使子阶段/stage 不到阈值也允许 retry W2-W4 fetch 字段", () => {
+    const allFetchFields = [
+      ...WAVE_2_FETCH_FIELDS,
+      ...WAVE_3_FETCH_FIELDS,
+      ...WAVE_4_FETCH_FIELDS,
+    ] as const;
+    for (const field of allFetchFields) {
+      expect(
+        shouldTriggerPerFieldRetry(field, {
+          hasJob: true,
+          currentSubStage: undefined,
+          jobStage: "input" as BlueprintGenerationJob["stage"],
+          skipLazyLoad: true,
+          pendingRequestId: null,
+        })
+      ).toBe(true);
+    }
   });
 });

@@ -842,6 +842,58 @@ export function computePollingBackoff(
 }
 
 /**
+ * Task 7：判断单字段 `retry()` 是否应当真正触发一次 fetch。
+ *
+ * 组合规则（Requirement 7.2、7.3、8.2、8.3）：
+ *   1. `hasJob === false` → 永远 `false`（`jobId` 为空时 retry 为 no-op）。
+ *   2. W1 字段 / W1 派生字段（`job / routeSet / selection / specTree / agentCrew /
+ *      artifactFeedback`） → 只要 `pendingRequestId === null` 即可触发；W1 字段不走懒加载 gate。
+ *   3. W2-W4 fetch 字段 → 需同时满足 `shouldLoadField` 懒加载 gate 与 in-flight guard
+ *      （`pendingRequestId === null`）。
+ *
+ * 该 helper 纯函数实现，可直接单测，不依赖 React / hook 内部 state；retry 的 Ignore_Stale_Policy
+ * 由 reducer 层（`pendingRequestId` 比较）承担，本 helper 仅负责「要不要发起」这一决策点。
+ */
+export function shouldTriggerPerFieldRetry(
+  field: RightRailFieldName,
+  params: {
+    hasJob: boolean;
+    currentSubStage: AutopilotRailSubStage | undefined;
+    jobStage: BlueprintGenerationJob["stage"] | null;
+    skipLazyLoad: boolean;
+    pendingRequestId: number | null;
+  }
+): boolean {
+  if (!params.hasJob) return false;
+  if (
+    field === "job" ||
+    field === "routeSet" ||
+    field === "selection" ||
+    field === "specTree" ||
+    field === "agentCrew" ||
+    field === "artifactFeedback"
+  ) {
+    // W1 / 派生字段：仅由 in-flight guard 限制；懒加载 gate 对 W1 不适用。
+    return params.pendingRequestId === null;
+  }
+  // W2-W4 fetch 字段：先懒加载 gate，再 in-flight guard。
+  const gateOpen = shouldLoadField(
+    field as Exclude<
+      RightRailFieldName,
+      "job" | "routeSet" | "selection" | "specTree"
+    >,
+    {
+      currentSubStage: params.currentSubStage,
+      jobStage: params.jobStage,
+      skipLazyLoad: params.skipLazyLoad,
+    }
+  );
+  if (!gateOpen) return false;
+  if (params.pendingRequestId !== null) return false;
+  return true;
+}
+
+/**
  * Task 6：从 SSE `message` 事件 payload 中提取 `job.stage`。
  *
  * 服务端 `/api/blueprint/jobs/:id/events/stream` 的 payload 形状可能是：
@@ -995,6 +1047,14 @@ export function useAutopilotRightRailData(
           requestId,
           fieldUpdates: deriveWave1FieldUpdates(result.data),
         });
+
+        // W1 on*Change 回调：把最新 job 快照 sibling 字段同步给 consumer（Phase A 桥接
+        // `BlueprintProgressPanel` 的 `initial*` / `on*Change` props，以及让 Office 任务面板
+        // 等统一驾驶舱消费方感知 W1 数据）。
+        options?.onJobChange?.(result.data.job ?? null);
+        options?.onRouteSetChange?.(result.data.routeSet ?? null);
+        options?.onSelectionChange?.(result.data.selection ?? null);
+        options?.onSpecTreeChange?.(result.data.specTree ?? null);
 
         // 写入 cache（用于 Requirement 4.3 切回复用）。
         const entry: PartialCacheEntry = cacheRef.current.get(trimmedJobId) ?? {};
@@ -1719,6 +1779,19 @@ export function useAutopilotRightRailData(
   const onFieldErrorRef =
     useRef<UseAutopilotRightRailDataOptions["onFieldError"]>(undefined);
   onFieldErrorRef.current = options?.onFieldError;
+  // W1 on*Change 回调的最新引用（SSE / polling 路径通过 ref 透传，不触发订阅重建）。
+  const onJobChangeRef =
+    useRef<UseAutopilotRightRailDataOptions["onJobChange"]>(undefined);
+  onJobChangeRef.current = options?.onJobChange;
+  const onRouteSetChangeRef =
+    useRef<UseAutopilotRightRailDataOptions["onRouteSetChange"]>(undefined);
+  onRouteSetChangeRef.current = options?.onRouteSetChange;
+  const onSelectionChangeRef =
+    useRef<UseAutopilotRightRailDataOptions["onSelectionChange"]>(undefined);
+  onSelectionChangeRef.current = options?.onSelectionChange;
+  const onSpecTreeChangeRef =
+    useRef<UseAutopilotRightRailDataOptions["onSpecTreeChange"]>(undefined);
+  onSpecTreeChangeRef.current = options?.onSpecTreeChange;
 
   useEffect(() => {
     if (!hasJob) return;
@@ -1786,6 +1859,11 @@ export function useAutopilotRightRailData(
             requestId,
             fieldUpdates: deriveWave1FieldUpdates(result.data),
           });
+          // W1 on*Change 回调：SSE / polling 路径通过 ref 透传最新 callback。
+          onJobChangeRef.current?.(result.data.job ?? null);
+          onRouteSetChangeRef.current?.(result.data.routeSet ?? null);
+          onSelectionChangeRef.current?.(result.data.selection ?? null);
+          onSpecTreeChangeRef.current?.(result.data.specTree ?? null);
           const entry: PartialCacheEntry =
             cacheRef.current.get(trimmedJobId) ?? {};
           entry.job = result.data.job ?? null;
@@ -1972,6 +2050,127 @@ export function useAutopilotRightRailData(
     return fromJob.length > 0 ? fromJob : initialArtifactFeedbackFallback;
   }, [wave4GateOpen, state.job.data, initialArtifactFeedbackFallback]);
 
+  // -------------------------------------------------------------------------
+  // Task 7：派生字段 `on*Change` 回调（`agentCrew` / `artifactFeedback`）。
+  //
+  // 这两个字段不通过独立 fetch 产出（`agentCrew` 由 job artifacts 派生；`artifactFeedback`
+  // 由 job.artifacts 中 `type === "feedback"` 的 payload 派生），因此无法在 `FETCH_FULFILLED`
+  // 路径里直接触发回调。改用 useEffect 观察派生值变化：当 `derivedAgentCrew` /
+  // `derivedArtifactFeedback` 身份变化时调用 consumer 回调；首次挂载不触发（避免 initial
+  // seed 造成冗余写回循环，行为与 W1-W4 fetch 路径的「仅在实际获取成功后通知」保持一致）。
+  // -------------------------------------------------------------------------
+  const onAgentCrewChangeRef =
+    useRef<UseAutopilotRightRailDataOptions["onAgentCrewChange"]>(undefined);
+  onAgentCrewChangeRef.current = options?.onAgentCrewChange;
+  const onArtifactFeedbackChangeRef =
+    useRef<
+      UseAutopilotRightRailDataOptions["onArtifactFeedbackChange"]
+    >(undefined);
+  onArtifactFeedbackChangeRef.current = options?.onArtifactFeedbackChange;
+
+  const lastNotifiedAgentCrewRef = useRef<BlueprintAgentCrewSnapshot | null>(
+    derivedAgentCrew
+  );
+  useEffect(() => {
+    if (lastNotifiedAgentCrewRef.current === derivedAgentCrew) return;
+    lastNotifiedAgentCrewRef.current = derivedAgentCrew;
+    onAgentCrewChangeRef.current?.(derivedAgentCrew);
+  }, [derivedAgentCrew]);
+
+  const lastNotifiedArtifactFeedbackRef = useRef<BlueprintArtifactFeedback[]>(
+    derivedArtifactFeedback
+  );
+  useEffect(() => {
+    if (lastNotifiedArtifactFeedbackRef.current === derivedArtifactFeedback)
+      return;
+    lastNotifiedArtifactFeedbackRef.current = derivedArtifactFeedback;
+    onArtifactFeedbackChangeRef.current?.(derivedArtifactFeedback);
+  }, [derivedArtifactFeedback]);
+
+  // -------------------------------------------------------------------------
+  // Task 7：Per-field `retry()`。
+  //
+  // 策略（design.md「推荐实现」简化方案）：
+  //   - 每个字段暴露独立 `retry()` 闭包，但内部仍调用对应 Wave 的共享 `retryWaveN()`
+  //     触发 effect 重跑（不做真正的 per-field 粒度刷新；这与现有 effect 架构兼容）。
+  //   - Retry 受懒加载 gate 约束：非 W1 字段在 `shouldLoadField` 判定关闭时为 no-op，
+  //     保持 `error` 不变。
+  //   - In-flight guard：同字段 `pendingRequestId !== null` 时 retry 为 no-op，等价于
+  //     「500ms 内去重」的更精确版本（整个 in-flight 窗口内都不重发）。
+  //   - W1 字段 / 派生字段（`agentCrew`、`artifactFeedback`）均绑定 `retryWave1`。
+  //
+  // 稳定引用（Requirement 1.8）：retry 通过 `useRef<Map>` 保存最新 gate / state，通过
+  // `useCallback` 构造 `retryField`（依赖仅 wave retry 与 `hasJob`）；`perFieldRetries`
+  // 为 15 条 retry 的稳定 Map，只在底层 retry 重建时重建。父组件多次 render 时，
+  // `view.xxx.retry` 的引用保持不变。
+  // -------------------------------------------------------------------------
+
+  const stateRef = useRef(state);
+  stateRef.current = state;
+
+  const gateParamsRef = useRef({
+    currentSubStage,
+    jobStage,
+    skipLazyLoad,
+    hasJob,
+  });
+  gateParamsRef.current = {
+    currentSubStage,
+    jobStage,
+    skipLazyLoad,
+    hasJob,
+  };
+
+  const retryField = useCallback(
+    (field: RightRailFieldName) => {
+      const gate = gateParamsRef.current;
+      if (!gate.hasJob) return;
+      const internal = stateRef.current[field] as InternalFieldState<unknown>;
+      const allow = shouldTriggerPerFieldRetry(field, {
+        hasJob: gate.hasJob,
+        currentSubStage: gate.currentSubStage,
+        jobStage: gate.jobStage,
+        skipLazyLoad: gate.skipLazyLoad,
+        pendingRequestId: internal.pendingRequestId,
+      });
+      if (!allow) return;
+      // W1 字段 / 派生字段 → retryWave1
+      if (
+        field === "job" ||
+        field === "routeSet" ||
+        field === "selection" ||
+        field === "specTree" ||
+        field === "agentCrew" ||
+        field === "artifactFeedback"
+      ) {
+        retryWave1();
+        return;
+      }
+      if ((WAVE_2_FETCH_FIELDS as readonly string[]).includes(field)) {
+        retryWave2();
+        return;
+      }
+      if ((WAVE_3_FETCH_FIELDS as readonly string[]).includes(field)) {
+        retryWave3();
+        return;
+      }
+      if ((WAVE_4_FETCH_FIELDS as readonly string[]).includes(field)) {
+        retryWave4();
+        return;
+      }
+    },
+    [retryWave1, retryWave2, retryWave3, retryWave4]
+  );
+
+  // 15 条稳定 per-field retry 闭包；依赖 `retryField`，后者仅在 wave retry 身份变化时重建。
+  const perFieldRetries = useMemo(() => {
+    const map = {} as Record<RightRailFieldName, () => void>;
+    for (const field of ALL_FIELD_NAMES) {
+      map[field] = () => retryField(field);
+    }
+    return map;
+  }, [retryField]);
+
   // 把 reducer state 映射为 public `RightRailDataView`：剥离 `pendingRequestId`，挂接 retry。
   return useMemo<RightRailDataView>(() => {
     const toPublic = <T,>(
@@ -1992,19 +2191,19 @@ export function useAutopilotRightRailData(
             data: derivedAgentCrew,
             loading: state.job.loading,
             error: state.job.error,
-            retry: retryWave1,
+            retry: perFieldRetries.agentCrew,
           }
         : {
             data: derivedAgentCrew,
             loading: false,
             error: null,
-            retry: retryWave1,
+            retry: perFieldRetries.agentCrew,
           };
 
     // artifactFeedback view：派生字段，与 `view.job` 共享 loading/error 生命周期。
     // - gate 打开 → data 使用 `deriveArtifactFeedbackFromJob` 派生值，loading/error 沿 state.job；
     // - gate 关闭 → data 退回 `initialData.artifactFeedback ?? []`，loading/error 清零；
-    // - retry 复用 `retryWave1`（刷新 W1 job 会自动带出最新 feedback）。
+    // - retry 通过 per-field retry 绑定到 `retryWave1`（刷新 W1 job 会自动带出最新 feedback）。
     const artifactFeedbackView: RightRailDataFieldStatus<
       BlueprintArtifactFeedback[]
     > = wave4GateOpen
@@ -2012,35 +2211,56 @@ export function useAutopilotRightRailData(
           data: derivedArtifactFeedback,
           loading: state.job.loading,
           error: state.job.error,
-          retry: retryWave1,
+          retry: perFieldRetries.artifactFeedback,
         }
       : {
           data: derivedArtifactFeedback,
           loading: false,
           error: null,
-          retry: retryWave1,
+          retry: perFieldRetries.artifactFeedback,
         };
 
     return {
-      // Wave 1 共享 retryWave1
-      job: toPublic(state.job, retryWave1),
-      routeSet: toPublic(state.routeSet, retryWave1),
-      selection: toPublic(state.selection, retryWave1),
-      specTree: toPublic(state.specTree, retryWave1),
-      // Wave 2：agentCrew 派生 + 其余 3 个字段共享 retryWave2
+      // Wave 1 per-field retries 均路由到 retryWave1（从同一次 W1 snapshot 派生）。
+      job: toPublic(state.job, perFieldRetries.job),
+      routeSet: toPublic(state.routeSet, perFieldRetries.routeSet),
+      selection: toPublic(state.selection, perFieldRetries.selection),
+      specTree: toPublic(state.specTree, perFieldRetries.specTree),
+      // Wave 2：agentCrew 派生 + 其余 3 个字段各自通过 per-field retry 路由到 retryWave2。
       agentCrew: agentCrewView,
-      capabilities: toPublic(state.capabilities, retryWave2),
-      capabilityInvocations: toPublic(state.capabilityInvocations, retryWave2),
-      capabilityEvidence: toPublic(state.capabilityEvidence, retryWave2),
-      // Wave 3：4 个字段共享 retryWave3
-      effectPreviews: toPublic(state.effectPreviews, retryWave3),
-      promptPackages: toPublic(state.promptPackages, retryWave3),
-      landingPlans: toPublic(state.landingPlans, retryWave3),
-      engineeringRuns: toPublic(state.engineeringRuns, retryWave3),
-      // Wave 4：`artifactEntries / artifactReplays` 共享 retryWave4；
-      // `artifactFeedback` 为派生字段，绑定 W1 生命周期并复用 retryWave1（见上方 view 构造）。
-      artifactEntries: toPublic(state.artifactEntries, retryWave4),
-      artifactReplays: toPublic(state.artifactReplays, retryWave4),
+      capabilities: toPublic(state.capabilities, perFieldRetries.capabilities),
+      capabilityInvocations: toPublic(
+        state.capabilityInvocations,
+        perFieldRetries.capabilityInvocations
+      ),
+      capabilityEvidence: toPublic(
+        state.capabilityEvidence,
+        perFieldRetries.capabilityEvidence
+      ),
+      // Wave 3：4 个字段各自通过 per-field retry 路由到 retryWave3。
+      effectPreviews: toPublic(
+        state.effectPreviews,
+        perFieldRetries.effectPreviews
+      ),
+      promptPackages: toPublic(
+        state.promptPackages,
+        perFieldRetries.promptPackages
+      ),
+      landingPlans: toPublic(state.landingPlans, perFieldRetries.landingPlans),
+      engineeringRuns: toPublic(
+        state.engineeringRuns,
+        perFieldRetries.engineeringRuns
+      ),
+      // Wave 4：`artifactEntries / artifactReplays` 通过 per-field retry 路由到 retryWave4；
+      // `artifactFeedback` 为派生字段，retry 走 retryWave1（见上方 view 构造）。
+      artifactEntries: toPublic(
+        state.artifactEntries,
+        perFieldRetries.artifactEntries
+      ),
+      artifactReplays: toPublic(
+        state.artifactReplays,
+        perFieldRetries.artifactReplays
+      ),
       artifactFeedback: artifactFeedbackView,
     };
   }, [
@@ -2049,10 +2269,7 @@ export function useAutopilotRightRailData(
     wave4GateOpen,
     derivedAgentCrew,
     derivedArtifactFeedback,
-    retryWave1,
-    retryWave2,
-    retryWave3,
-    retryWave4,
+    perFieldRetries,
   ]);
 }
 
@@ -2131,4 +2348,6 @@ export const __testing__ = {
   isJobAutoRefreshEnabled,
   computePollingBackoff,
   extractStageFromSSEPayload,
+  // Task 7：per-field retry helper
+  shouldTriggerPerFieldRetry,
 };

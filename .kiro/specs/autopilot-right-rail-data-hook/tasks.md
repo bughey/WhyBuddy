@@ -91,7 +91,7 @@
   - **验收**:`jobId` 变化后不泄漏上一个 job 数据;快速连续 stage 推进不出现 stale 覆盖;unmount 不触发 setState warning
   - _需求:Requirement 4.1、4.2、4.3、4.4、4.5、4.6、Requirement 5.1、5.2、5.3、5.4、5.5、5.6、Requirement 8.5_
 
-- [ ] 7. 实现 per-field `retry()` + error recovery + in-flight guard + onXXXChange 回调
+- [x] 7. 实现 per-field `retry()` + error recovery + in-flight guard + onXXXChange 回调
   - `retry` 通过 `useCallback(() => dispatch({ type: "RETRY", field, jobId }), [jobId])` 建立稳定引用
   - `retry` 受懒加载规则约束:若当前 `currentSubStage` / `job.stage` 不满足该字段懒加载阈值,retry 为 no-op 并保持 `error` 不变
   - In-flight guard:同字段在 500ms 内重复 retry 时只发起 1 次 fetch(通过 reducer 的 `pendingRequestId !== null` 检查实现)
