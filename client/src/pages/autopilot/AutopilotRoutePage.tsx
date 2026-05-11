@@ -2437,6 +2437,33 @@ export default function AutopilotRoutePage() {
             existingAnswers.map(answer => [answer.questionId, answer.answer])
           )
         );
+
+        // 自动触发澄清生成(合并"创建输入记录"和"生成澄清"为一步)
+        if (!result.data.clarificationSession) {
+          setGeneratingClarifications(true);
+          try {
+            const clarResult = await createBlueprintClarificationSession(
+              result.data.intake.id,
+              { projectId: currentProjectId ?? undefined }
+            );
+            if (clarResult.ok) {
+              setClarificationSession(clarResult.data.clarificationSession);
+              if (clarResult.data.projectContext) {
+                setProjectContext(clarResult.data.projectContext);
+              }
+              const clarAnswers = clarResult.data.clarificationSession.answers ?? [];
+              setAnswerDrafts(
+                Object.fromEntries(
+                  clarAnswers.map(answer => [answer.questionId, answer.answer])
+                )
+              );
+            } else {
+              setApiError(clarResult.error);
+            }
+          } finally {
+            setGeneratingClarifications(false);
+          }
+        }
       } else {
         setApiError(result.error);
       }
