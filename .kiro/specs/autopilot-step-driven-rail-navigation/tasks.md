@@ -79,7 +79,7 @@
   - **验收**：键盘操作不干扰输入框；边界不越界、不循环；提示元素可见且可 dismiss
   - _需求：Requirement 4.1、4.2、4.3、4.4、4.5、4.6、4.7、4.8、Requirement 8.5、Requirement 9.1（keyboard-hint testid）_
 
-- [ ] 5. 新增 `useViewportTier` hook + Viewport_Tier 三档渲染分支
+- [x] 5. 新增 `useViewportTier` hook + Viewport_Tier 三档渲染分支
   - 新建 `client/src/pages/autopilot/right-rail/hooks/use-viewport-tier.ts`（或内联在 `AutopilotRightRail.tsx` / `AutopilotRoutePage.tsx` 视耦合度决定）
   - 导出 `ViewportTier = "drawer" | "side-collapsible" | "side-fixed"` 与 `useViewportTier(): ViewportTier` hook
   - 实现：`useState` 初始化 `resolveTier(window.innerWidth)`；`useEffect` 注册两个 `matchMedia("(min-width: 768px)")` 与 `matchMedia("(min-width: 1280px)")` 的 change listener；unmount 时 `removeEventListener`

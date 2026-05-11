@@ -32,3 +32,10 @@ export {
   type RightRailSubStageContextValue,
   type UseRightRailSubStageStateInput,
 } from "./hooks";
+export {
+  resolveViewportTier,
+  useViewportTier,
+  VIEWPORT_TIER_BREAKPOINT_MD,
+  VIEWPORT_TIER_BREAKPOINT_XL,
+  type ViewportTier,
+} from "./hooks";

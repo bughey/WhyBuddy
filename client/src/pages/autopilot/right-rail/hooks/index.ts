@@ -27,3 +27,11 @@ export {
   type RightRailSubStageContextValue,
   type UseRightRailSubStageStateInput,
 } from "./use-right-rail-sub-stage-state";
+
+export {
+  resolveViewportTier,
+  useViewportTier,
+  VIEWPORT_TIER_BREAKPOINT_MD,
+  VIEWPORT_TIER_BREAKPOINT_XL,
+  type ViewportTier,
+} from "./use-viewport-tier";
