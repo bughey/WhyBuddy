@@ -58,7 +58,13 @@ import type {
   BlueprintSpecTree,
 } from "@shared/blueprint/contracts";
 
-import { AutopilotRightRail, resolveRailSubStage } from "./right-rail";
+import {
+  AutopilotRightRail,
+  resolveRailSubStage,
+  useAutopilotRightRailData,
+  type AutopilotRailSubStage,
+  type RightRailDataView,
+} from "./right-rail";
 
 const GITHUB_URL_PATTERN = /^https:\/\/github\.com\/[^/\s]+\/[^/\s]+/i;
 
@@ -1242,6 +1248,8 @@ function AutopilotWorkflowRail({
   onGenerateRouteSet,
   onSelectRoute,
   apiError,
+  rightRailView,
+  fabricSubStage,
 }: {
   locale: AppLocale;
   targetText: string;
@@ -1279,6 +1287,25 @@ function AutopilotWorkflowRail({
   onGenerateRouteSet: () => void;
   onSelectRoute: (routeId: string) => void;
   apiError: ApiRequestError | null;
+  /**
+   * Spec 4 Task 9：fabric 阶段右栏数据层 hook 视图。
+   *
+   * `AutopilotWorkflowRail` 的 fabric 分支会消费 `rightRailView.XXX.data` 作为
+   * `<AutopilotRightRail>` 9 个 props 的数据源，替代直接读 `latestJob / routeSet /
+   * selection / specTree / agentCrew / capabilities / capabilityInvocations /
+   * capabilityEvidence / effectPreviews`。其它阶段（input / clarification / routeset /
+   * selection / projection）不消费该 prop，继续沿用现有派生值。
+   *
+   * 由父组件计算并传入的原因：hook 不能在条件分支里调用（违反 Rules of Hooks）。
+   * 预先在 `AutopilotRoutePage` 顶层调用，再以 view 形态向下透传最符合最小改动原则。
+   */
+  rightRailView: RightRailDataView;
+  /**
+   * Spec 4 Task 9：预先由父组件通过 `resolveRailSubStage({ currentStage: "fabric",
+   * ... })` 算好的 fabric 子阶段。fabric 分支直接用它作为 `<AutopilotRightRail>` 的
+   * `currentSubStage` prop，避免在 render 期间重复调用 resolver。
+   */
+  fabricSubStage: AutopilotRailSubStage | undefined;
 }) {
   const primaryRoute =
     routeSet?.routes.find(route => route.id === routeSet.primaryRouteId) ??
@@ -1555,24 +1582,20 @@ function AutopilotWorkflowRail({
               </div>
             )}
             <AutopilotRightRail
-              jobId={latestJob?.id ?? ""}
+              jobId={rightRailView.job.data?.id ?? latestJob?.id ?? ""}
               currentStage="fabric"
-              currentSubStage={resolveRailSubStage({
-                currentStage: "fabric",
-                job: latestJob,
-                selection,
-                specTree,
-                agentCrew,
-              })}
-              job={latestJob}
-              routeSet={routeSet}
-              selection={selection}
-              specTree={specTree}
-              agentCrew={agentCrew}
-              capabilities={capabilities}
-              capabilityInvocations={capabilityInvocations}
-              capabilityEvidence={capabilityEvidence}
-              effectPreviews={effectPreviews}
+              currentSubStage={fabricSubStage}
+              job={rightRailView.job.data}
+              routeSet={rightRailView.routeSet.data}
+              selection={rightRailView.selection.data}
+              specTree={rightRailView.specTree.data}
+              agentCrew={rightRailView.agentCrew.data}
+              capabilities={rightRailView.capabilities.data ?? []}
+              capabilityInvocations={
+                rightRailView.capabilityInvocations.data ?? []
+              }
+              capabilityEvidence={rightRailView.capabilityEvidence.data ?? []}
+              effectPreviews={rightRailView.effectPreviews.data ?? []}
               locale={locale}
               onSubStageChange={() => {}}
             />
@@ -2134,6 +2157,55 @@ export default function AutopilotRoutePage() {
     () => readAutopilotEffectPreviews(latestJob),
     [latestJob]
   );
+  // Spec 4 Task 9：在 fabric 阶段接入右栏数据层 hook(`useAutopilotRightRailData`)。
+  //
+  // 用法边界：
+  //  - 本调用是无条件的（遵守 Rules of Hooks）；hook 内部根据 `jobId === ""` /
+  //    `currentSubStage` / `job.stage` 等条件自行决定是否发起 fetch。
+  //  - `initialData` 完全从现有 `useState`（`latestJob / routeSet / selection / specTree`）
+  //    与 5 条 `readAutopilot*(latestJob)` 派生值 seed，保证 SSR 快照路径下
+  //    `view.XXX.data` 与 hook 接入前 DOM 严格一致（AutopilotRoutePage.test.tsx 使用
+  //    `renderToStaticMarkup`，不运行 `useEffect`，因此 view 的 fetch effect 不会在快照中
+  //    触发）。
+  //  - `currentSubStage` 用 `resolveRailSubStage({ currentStage: "fabric", ... })` 预先
+  //    算好，既用于 hook 的懒加载 gate，也用作 fabric 分支里 `<AutopilotRightRail>` 的
+  //    prop（避免在 render 期间重复调用 resolver）。非 fabric 阶段传入的 resolver 依然
+  //    会返回 undefined（resolver 纯函数契约），因此即便在 `input/clarification/routeset
+  //    /selection` 阶段本 hook 被调用，也不会触发 Wave 2-4 的 fetch。
+  //  - 本次接入只把 fabric 分支切到 hook 消费；`input/clarification/routeset/selection`
+  //    4 个阶段的 `useState` / `useEffect` / 写请求（`createBlueprintIntake` /
+  //    `createBlueprintClarificationSession` / `saveBlueprintClarificationAnswers` /
+  //    `selectBlueprintRoute` 等）保持不变。
+  //  - 5 条 `useMemo(readAutopilot*(latestJob))` 派生值保留：`flowSteps` / `consoleLines`
+  //    的 useMemo 与 `projection` 阶段 UI 仍然依赖它们；hook 只替换 fabric 分支传给
+  //    `<AutopilotRightRail>` 的 9 个 props 的来源（Requirement 6.6：不删除派生 helper）。
+  //  - `onSubStageChange` 保持 `() => {}` no-op（Spec 5 `autopilot-step-driven-rail-
+  //    navigation` 会接入 URL `?sub=xxx` 同步）。
+  const fabricSubStage = useMemo(
+    () =>
+      resolveRailSubStage({
+        currentStage: "fabric",
+        job: latestJob,
+        selection,
+        specTree,
+        agentCrew: autopilotAgentCrew,
+      }),
+    [latestJob, selection, specTree, autopilotAgentCrew]
+  );
+  const rightRailView = useAutopilotRightRailData(latestJob?.id ?? "", {
+    initialData: {
+      job: latestJob,
+      routeSet,
+      selection,
+      specTree,
+      agentCrew: autopilotAgentCrew,
+      capabilities: autopilotCapabilities,
+      capabilityInvocations: autopilotCapabilityInvocations,
+      capabilityEvidence: autopilotCapabilityEvidence,
+      effectPreviews: autopilotEffectPreviews,
+    },
+    currentSubStage: fabricSubStage,
+  });
   const flowSteps = useMemo(
     () =>
       buildFlowSteps({
@@ -2478,6 +2550,8 @@ export default function AutopilotRoutePage() {
             onGenerateRouteSet={handleGenerateRouteSet}
             onSelectRoute={handleSelectRoute}
             apiError={apiError}
+            rightRailView={rightRailView}
+            fabricSubStage={fabricSubStage}
           />
         </div>
       </div>

@@ -120,7 +120,7 @@
   - **验收**:历史 import `@/pages/specs/hooks/use-blueprint-progress-data` 可以继续工作;删除本 shim 未来只需一次 `git rm` 无需迁移调用方
   - _需求:Requirement 9.1、9.2、9.3、9.4、9.5_
 
-- [ ] 9. 在 `AutopilotRoutePage.tsx` 中接入 hook(替换 5 条派生 useMemo)
+- [x] 9. 在 `AutopilotRoutePage.tsx` 中接入 hook(替换 5 条派生 useMemo)
   - 在文件顶部新增 `import { useAutopilotRightRailData, resolveRailSubStage } from "./right-rail";`
   - 在 fabric 阶段调用 `useAutopilotRightRailData(latestJob?.id ?? "", { initialData: { job: latestJob, routeSet, selection, specTree, agentCrew: autopilotAgentCrew, capabilities: autopilotCapabilities, capabilityInvocations: autopilotCapabilityInvocations, capabilityEvidence: autopilotCapabilityEvidence, effectPreviews: autopilotEffectPreviews }, currentSubStage })`
   - 用 `view.job.data / view.agentCrew.data / view.capabilities.data / view.capabilityInvocations.data / view.capabilityEvidence.data / view.effectPreviews.data` 替换现有 5 条 `useMemo(readAutopilot*(latestJob))` 派生结果(helper 函数 `readAutopilotAgentCrew` 等可以保留供 hook 内部复用)
