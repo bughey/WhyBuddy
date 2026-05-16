@@ -621,7 +621,70 @@ async function startServer() {
   const { createDefaultBlueprintHttpFetcher } = await import(
     "./routes/blueprint/mcp-github-source/http-fetcher.js"
   );
+  const { resolveAllBridgeEnablement } = await import(
+    "./routes/blueprint/runtime-enablement/resolver.js"
+  );
+
+  // Task 12（design §D1 / §3.1 / requirement 1.1 / 2.1 / 3.1 / 7.7）：
+  // 启动期一次性解析 5 条 capability bridge 的 enablement。
+  // resolver 会把解析结果写回 `process.env`，使既有 bridge 内部的
+  // `process.env.X === "true"` tier-1 门禁自动继承新默认值；
+  // 既有测试通过 `BUILD_TARGET=test` 强制返回 "false" 保持兼容。
+  const resolvedEnablement = resolveAllBridgeEnablement(process.env);
+
+  // Task 16.1-16.2（`autopilot-role-container-loader`）：解析 loader 的 enablement
+  // 并写回 process.env，让 loader 的 Tier 1 gate 能读到最终值。
+  // `resolveBridgeEnablement` 的 `envFlag` union 尚未包含此 key，用 as never 下钻。
+  const { resolveBridgeEnablement } = await import(
+    "./routes/blueprint/runtime-enablement/resolver.js"
+  );
+  const resolvedRoleContainerLoaderEnabled = resolveBridgeEnablement({
+    envFlag: "BLUEPRINT_ROLE_CONTAINER_LOADER_ENABLED" as never,
+    explicitEnvValue: process.env.BLUEPRINT_ROLE_CONTAINER_LOADER_ENABLED,
+    masterSwitch: process.env.AUTOPILOT_REAL_RUNTIME,
+    buildTarget: process.env.BUILD_TARGET,
+  });
+  if (
+    resolvedRoleContainerLoaderEnabled !== undefined &&
+    process.env.BLUEPRINT_ROLE_CONTAINER_LOADER_ENABLED !==
+      resolvedRoleContainerLoaderEnabled
+  ) {
+    process.env.BLUEPRINT_ROLE_CONTAINER_LOADER_ENABLED =
+      resolvedRoleContainerLoaderEnabled;
+  }
+
   const blueprintServiceContext = buildBlueprintServiceContext({});
+
+  // autopilot-agent-reasoning-stream：装配 CallbackReceiver 实例，让 Agent 推理流
+  // 的 HMAC 回调有宿主侧 HTTP server 接收。仅当 Agent 驱动管线开启时才装配。
+  if (
+    process.env.BLUEPRINT_AGENT_DRIVEN_PIPELINE_ENABLED === "true" &&
+    process.env.BUILD_TARGET !== "test"
+  ) {
+    try {
+      const { createCallbackReceiver } = await import(
+        "./routes/blueprint/role-agent-runtime/callback-receiver.js"
+      );
+      const receiver = createCallbackReceiver({
+        hmacSecret: process.env.EXECUTOR_CALLBACK_SECRET ?? "dev-callback-secret-2026",
+        logger: blueprintServiceContext.logger,
+        now: () => new Date(),
+      });
+      await receiver.start(0); // OS 分配端口
+      blueprintServiceContext.callbackReceiver = receiver;
+      // eslint-disable-next-line no-console
+      console.log(
+        `[blueprint] CallbackReceiver started on port ${receiver.actualPort}`
+      );
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        "[blueprint] Failed to start CallbackReceiver:",
+        err instanceof Error ? err.message : String(err),
+      );
+    }
+  }
+
   const aigcMonitoringRoutes = (await import("./routes/aigc-monitoring.js"))
     .default;
   const configRoutes = (await import("./routes/config.js")).default;
@@ -1097,8 +1160,9 @@ async function startServer() {
   // `mcp-github-source` capability from templated fallback to a real MCP /
   // HTTP invocation. Otherwise we mount the default singleton and the bridge
   // stays in fallback mode (`provenance.executionMode = "simulated_fallback"`).
-  const mcpBridgeEnabled =
-    process.env.BLUEPRINT_MCP_CAPABILITY_BRIDGE_ENABLED === "true";
+  // Task 12.2：master switch / explicit flag / BUILD_TARGET 的合一由
+  // resolveAllBridgeEnablement 在启动期决策，这里只消费解析结果。
+  const mcpBridgeEnabled = resolvedEnablement.mcpGithub === "true";
   if (mcpBridgeEnabled) {
     const blueprintHttpFetcher = createDefaultBlueprintHttpFetcher({
       maxResponseBodyBytes: 1_048_576,
@@ -1115,12 +1179,174 @@ async function startServer() {
         httpFetcher: blueprintHttpFetcher,
       }),
     );
+    // Task 12.3：启动期同步写入 mcp-github 桥的初始 configuration；桥内部每次
+    // invocation 完成后会通过 diagnostics subscriber 追加 invocation 统计。
+    blueprintServiceContext.runtimeDiagnostics.recordBridgeConfiguration(
+      "mcpGithub",
+      { enabledByConfig: true, dependencyReady: true },
+    );
   } else {
     app.use(
       "/api/blueprint",
       createBlueprintRouter({ blueprintServiceContext }),
     );
+    blueprintServiceContext.runtimeDiagnostics.recordBridgeConfiguration(
+      "mcpGithub",
+      { enabledByConfig: false, dependencyReady: false },
+    );
   }
+
+  // Task 12.4（design §4.4 / requirement 5.2 / 6.1 / 6.2）：把剩余 4 条桥的
+  // 启动期配置状态写入 diagnostics store。docker 桥的 configuration 由
+  // `resolveDefaultExecutorClient` 的 fire-and-forget probe 异步补录
+  // `dependencyReady`（design §4.3）；这里同步写一次初始值作为基线。
+  {
+    const dockerEnabled = resolvedEnablement.docker === "true";
+    blueprintServiceContext.runtimeDiagnostics.recordBridgeConfiguration(
+      "docker",
+      {
+        enabledByConfig: dockerEnabled,
+        // 启动期尚未完成 probe，暂以 enabled 为基线；probe 回调会覆盖此值。
+        dependencyReady:
+          dockerEnabled && !!process.env.LOBSTER_EXECUTOR_BASE_URL,
+      },
+    );
+
+    const llmApiKeyReady = !!blueprintServiceContext.llm.getConfig().apiKey;
+
+    const roleEnabled = resolvedEnablement.role === "true";
+    blueprintServiceContext.runtimeDiagnostics.recordBridgeConfiguration(
+      "role",
+      {
+        enabledByConfig: roleEnabled,
+        dependencyReady: roleEnabled && llmApiKeyReady,
+      },
+    );
+
+    const aigcNodeEnabled = resolvedEnablement.aigcNode === "true";
+    blueprintServiceContext.runtimeDiagnostics.recordBridgeConfiguration(
+      "aigcNode",
+      {
+        enabledByConfig: aigcNodeEnabled,
+        dependencyReady: aigcNodeEnabled && llmApiKeyReady,
+      },
+    );
+
+    const stageEnabled =
+      resolvedEnablement.agentCrewStageActivation === "true";
+    blueprintServiceContext.runtimeDiagnostics.recordBridgeConfiguration(
+      "agentCrewStageActivation",
+      { enabledByConfig: stageEnabled, dependencyReady: stageEnabled },
+    );
+  }
+
+  // Task 16.4（`autopilot-role-container-loader`）：启动期 recordBridgeConfiguration
+  // 把 loader 的 enablement 与 dependency 状态写入 diagnostics store。
+  blueprintServiceContext.runtimeDiagnostics.recordBridgeConfiguration(
+    "roleContainerLoader",
+    {
+      enabledByConfig: resolvedRoleContainerLoaderEnabled === "true",
+      dependencyReady: Boolean(blueprintServiceContext.roleContainerLoader),
+    },
+  );
+
+  // autopilot-streaming-experience integration-gap-2026-05-16 P1：让诊断面与启动日志对齐。
+  //
+  // 背景：`/api/blueprint/diagnostics` 在 fresh server 上把 `roleAutonomousAgent` 与
+  // `agentReasoningBridge` 报告为 `enabledByConfig=false / dependencyReady=false /
+  // mode=unknown`，即使 `.env` 已显式把对应 flag 设成 `"true"`、且启动日志已经
+  // 打出 `[blueprint] agentReasoningBridge enabled`。
+  //
+  // 根因：上文 docker / mcpGithub / role / aigcNode / agentCrewStageActivation /
+  // roleContainerLoader 均同步写入了 `recordBridgeConfiguration(...)`，而
+  // roleAutonomousAgent 与 agentReasoningBridge 的桥都是按 env flag 在 createBlueprintServiceContext
+  // 内部 lazy 装配的，从未在启动期把 enablement / 依赖就绪状态同步给 diagnostics store。
+  //
+  // 修复：补两次同步 `recordBridgeConfiguration` 调用，依据各自的 env flag 加上
+  // 上下文中是否已具备最小 runtime 依赖（`roleAgentDelegator` 与 `eventBus`）来推导
+  // `dependencyReady`，与启动日志保持一致；不修改 diagnostics-store 内部 BridgeId
+  // 列表，也不改 agent-reasoning-bridge.ts / callback-receiver.ts /
+  // lite-agent-runtime.ts / llm-call.ts。
+  {
+    const roleAutonomousAgentEnabled =
+      process.env.BLUEPRINT_ROLE_AUTONOMOUS_AGENT_ENABLED === "true";
+    blueprintServiceContext.runtimeDiagnostics.recordBridgeConfiguration(
+      "roleAutonomousAgent",
+      {
+        enabledByConfig: roleAutonomousAgentEnabled,
+        // 角色自主 Agent 的最小依赖是 `RoleAgentDelegator`：context.ts 在 env flag
+        // 为 "true" 且非测试环境下 lazy 装配；缺失时 dependencyReady 应为 false。
+        dependencyReady:
+          roleAutonomousAgentEnabled
+          && Boolean(blueprintServiceContext.roleAgentDelegator),
+      },
+    );
+
+    const agentReasoningBridgeEnabled =
+      process.env.BLUEPRINT_AGENT_REASONING_STREAM_ENABLED === "true";
+    blueprintServiceContext.runtimeDiagnostics.recordBridgeConfiguration(
+      "agentReasoningBridge",
+      {
+        enabledByConfig: agentReasoningBridgeEnabled,
+        // Agent 推理流桥订阅 `BlueprintEventBus` 把 role.agent.* 事件 forward 到
+        // Socket.IO/HUD；`eventBus` 是 context 上的必填字段，因此把 dependencyReady
+        // 直接对齐到 env flag 即可（`agentReasoningBridge.start()` 内部会再做一次
+        // env / callbackReceiver 校验，env-off 时只是 no-op）。
+        dependencyReady: agentReasoningBridgeEnabled
+          && Boolean(blueprintServiceContext.eventBus),
+      },
+    );
+  }
+
+  // Blueprint Socket.IO relay（autopilot-realtime-observation-bridge Task 1.5）
+  const socketIoInstance = getSocketIO();
+  if (socketIoInstance) {
+    const { createBlueprintSocketRelay } = await import("./routes/blueprint/socket-relay.js");
+    const blueprintRelay = createBlueprintSocketRelay({
+      eventBus: blueprintServiceContext.eventBus,
+      io: socketIoInstance,
+      logger: blueprintServiceContext.logger,
+    });
+    blueprintRelay.start();
+  }
+
+  // `autopilot-agent-reasoning-stream` spec Task 6.2-6.4：env-flag-gated
+  // 装配 AgentReasoningBridge。仅当主开关 `BLUEPRINT_AGENT_REASONING_STREAM_ENABLED
+  // === "true"` 且 `BUILD_TARGET !== "test"` 时才动态 import bridge 模块并
+  // `.start()`，env-off 时本块不进入，无新增 import side effect、无 eager
+  // 装配（Task 6.5）。bridge 工厂内部还有第二层 env / callbackReceiver 检查
+  // （design §「Env flag off 路径」），即使 callbackReceiver 缺失也只是 no-op。
+  if (
+    process.env.BLUEPRINT_AGENT_REASONING_STREAM_ENABLED === "true" &&
+    process.env.BUILD_TARGET !== "test"
+  ) {
+    try {
+      const { createAgentReasoningBridge } = await import(
+        "./routes/blueprint/agent-reasoning-bridge.js"
+      );
+      const bridge = createAgentReasoningBridge({
+        eventBus: blueprintServiceContext.eventBus,
+        callbackReceiver: blueprintServiceContext.callbackReceiver,
+        delegator: blueprintServiceContext.roleAgentDelegator,
+        runtimeDiagnostics: blueprintServiceContext.runtimeDiagnostics,
+        logger: blueprintServiceContext.logger,
+        now: () => new Date(),
+      });
+      // bridge.start() 内部会调用 runtimeDiagnostics.setAgentReasoningEnabled(true)，
+      // 这里不重复调用以保持单一来源。
+      bridge.start();
+      // eslint-disable-next-line no-console
+      console.log("[blueprint] agentReasoningBridge enabled");
+    } catch (err) {
+      // 装配失败兜底：不让宿主启动崩溃；env-off 路径与主线行为完全等价。
+      // eslint-disable-next-line no-console
+      console.warn(
+        "[blueprint] failed to assemble agentReasoningBridge:",
+        err instanceof Error ? err.message : String(err),
+      );
+    }
+  }
+
   app.use(
     "/api/mcp",
     createMcpRouter({
@@ -1886,6 +2112,22 @@ async function startServer() {
   });
   process.on("SIGTERM", () => {
     void shutdown("SIGTERM");
+  });
+
+  // 全局兜底：防止单次未处理的 async 异常（例如 MySQL 瞬时 ECONNRESET、LLM HTTP 500、
+  // 第三方 SDK 内部抛错）把整个 Node 进程拖死。在开发态这会让服务崩溃后需要重启,
+  // 在生产态更不能接受;默认策略是记日志但不退出进程,让下一次请求走正常错误路径。
+  //
+  // 例外：如果错误明确表示进程级不可恢复（例如 out-of-memory），仍然应让进程退出。
+  // 目前没有这类信号,全部记日志即可。
+  process.on("unhandledRejection", (reason, promise) => {
+    console.error("[process] unhandledRejection:", reason);
+    // 不重新抛出；下一次 tick 不会让进程退出。
+    void promise;
+  });
+  process.on("uncaughtException", (error) => {
+    console.error("[process] uncaughtException:", error);
+    // 不退出进程;express 下游请求仍会继续。
   });
 }
 

@@ -542,3 +542,162 @@ describe("createAgentCrewStageActivationDriver", () => {
     expect(emit2).toHaveBeenCalledTimes(2);
   });
 });
+
+
+// ─── autopilot-role-container-loader spec Task 20 ───
+// 4 条集成测试：验证 driver 中 role container loader hook 的行为。
+describe("role container loader hook", () => {
+  beforeEach(() => {
+    vi.stubEnv("BLUEPRINT_AGENT_CREW_STAGE_ACTIVATION_ENABLED", "true");
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  // (a) ctx 未注入 loader → hook 不触发
+  it("does not invoke hook when ctx has no roleContainerLoader", () => {
+    const { ctx, emitSpy } = makeCtx();
+    // 确保 ctx 上没有 roleContainerLoader
+    expect((ctx as any).roleContainerLoader).toBeUndefined();
+
+    const driver = createAgentCrewStageActivationDriver(ctx);
+    const job = makeJob({
+      roles: [
+        { id: "planner", label: "Planner", activationStages: ["input"], responsibilities: [] },
+      ],
+      stages: ["input", "clarification"] as BlueprintGenerationStage[],
+    });
+
+    driver.onStageTransition({
+      jobId: "job-1",
+      stageId: "input" as BlueprintGenerationStage,
+      transition: "stage_started",
+      job,
+    });
+
+    // driver 正常 emit role 事件
+    expect(emitSpy).toHaveBeenCalled();
+    // 没有 loader hook 被调用（因为 ctx 上没有 loader）
+  });
+
+  // (b) 注入 loader + BLUEPRINT_ROLE_CONTAINER_LOADER_ENABLED=true → hook 被调一次
+  it("invokes onStageTransitionHook once when loader is injected and flag is true", () => {
+    vi.stubEnv("BLUEPRINT_ROLE_CONTAINER_LOADER_ENABLED", "true");
+
+    const { ctx, emitSpy } = makeCtx();
+    const hookSpy = vi.fn();
+    // 注入 spy loader
+    (ctx as any).roleContainerLoader = { onStageTransitionHook: hookSpy };
+
+    const driver = createAgentCrewStageActivationDriver(ctx);
+    const job = makeJob({
+      roles: [
+        { id: "planner", label: "Planner", activationStages: ["input"], responsibilities: [] },
+        { id: "architect", label: "Architect", activationStages: ["spec_tree"], responsibilities: [] },
+      ],
+      stages: ["input", "clarification", "spec_tree"] as BlueprintGenerationStage[],
+    });
+
+    driver.onStageTransition({
+      jobId: "job-1",
+      stageId: "input" as BlueprintGenerationStage,
+      transition: "stage_started",
+      job,
+    });
+
+    // hook 被调一次
+    expect(hookSpy).toHaveBeenCalledTimes(1);
+    // payload 等于 driver 的 input + stageRoleStateMap
+    expect(hookSpy.mock.calls[0][0]).toEqual({
+      jobId: "job-1",
+      stageId: "input",
+    });
+    // 第二个参数是 stageRoleStateMap（Map）
+    const stateMap = hookSpy.mock.calls[0][1] as ReadonlyMap<string, string>;
+    expect(stateMap).toBeInstanceOf(Map);
+    // planner 在 input 阶段应为 active
+    expect(stateMap.get("planner")).toBe("active");
+
+    // driver 自身的 role 事件也正常 emit
+    expect(emitSpy).toHaveBeenCalled();
+  });
+
+  // (c) 注入 loader + flag 未设 → hook 不触发
+  it("does not invoke hook when BLUEPRINT_ROLE_CONTAINER_LOADER_ENABLED is not set", () => {
+    // 不设置 BLUEPRINT_ROLE_CONTAINER_LOADER_ENABLED（或显式删除）
+    delete process.env.BLUEPRINT_ROLE_CONTAINER_LOADER_ENABLED;
+
+    const { ctx, emitSpy } = makeCtx();
+    const hookSpy = vi.fn();
+    (ctx as any).roleContainerLoader = { onStageTransitionHook: hookSpy };
+
+    const driver = createAgentCrewStageActivationDriver(ctx);
+    const job = makeJob({
+      roles: [
+        { id: "planner", label: "Planner", activationStages: ["input"], responsibilities: [] },
+      ],
+      stages: ["input", "clarification"] as BlueprintGenerationStage[],
+    });
+
+    driver.onStageTransition({
+      jobId: "job-1",
+      stageId: "input" as BlueprintGenerationStage,
+      transition: "stage_started",
+      job,
+    });
+
+    // hook 不被调用
+    expect(hookSpy).not.toHaveBeenCalled();
+    // driver 自身行为正常
+    expect(emitSpy).toHaveBeenCalled();
+  });
+
+  // (d) hook 抛错 → driver 自身行为不受影响
+  it("driver behavior is unaffected when hook throws an error", () => {
+    vi.stubEnv("BLUEPRINT_ROLE_CONTAINER_LOADER_ENABLED", "true");
+
+    const { ctx, emitSpy, warnSpy } = makeCtx();
+    const hookSpy = vi.fn(() => {
+      throw new Error("hook explosion");
+    });
+    (ctx as any).roleContainerLoader = { onStageTransitionHook: hookSpy };
+
+    const driver = createAgentCrewStageActivationDriver(ctx);
+    const job = makeJob({
+      roles: [
+        { id: "planner", label: "Planner", activationStages: ["input"], responsibilities: [] },
+        { id: "architect", label: "Architect", activationStages: ["spec_tree"], responsibilities: [] },
+      ],
+      stages: ["input", "clarification", "spec_tree"] as BlueprintGenerationStage[],
+    });
+
+    // 不应抛错
+    expect(() => {
+      driver.onStageTransition({
+        jobId: "job-1",
+        stageId: "input" as BlueprintGenerationStage,
+        transition: "stage_started",
+        job,
+      });
+    }).not.toThrow();
+
+    // hook 被调了（然后抛错）
+    expect(hookSpy).toHaveBeenCalledTimes(1);
+
+    // driver 自身的 role.* 事件序列完全不受影响
+    const events = emitSpy.mock.calls.map((c: any) => c[0]);
+    // planner → active, architect → watching
+    expect(events.length).toBe(2);
+    expect(events[0].type).toBe(BlueprintEventName.RoleActivated);
+    expect(events[0].roleId).toBe("planner");
+    expect(events[1].type).toBe(BlueprintEventName.RoleWatching);
+    expect(events[1].roleId).toBe("architect");
+
+    // warn 被记录
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining("role container loader hook threw"),
+      expect.objectContaining({ err: expect.stringContaining("hook explosion") }),
+    );
+  });
+});

@@ -15,15 +15,36 @@
  * - 需求 3.5（`blueprintStores` 与 `BlueprintJobStore` 的抽象边界）
  */
 
+import { readFileSync } from "node:fs";
 import path from "node:path";
 
 import { getAIConfig, type AIConfig } from "../../core/ai-config.js";
 import { callLLMJson } from "../../core/llm-client.js";
 import type { ExecutorClient } from "../../core/executor-client.js";
+import { buildCallbackUrl } from "../../core/execution-bridge.js";
 import {
   createFileBlueprintJobStore,
   type BlueprintJobStore,
 } from "./job-store.js";
+import {
+  createBlueprintRuntimeDiagnosticsStore,
+  type BlueprintRuntimeDiagnosticsStore,
+} from "./runtime-enablement/diagnostics-store.js";
+import { resolveDefaultExecutorClient } from "./runtime-enablement/executor-factory.js";
+import { attachDiagnosticsSubscriber } from "./runtime-enablement/subscriber.js";
+import {
+  createInMemoryRoleRuntimeContextStore,
+  createRoleContainerLoader,
+  type RoleContainerLoader,
+  type RoleRuntimeContextStore,
+} from "./role-container-loader/loader.js";
+import type { SkillRegistryDependency } from "./role-container-loader/skills-binder.js";
+import type { RoleAgentDelegator } from "./role-agent-runtime/delegator.js";
+import { createRoleAgentDelegator } from "./role-agent-runtime/delegator.js";
+import type { CallbackReceiver } from "./role-agent-runtime/callback-receiver.js";
+import { createLlmCall } from "./role-agent-runtime/llm-call.js";
+import { createLiteAgentRuntime } from "./role-agent-runtime/lite-agent-runtime.js";
+import type { RoleCapabilityPackage } from "../../../shared/blueprint/index.js";
 import type {
   BlueprintClarificationSession,
   BlueprintGenerationArtifact,
@@ -91,6 +112,16 @@ import type { SpecDocumentsLlmPolicy } from "./spec-documents/policy.js";
 import { createDefaultSpecDocumentsLlmPolicy } from "./spec-documents/policy.js";
 import type { SpecDocumentsLlmService } from "./spec-documents/service.js";
 import { createSpecDocumentsLlmService } from "./spec-documents/service.js";
+// `autopilot-llm-spec-generation` Task 5.1：以 `import type` 引入新工厂的对外
+// 接口；Task 5.2 进一步引入运行期工厂函数 `createSpecTreeLlmDerivation` /
+// `createSpecDocsLlmGeneration`，在 `buildBlueprintServiceContext` 内部完成
+// 默认实例的装配。两个工厂模块自身仅依赖 `import type` 引入既有 runtime，
+// 不会触发 `agent-reasoning-bridge.ts` / `lite-agent-runtime.ts` 等模块的
+// 运行期副作用（design §硬约束）。
+import type { SpecTreeLlmDerivation } from "./spec-tree-llm-derivation.js";
+import { createSpecTreeLlmDerivation } from "./spec-tree-llm-derivation.js";
+import type { SpecDocsLlmGeneration } from "./spec-docs-llm-generation.js";
+import { createSpecDocsLlmGeneration } from "./spec-docs-llm-generation.js";
 import type { PromptPackageLlmPolicy } from "./prompt-package/policy.js";
 import { createDefaultPromptPackageLlmPolicy } from "./prompt-package/policy.js";
 import type { PromptPackageLlmService } from "./prompt-package/service.js";
@@ -554,6 +585,37 @@ export interface BlueprintServiceContext {
    */
   specDocumentsLlmService?: SpecDocumentsLlmService;
   /**
+   * `autopilot-llm-spec-generation` spec Task 5.1：可选的 SPEC 树 LLM 推导工厂。
+   *
+   * 由 spec_tree handler（Task 6.1）在 env flag
+   * `BLUEPRINT_SPEC_TREE_LLM_ENABLED === "true"` 且非 `BUILD_TARGET=test` 时
+   * 优先调用 {@link SpecTreeLlmDerivation.derive} 走真实 LLM 推导；未注入或
+   * 装配阶段 `enabledByConfig` / `dependencyReady` 不就绪时回落到既有模板路径。
+   *
+   * 默认装配在 Task 5.2 `buildBlueprintServiceContext` 中完成；测试可通过
+   * {@link BlueprintServiceContextDeps.specTreeLlmDerivation} 注入 fake 工厂。
+   * 字段保持可选语义以兼容直接装配 ctx 的旧调用路径。
+   *
+   * @see `.kiro/specs/autopilot-llm-spec-generation/design.md` §2.D1 / §4.2
+   */
+  specTreeLlmDerivation?: SpecTreeLlmDerivation;
+  /**
+   * `autopilot-llm-spec-generation` spec Task 5.1：可选的 SPEC 文档 LLM 生成工厂。
+   *
+   * 由 spec_docs handler（Task 6.2）按节点逐项调用
+   * {@link SpecDocsLlmGeneration.generate}：当 env flag
+   * `BLUEPRINT_SPEC_DOCS_LLM_ENABLED === "true"` 且非 `BUILD_TARGET=test`、
+   * 同时工厂注入到位时走真实 LLM 路径；任一节点降级时按
+   * `perNode[i].generationSource` 单独决策模板回退，不影响其它节点。
+   *
+   * 默认装配在 Task 5.2 `buildBlueprintServiceContext` 中完成；测试可通过
+   * {@link BlueprintServiceContextDeps.specDocsLlmGeneration} 注入 fake 工厂。
+   * 字段保持可选语义以兼容直接装配 ctx 的旧调用路径。
+   *
+   * @see `.kiro/specs/autopilot-llm-spec-generation/design.md` §2.D1 / §4.2 / §4.6
+   */
+  specDocsLlmGeneration?: SpecDocsLlmGeneration;
+  /**
    * Optional: Prompt Package LLM service policy (pure data, stateless).
    * When omitted, `buildBlueprintServiceContext` wires a default via
    * `createDefaultPromptPackageLlmPolicy()`.
@@ -576,6 +638,69 @@ export interface BlueprintServiceContext {
    * `createEngineeringHandoffLlmService(ctx)`.
    */
   engineeringHandoffLlmService?: EngineeringHandoffLlmService;
+  /**
+   * 运行时诊断 store。默认装配 in-memory
+   * `createBlueprintRuntimeDiagnosticsStore()`；测试可以通过
+   * `buildBlueprintServiceContext({ runtimeDiagnostics })` 注入替代实例以观察
+   * 事件订阅行为或在并发用例之间保持状态隔离。
+   *
+   * 由 `server/routes/blueprint.ts` 的 `GET /diagnostics` 路由在
+   * `.kiro/specs/autopilot-capability-runtime-enablement` Task 11 接线后
+   * 消费；在此之前已经通过 `attachDiagnosticsSubscriber(eventBus, store)`
+   * 持续聚合 capability / role 事件。
+   *
+   * 参考：
+   * - `.kiro/specs/autopilot-capability-runtime-enablement/design.md` §4.4 / §4.5 / §4.6
+   * - 需求 5.1 / 5.2 / 5.3 / 5.6 / 5.8
+   *
+   * 该字段为必填：`buildBlueprintServiceContext` 始终保证在返回 ctx 时此字段
+   * 非空（默认使用 in-memory store），以便子域 / 路由层无需 `??` 兜底。
+   */
+  runtimeDiagnostics: BlueprintRuntimeDiagnosticsStore;
+  /**
+   * `autopilot-role-container-loader` spec Task 12：角色容器 loader。
+   * 默认在 `buildBlueprintServiceContext` 内按 Tier 1 gate 装配；
+   * 详见 `role-container-loader/loader.ts` 与 design §4.5。
+   */
+  roleContainerLoader?: RoleContainerLoader;
+
+  /**
+   * 角色运行时 ctx 的进程内 store；默认装配 in-memory Map 实现。
+   * 由 loader 的 provision / teardown / handoff 消费（design §D4）。
+   */
+  roleRuntimeContextStore?: RoleRuntimeContextStore;
+
+  /**
+   * L12 `plugin-skill-system` 的 Skill 注册表依赖。未注入时 skills-binder 走
+   * "全部跳过" 路径（需求 5.3）。本字段只承载类型，默认装配由 `server/index.ts`
+   * composition root 负责。
+   */
+  skillRegistry?: SkillRegistryDependency;
+
+  /**
+   * Agent 驱动管线委派器。env flag 开启时装配。
+   *
+   * 当 `BLUEPRINT_AGENT_DRIVEN_PIPELINE_ENABLED === "true"` 时，
+   * `createGenerationJob` 优先通过此委派器走 Agent 驱动链路生成 RouteSet。
+   * 未注入或 env flag 关闭时走现有 `buildRouteSet` 链路。
+   */
+  roleAgentDelegator?: RoleAgentDelegator;
+  /**
+   * `autopilot-agent-reasoning-stream` spec Task 6.1：宿主侧 HMAC 回调接收器。
+   *
+   * 由 `autopilot-role-autonomous-agent` Task 7 引入的 {@link CallbackReceiver}
+   * 实例，用于接收容器内 Agent Loop 的 HMAC 回调载荷
+   * （{@link AgentProgressEvent}）。当前主线 `server/index.ts` 默认不显式装配
+   * 实例，因此本字段保持 optional，未注入时下游 `agent-reasoning-bridge`
+   * 自动走 env-off 路径（design §「Env flag off 路径」）。
+   *
+   * 仅类型透传，不在 `buildBlueprintServiceContext` 内构造默认实例：
+   * - `CreateCallbackReceiverOptions` 必填 `hmacSecret`，需要由 composition
+   *   root 决策（与容器 progress-emitter 共享同一密钥）；
+   * - 既有 5140+ 测试与 `BUILD_TARGET=test` 路径不应感知该字段，否则会扩大
+   *   测试基线影响面。
+   */
+  callbackReceiver?: CallbackReceiver;
 }
 
 /**
@@ -727,9 +852,40 @@ export interface BlueprintServiceContextDeps {
    * so the service sees the same `llm` / `logger` / `now` /
    * `specDocumentsLlmPolicy` that the rest of the app uses.
    *
-   * @see `.kiro/specs/autopilot-spec-documents-llm/design.md` §2.D2 / §4.6
+   * @see `.kiro/specs/autopilot-spec-documents-llm/design.md` §2.D2 / §4.2 / §4.6
    */
   specDocumentsLlmService?: SpecDocumentsLlmService;
+  /**
+   * `autopilot-llm-spec-generation` spec Task 5.1：可选的 SPEC 树 LLM 推导工厂。
+   *
+   * 由 spec_tree handler（Task 6.1）在 env flag
+   * `BLUEPRINT_SPEC_TREE_LLM_ENABLED === "true"` 且非 `BUILD_TARGET=test` 时
+   * 优先调用 {@link SpecTreeLlmDerivation.derive} 走真实 LLM 推导；未注入或
+   * 装配阶段 `enabledByConfig` / `dependencyReady` 不就绪时回落到既有模板路径。
+   *
+   * 默认装配在 Task 5.2 `buildBlueprintServiceContext` 中完成；测试可通过
+   * {@link BlueprintServiceContextDeps.specTreeLlmDerivation} 注入 fake 工厂。
+   * 字段保持可选语义以兼容直接装配 ctx 的旧调用路径。
+   *
+   * @see `.kiro/specs/autopilot-llm-spec-generation/design.md` §2.D1 / §4.2
+   */
+  specTreeLlmDerivation?: SpecTreeLlmDerivation;
+  /**
+   * `autopilot-llm-spec-generation` spec Task 5.1：可选的 SPEC 文档 LLM 生成工厂。
+   *
+   * 由 spec_docs handler（Task 6.2）按节点逐项调用
+   * {@link SpecDocsLlmGeneration.generate}：当 env flag
+   * `BLUEPRINT_SPEC_DOCS_LLM_ENABLED === "true"` 且非 `BUILD_TARGET=test`、
+   * 同时工厂注入到位时走真实 LLM 路径；任一节点降级时按
+   * `perNode[i].generationSource` 单独决策模板回退，不影响其它节点。
+   *
+   * 默认装配在 Task 5.2 `buildBlueprintServiceContext` 中完成；测试可通过
+   * {@link BlueprintServiceContextDeps.specDocsLlmGeneration} 注入 fake 工厂。
+   * 字段保持可选语义以兼容直接装配 ctx 的旧调用路径。
+   *
+   * @see `.kiro/specs/autopilot-llm-spec-generation/design.md` §2.D1 / §4.2 / §4.6
+   */
+  specDocsLlmGeneration?: SpecDocsLlmGeneration;
   /** See {@link BlueprintServiceContext.promptPackageLlmPolicy}. */
   promptPackageLlmPolicy?: PromptPackageLlmPolicy;
   /** See {@link BlueprintServiceContext.promptPackageLlmService}. */
@@ -738,6 +894,59 @@ export interface BlueprintServiceContextDeps {
   engineeringHandoffLlmPolicy?: EngineeringHandoffLlmPolicy;
   /** See {@link BlueprintServiceContext.engineeringHandoffLlmService}. */
   engineeringHandoffLlmService?: EngineeringHandoffLlmService;
+  /**
+   * 可选：运行时诊断 store 覆盖。未提供时
+   * `buildBlueprintServiceContext` 默认装配
+   * `createBlueprintRuntimeDiagnosticsStore()`；测试可注入预置状态或 spy 后
+   * 的 store 观察 capability / role 事件。
+   *
+   * @see design §4.4 / §4.5
+   */
+  runtimeDiagnostics?: BlueprintRuntimeDiagnosticsStore;
+  /**
+   * `autopilot-role-container-loader` spec Task 12：角色容器 loader 覆盖。
+   * 未提供时 `buildBlueprintServiceContext` 仅在 Tier 1 gate 打开时（即
+   * `BLUEPRINT_ROLE_CONTAINER_LOADER_ENABLED === "true"`）默认装配一个 loader
+   * 实例；测试可以直接注入 fake loader 跳过装配路径。
+   */
+  roleContainerLoader?: RoleContainerLoader;
+  /**
+   * 可选：角色运行时 ctx 的进程内 store 覆盖。未提供时默认装配 in-memory
+   * Map store；测试可注入 spy 或预置状态。
+   */
+  roleRuntimeContextStore?: RoleRuntimeContextStore;
+  /**
+   * 可选：L12 plugin-skill-system Skill 注册表依赖。未提供时 ctx 上保持
+   * `undefined`，skills-binder 自动走 "全部跳过" 路径。默认装配由
+   * `server/index.ts` composition root 负责。
+   */
+  skillRegistry?: SkillRegistryDependency;
+  /**
+   * 可选：Agent 驱动管线委派器。未提供时 `buildBlueprintServiceContext` 仅在
+   * `BLUEPRINT_AGENT_DRIVEN_PIPELINE_ENABLED === "true"` 且
+   * `BUILD_TARGET !== "test"` 时默认装配。
+   */
+  roleAgentDelegator?: RoleAgentDelegator;
+  /**
+   * `autopilot-agent-reasoning-stream` spec Task 6.1：可选注入 HMAC
+   * 回调接收器。未提供时 `buildBlueprintServiceContext` 不构造默认实例
+   * （需要 `hmacSecret` 等密钥参数，由 composition root 决策），ctx 上
+   * `callbackReceiver` 保持 `undefined`，下游 agent-reasoning bridge 自动
+   * 走 env-off 路径。
+   */
+  callbackReceiver?: CallbackReceiver;
+  /**
+   * 可选：是否在 `deps.executorClient === undefined` 时自动解析默认
+   * `ExecutorClient`（默认 `true`，见 Task 10.3）。测试若明确要求 "ctx 上
+   * 不放 executorClient"（例如只做投影层断言），可显式传 `false`。
+   *
+   * 即便 `autoResolveExecutorClient === true`，
+   * `resolveDefaultExecutorClient` 仍会在
+   * `BLUEPRINT_DOCKER_CAPABILITY_BRIDGE_ENABLED !== "true"` 时返回
+   * `undefined`，因此 BUILD_TARGET=test 默认仍走 fallback 路径
+   * （design §D7 / 需求 10.6）。
+   */
+  autoResolveExecutorClient?: boolean;
 }
 
 /**
@@ -751,6 +960,44 @@ export type BlueprintClarificationQuestionGenerator = (
 ) => Promise<unknown>;
 
 let cachedDefaultJobStore: BlueprintJobStore | null = null;
+
+/**
+ * `autopilot-role-container-loader` spec Task 12：默认角色能力包目录（缓存）。
+ *
+ * 通过 `readFileSync` + `JSON.parse` 同步读取，避免 `with { type: "json" }`
+ * 语法在当前 tsx / TS 配置下的兼容性风险；首次调用时加载，后续命中内存缓存。
+ * 若 JSON 读取失败（例如文件被删除），返回空目录并一次性 warn，不让 loader
+ * 装配失败。
+ */
+let cachedDefaultRoleCapabilityPackages:
+  | Record<string, RoleCapabilityPackage>
+  | null = null;
+
+function loadDefaultRoleCapabilityPackages(
+  logger: BlueprintLogger,
+): Record<string, RoleCapabilityPackage> {
+  if (cachedDefaultRoleCapabilityPackages) {
+    return cachedDefaultRoleCapabilityPackages;
+  }
+  try {
+    const jsonUrl = new URL(
+      "./role-container-loader/default-role-capability-packages.json",
+      import.meta.url,
+    );
+    const raw = readFileSync(jsonUrl, "utf-8");
+    const parsed = JSON.parse(raw) as {
+      packages?: Record<string, RoleCapabilityPackage>;
+    };
+    cachedDefaultRoleCapabilityPackages = parsed.packages ?? {};
+  } catch (err) {
+    logger.warn(
+      "role container loader: failed to load default-role-capability-packages.json",
+      { error: err instanceof Error ? err.message : String(err) },
+    );
+    cachedDefaultRoleCapabilityPackages = {};
+  }
+  return cachedDefaultRoleCapabilityPackages;
+}
 
 /**
  * 懒加载默认 {@link BlueprintJobStore}。
@@ -768,6 +1015,26 @@ function getDefaultJobStore(storageFile?: string): BlueprintJobStore {
     cachedDefaultJobStore = createFileBlueprintJobStore();
   }
   return cachedDefaultJobStore;
+}
+
+/**
+ * Task 10.5: derive the executor callback URL the default `ExecutorClient`
+ * should POST events to. Reuses `buildCallbackUrl` from
+ * `server/core/execution-bridge.ts` so the URL format matches the rest of
+ * the mission runtime and the `/api/executor/events` endpoint.
+ *
+ * `SERVER_BASE_URL` falls back to `http://localhost:3001` when unset — that
+ * matches the server's default listen port when `PORT` is not configured.
+ * Production deployments are expected to set `SERVER_BASE_URL` explicitly so
+ * the executor can reach the callback endpoint across hosts.
+ *
+ * This helper is private to the context module; it is only invoked during
+ * the default `resolveDefaultExecutorClient({...})` path. Tests that inject
+ * `deps.executorClient` never exercise this code path.
+ */
+function deriveServerCallbackUrl(): string {
+  const baseUrl = process.env.SERVER_BASE_URL ?? "http://localhost:3001";
+  return buildCallbackUrl(baseUrl);
 }
 
 /**
@@ -804,11 +1071,61 @@ export function buildBlueprintServiceContext(
   const now = deps.now ?? (() => new Date());
   const logger = deps.logger ?? createSilentBlueprintLogger();
   const jobStore = deps.jobStore ?? getDefaultJobStore(deps.jobStoreFile);
-  // Task 13.1：executorCallbackDispatcher / dockerCapabilityPolicy 默认装配。
-  // Task 13.2：executorClient 继续透传，不强行装配默认实例 —— bridge 在 ctx 上
-  // `executorClient` 为 `undefined` 时会走 simulated fallback 早退路径（design
-  // §4.6 step 1），保证 dev 默认装配下不会因默认 HTTP executor 连接尝试而拖慢
-  // 响应，也保证测试默认装配行为等价于今天（design §2 D10）。
+
+  // Task 10.2: runtime diagnostics store default assembly. This must happen
+  // BEFORE the executor-client resolution path below because the
+  // `onProbeResult` callback passed to `resolveDefaultExecutorClient`
+  // writes the docker bridge's `dependencyReady` flag into the store once
+  // the fire-and-forget reachability probe settles.
+  //
+  // Tests can override via `deps.runtimeDiagnostics` to observe recorded
+  // invocations or share state across multiple ctx instances; production
+  // deployments get a per-ctx in-memory store that resets on process
+  // restart (requirement 5.8 / design §4.4).
+  const runtimeDiagnostics =
+    deps.runtimeDiagnostics ?? createBlueprintRuntimeDiagnosticsStore({ now });
+
+  // Task 10.3 / 10.5: default executor-client resolution. When
+  // `deps.executorClient` is undefined AND `deps.autoResolveExecutorClient`
+  // is not `false`, attempt to construct a default `ExecutorClient` via the
+  // env-gated factory. The factory performs its own tier-1 check on
+  // `dockerEnabled === "true"` and silently returns `undefined` otherwise,
+  // so in test environments (where the runtime-enablement resolver clamps
+  // the flag to `"false"`) no real client is constructed and `ctx.executorClient`
+  // remains `undefined` — matching today's default behaviour and preserving
+  // compatibility with the 5140+ existing tests (requirement 10.6).
+  //
+  // Tests that explicitly inject `executorClient: fake` continue to take
+  // precedence because the factory is only invoked when `deps.executorClient`
+  // is undefined. The Docker E2E suite in `blueprint-routes.test.ts` relies
+  // on this precedence order.
+  const autoResolveExecutorClient = deps.autoResolveExecutorClient !== false;
+  const resolvedDefaultExecutorClient =
+    deps.executorClient === undefined && autoResolveExecutorClient
+      ? resolveDefaultExecutorClient({
+          dockerEnabled: process.env
+            .BLUEPRINT_DOCKER_CAPABILITY_BRIDGE_ENABLED as
+            | "true"
+            | "false"
+            | undefined,
+          baseUrl: process.env.LOBSTER_EXECUTOR_BASE_URL,
+          callbackUrl: deriveServerCallbackUrl(),
+          logger,
+          onProbeResult: (result) => {
+            runtimeDiagnostics.recordBridgeConfiguration("docker", {
+              enabledByConfig: true,
+              dependencyReady: result.reachable,
+            });
+          },
+        })
+      : undefined;
+  const effectiveExecutorClient =
+    deps.executorClient ?? resolvedDefaultExecutorClient;
+  // Task 10.1 / 13.1：executorCallbackDispatcher / dockerCapabilityPolicy 默认装配。
+  // Task 13.2 / 10.3：executorClient 现在支持默认解析（见上），但仍保持
+  // `bridge` 在 ctx 上 `executorClient` 为 `undefined` 时走 simulated fallback
+  // 早退路径（design §4.6 step 1），保证 dev 默认装配下不会因默认 HTTP
+  // executor 连接尝试而拖慢响应，也保证测试默认装配行为等价于今天（design §2 D10）。
   const executorCallbackDispatcher =
     deps.executorCallbackDispatcher ??
     createBlueprintExecutorCallbackDispatcher({ now, logger });
@@ -850,10 +1167,13 @@ export function buildBlueprintServiceContext(
       deps.specsRoot ?? path.resolve(process.cwd(), ".kiro", "specs"),
     logger,
     // Docker capability bridge 相关依赖：
-    // - executorClient 仅透传（Task 13.2）；
+    // - executorClient 采用 default-on 解析（Task 10.3）：`deps.executorClient`
+    //   优先；否则当 `autoResolveExecutorClient !== false` 时由
+    //   `resolveDefaultExecutorClient` 根据 env 状态决定；测试环境下 resolver
+    //   返回 `undefined`，行为与今天等价（需求 10.6）。
     // - executorCallbackDispatcher / dockerCapabilityPolicy 默认装配（Task 13.1）；
     // - dockerCapabilityBridge 先占位为 undefined，下一步用 baseCtx 构造默认实例。
-    executorClient: deps.executorClient,
+    executorClient: effectiveExecutorClient,
     executorCallbackDispatcher,
     dockerCapabilityPolicy,
     dockerCapabilityBridge: undefined,
@@ -903,6 +1223,25 @@ export function buildBlueprintServiceContext(
       deps.engineeringHandoffLlmPolicy ??
       createDefaultEngineeringHandoffLlmPolicy(),
     engineeringHandoffLlmService: deps.engineeringHandoffLlmService,
+    // Task 10.2：运行时诊断 store。默认装配 in-memory 实例；
+    // `attachDiagnosticsSubscriber` 在 ctx 完全装配后订阅 `ctx.eventBus`
+    // 收集 capability / role 事件，供 Task 11 的 `GET /diagnostics` 路由消费。
+    runtimeDiagnostics,
+    // `autopilot-role-container-loader` spec Task 12.3：
+    // - `roleRuntimeContextStore`：未注入时默认装配 in-memory Map store，供
+    //   loader 的 provision / teardown / handoff 使用；测试可直接注入 spy。
+    // - `skillRegistry`：只做类型透传，ctx 未装配时 skills-binder 走"全部跳过"
+    //   路径（需求 5.3），默认装配由 `server/index.ts` composition root 负责。
+    // - `roleContainerLoader`：先占位为 undefined，下方按 Tier 1 gate 懒装配。
+    roleRuntimeContextStore:
+      deps.roleRuntimeContextStore ?? createInMemoryRoleRuntimeContextStore(),
+    skillRegistry: deps.skillRegistry,
+    roleContainerLoader: deps.roleContainerLoader,
+    roleAgentDelegator: deps.roleAgentDelegator,
+    // `autopilot-agent-reasoning-stream` spec Task 6.1：CallbackReceiver
+    // 仅作类型透传；未注入时 ctx 上保持 `undefined`，下游
+    // `createAgentReasoningBridge` 自动走 env-off / no-op 路径。
+    callbackReceiver: deps.callbackReceiver,
   };
 
   // Task 13.1 / 13.3 最后一步：用 baseCtx 构造默认 docker bridge（或透传注入的 bridge）。
@@ -976,6 +1315,162 @@ export function buildBlueprintServiceContext(
   if (!ctx.engineeringHandoffLlmService) {
     ctx.engineeringHandoffLlmService = createEngineeringHandoffLlmService(ctx);
   }
+
+  // ── `autopilot-llm-spec-generation` Task 5.2 / 5.3：装配 spec_tree /
+  //    spec_docs LLM 工厂，并在装配阶段写入诊断 store 的 bridge configuration
+  //    入口（让 `GET /api/blueprint/diagnostics` 首屏即可看到正确的
+  //    `enabled` / `disabled` mode）。
+  //
+  //    设计要点：
+  //    - `llmCall` 与 `liteAgentRuntime` 同源（design §2.D1）：构造一份
+  //      `LlmCallFn`，再以同一实例 + ctx.mcpToolAdapter / ctx.skillRegistry
+  //      装配 `LiteAgentRuntime`，最后把这份 `llmCall` 同时传给两个工厂；
+  //    - `liteAgentRuntime` 是工厂的可选依赖（design `SpecTreeLlmDerivationDeps`
+  //      / `SpecDocsLlmGenerationDeps` 中均为 `?`）。这里始终装配，方便 handler
+  //      在 env-on 时直接走 ReAct 循环；env-off 路径上工厂自身会早退，不会
+  //      触发任何 LLM / MCP / executor 副作用（needs Task 2.2 / 3.2）；
+  //    - `recordBridgeConfiguration` 的 `enabledByConfig` 严格按 env flag
+  //      与 `BUILD_TARGET` 计算；`dependencyReady` 仅做 "ctx 装配齐全" 的
+  //      静态判定（runtimeDiagnostics / llm 依赖恒在），apiKey 在工厂内部
+  //      Tier 1 早退处理（design §4.6）。
+  if (!ctx.specTreeLlmDerivation || !ctx.specDocsLlmGeneration) {
+    const sharedLlmCall = createLlmCall({
+      llm: ctx.llm,
+      logger: ctx.logger,
+    });
+    const sharedLiteAgentRuntime = createLiteAgentRuntime({
+      llmCall: sharedLlmCall,
+      mcpToolAdapter: ctx.mcpToolAdapter,
+      skillRegistry: ctx.skillRegistry,
+      logger: ctx.logger,
+      now: ctx.now,
+    });
+
+    if (!ctx.specTreeLlmDerivation) {
+      ctx.specTreeLlmDerivation = createSpecTreeLlmDerivation({
+        llmCall: sharedLlmCall,
+        mcpToolAdapter: ctx.mcpToolAdapter,
+        liteAgentRuntime: sharedLiteAgentRuntime,
+        diagnostics: ctx.runtimeDiagnostics,
+        logger: ctx.logger,
+        now: ctx.now,
+      });
+    }
+
+    if (!ctx.specDocsLlmGeneration) {
+      ctx.specDocsLlmGeneration = createSpecDocsLlmGeneration({
+        llmCall: sharedLlmCall,
+        mcpToolAdapter: ctx.mcpToolAdapter,
+        liteAgentRuntime: sharedLiteAgentRuntime,
+        diagnostics: ctx.runtimeDiagnostics,
+        logger: ctx.logger,
+        now: ctx.now,
+        eventBus: ctx.eventBus,
+      });
+    }
+  }
+
+  // Task 5.3：在 ctx 装配阶段写入 specTreeLlm / specDocsLlm 的 bridge
+  // configuration，使 `GET /api/blueprint/diagnostics` 首屏即可显示正确
+  // mode（`enabled` / `disabled`）。`enabledByConfig` 严格按需求 4.4 / 4.5
+  // 计算：仅当 env flag 为 "true" 且 `BUILD_TARGET !== "test"` 时为 true。
+  // `dependencyReady` 表示 ctx 装配阶段的依赖是否齐全；apiKey 缺失这种
+  // 运行期态由工厂自身的 Tier 2 早退处理（design §4.6），此处不做。
+  const isTestBuildTarget = process.env.BUILD_TARGET === "test";
+  const specTreeLlmEnabledByConfig =
+    process.env.BLUEPRINT_SPEC_TREE_LLM_ENABLED === "true" &&
+    !isTestBuildTarget;
+  const specDocsLlmEnabledByConfig =
+    process.env.BLUEPRINT_SPEC_DOCS_LLM_ENABLED === "true" &&
+    !isTestBuildTarget;
+  // ctx.specTreeLlmDerivation / ctx.specDocsLlmGeneration 在上一步保证非空；
+  // 同时 ctx.llm 与 ctx.runtimeDiagnostics 也必然就位，因此 dependencyReady
+  // 可以在装配阶段静态判定为 true。
+  ctx.runtimeDiagnostics.recordBridgeConfiguration("specTreeLlm", {
+    enabledByConfig: specTreeLlmEnabledByConfig,
+    dependencyReady: Boolean(ctx.specTreeLlmDerivation),
+  });
+  ctx.runtimeDiagnostics.recordBridgeConfiguration("specDocsLlm", {
+    enabledByConfig: specDocsLlmEnabledByConfig,
+    dependencyReady: Boolean(ctx.specDocsLlmGeneration),
+  });
+
+  // `autopilot-role-container-loader` spec Task 12.3 / 12.5：
+  // 角色容器 loader 的 Tier 1 门禁懒装配。仅当下面两个条件同时满足时才
+  // 构造默认 loader：
+  //   1. 调用方没有显式注入 `deps.roleContainerLoader`（尊重测试 spy）；
+  //   2. 环境变量 `BLUEPRINT_ROLE_CONTAINER_LOADER_ENABLED === "true"`
+  //      （由 Task 16 的 server/index composition root 经 resolver 写回）。
+  //
+  // 测试默认（`BUILD_TARGET=test`）下 resolver 会把该 flag 强制锁为
+  // `"false"`，因此 `buildBlueprintServiceContext({})` 返回的 ctx
+  // `roleContainerLoader === undefined`，不会触发 dispatchPlan / probe 等
+  // 任何副作用（需求 11.1）。
+  if (
+    !ctx.roleContainerLoader &&
+    process.env.BLUEPRINT_ROLE_CONTAINER_LOADER_ENABLED === "true"
+  ) {
+    const defaultsCatalog = loadDefaultRoleCapabilityPackages(logger);
+    ctx.roleContainerLoader = createRoleContainerLoader(ctx, defaultsCatalog);
+  }
+
+  // Task 10.4: attach the diagnostics subscriber now that every bridge /
+  // service is late-bound and `ctx.eventBus` is stable. The subscriber
+  // translates capability / role events emitted by the 5 `/autopilot`
+  // bridges into `ctx.runtimeDiagnostics.recordBridgeInvocation(...)`
+  // updates, without requiring any modification to the bridge
+  // implementations themselves (design §4.6 / requirement 5.6).
+  //
+  // The unsubscribe handle is intentionally dropped: the diagnostics store
+  // shares lifetime with the Node process per requirement 5.8, and
+  // `BlueprintEventBus` has no documented teardown for the ctx lifecycle.
+  // Should ctx teardown ever be introduced, the handle can be reinstated
+  // on a private field without touching this module's public surface.
+  attachDiagnosticsSubscriber(ctx.eventBus, ctx.runtimeDiagnostics, {
+    logger,
+  });
+
+  // Agent-driven pipeline delegator（autopilot-agent-driven-pipeline Task 1.2）
+  // 仅当 env flag 为 "true" 且非测试环境时装配，避免无谓开销。
+  if (
+    !ctx.roleAgentDelegator &&
+    process.env.BLUEPRINT_AGENT_DRIVEN_PIPELINE_ENABLED === "true" &&
+    process.env.BUILD_TARGET !== "test"
+  ) {
+    try {
+      const llmCall = createLlmCall({ llm: ctx.llm, logger: ctx.logger });
+
+      const routeSetGen = ctx.routeSetLlmGenerator!;
+      ctx.roleAgentDelegator = createRoleAgentDelegator({
+        roleRuntimeContextStore: ctx.roleRuntimeContextStore,
+        executorClient: ctx.executorClient,
+        liteAgentRuntime: createLiteAgentRuntime({
+          llmCall,
+          logger: ctx.logger,
+          now: ctx.now,
+        }),
+        fallbackLlmCall: async (delegateInput) => {
+          const result = await routeSetGen({
+            request: delegateInput.context.request as any,
+            intake: delegateInput.context.intake as any,
+            clarificationSession: delegateInput.context.clarificationSession as any,
+            projectContext: delegateInput.context.projectContext as any,
+            routeSetId: (delegateInput.context.routeSetId as string) ?? "fallback-routeset",
+            primaryRouteId: (delegateInput.context.primaryRouteId as string) ?? "fallback-primary",
+            createdAt: new Date().toISOString(),
+          });
+          return result.routes;
+        },
+        logger: ctx.logger,
+        now: ctx.now,
+      });
+    } catch (err) {
+      logger.warn("[context] Failed to assemble roleAgentDelegator", {
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
+  }
+
   return ctx;
 }
 

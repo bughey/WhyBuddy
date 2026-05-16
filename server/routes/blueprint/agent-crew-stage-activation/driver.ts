@@ -313,6 +313,50 @@ export function createAgentCrewStageActivationDriver(
         tracker.lastEmittedState = newState;
         tracker.lastStageId = stageKey;
       }
+
+      // `autopilot-role-container-loader` spec Task 15：env-gated hook。
+      //
+      // driver 主体已完成 role.* 事件序列 emit；此处做一次 fire-and-forget
+      // 调用，把 stageRoleStateMap 转给 loader，由 loader 决定 provision /
+      // teardown。
+      //
+      // 硬约束（需求 10.5 / 10.7）：
+      // - 仅在 `BLUEPRINT_ROLE_CONTAINER_LOADER_ENABLED === "true"` 且 ctx 已
+      //   注入 loader 时触发。未注入或 Tier 1 off 时短路，保证原有 driver 行为
+      //   对 Tier 1 off 测试透明。
+      // - hook 抛错必须被吞掉，不影响 driver 自身的返回值与事件序列。
+      // - ctx 上 `roleContainerLoader` 字段由 `autopilot-role-container-loader`
+      //   spec Task 12 在 `BlueprintServiceContext` 类型上追加；此处使用
+      //   duck-typed 访问保持与 Task 12 合并顺序解耦。
+      const loader = (
+        ctx as unknown as {
+          roleContainerLoader?: {
+            onStageTransitionHook: (
+              input: {
+                jobId: string;
+                stageId: BlueprintGenerationStage;
+              },
+              stateMap: ReadonlyMap<string, BlueprintRolePresenceState>,
+            ) => void;
+          };
+        }
+      ).roleContainerLoader;
+      if (
+        loader !== undefined &&
+        process.env.BLUEPRINT_ROLE_CONTAINER_LOADER_ENABLED === "true"
+      ) {
+        try {
+          loader.onStageTransitionHook(
+            { jobId: input.jobId, stageId: input.stageId },
+            stateMap,
+          );
+        } catch (err) {
+          ctx.logger.warn("role container loader hook threw, ignored", {
+            err:
+              err instanceof Error ? err.message.slice(0, 400) : String(err).slice(0, 400),
+          });
+        }
+      }
     },
   };
 }
