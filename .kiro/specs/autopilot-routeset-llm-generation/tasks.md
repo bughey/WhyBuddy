@@ -8,57 +8,57 @@
 
 ## 任务列表
 
-- [ ] 1. 在 `shared/blueprint/contracts.ts` 扩展 `BlueprintRouteSet.provenance`
-  - [ ] 1.1 追加 4 个可选字段到 `provenance` 类型：`generationSource?: "llm" | "llm_fallback" | "template"`、`promptId?: string`、`model?: string`、`error?: string`；不删除、不重命名、不修改任何既有字段
-  - [ ] 1.2 在仓库根运行 `node --run check`，确认新增字段不引入新 TS 错误；同时 grep `BlueprintRouteSet.provenance` / `provenance:` 确认没有现有消费者被破坏
+- [x] 1. 在 `shared/blueprint/contracts.ts` 扩展 `BlueprintRouteSet.provenance`
+  - [x] 1.1 追加 4 个可选字段到 `provenance` 类型：`generationSource?: "llm" | "llm_fallback" | "template"`、`promptId?: string`、`model?: string`、`error?: string`；不删除、不重命名、不修改任何既有字段
+  - [x] 1.2 在仓库根运行 `node --run check`，确认新增字段不引入新 TS 错误；同时 grep `BlueprintRouteSet.provenance` / `provenance:` 确认没有现有消费者被破坏
   - _Requirements: 4.2, 4.3, 5.1, 5.2_
 
-- [ ] 2. 在 `server/routes/blueprint/routeset/route-schema.ts` 定义 zod 严格 schema
-  - [ ] 2.1 按 design §4.2 定义 `BlueprintRouteSetLlmResponseSchema`：包含 `RouteKindEnum`（`"primary" | "alternative"`）、`RiskLevelEnum` / `CostLevelEnum`（`"low" | "medium" | "high"`）、`ComplexityEnum`（`"light" | "balanced" | "deep"`，注意不是 `simple/standard/complex`）、`CapabilityUsageSchema` 与 `BlueprintRouteCandidateLlmSchema`；`routes` 数组 `.min(2).max(5)`
-  - [ ] 2.2 追加 `.refine()` 约束恰好一条 `kind === "primary"` 路线；导出类型 `BlueprintRouteSetLlmResponse = z.infer<typeof BlueprintRouteSetLlmResponseSchema>`
+- [x] 2. 在 `server/routes/blueprint/routeset/route-schema.ts` 定义 zod 严格 schema
+  - [x] 2.1 按 design §4.2 定义 `BlueprintRouteSetLlmResponseSchema`：包含 `RouteKindEnum`（`"primary" | "alternative"`）、`RiskLevelEnum` / `CostLevelEnum`（`"low" | "medium" | "high"`）、`ComplexityEnum`（`"light" | "balanced" | "deep"`，注意不是 `simple/standard/complex`）、`CapabilityUsageSchema` 与 `BlueprintRouteCandidateLlmSchema`；`routes` 数组 `.min(2).max(5)`
+  - [x] 2.2 追加 `.refine()` 约束恰好一条 `kind === "primary"` 路线；导出类型 `BlueprintRouteSetLlmResponse = z.infer<typeof BlueprintRouteSetLlmResponseSchema>`
   - _Requirements: 3.3, 3.4_
 
-- [ ] 3. 在 `server/routes/blueprint/routeset/route-schema.test.ts` 新增 9 条 schema 单测
-  - [ ] 3.1 覆盖以下场景：合法响应通过 / `routes` 缺失 / 零条 primary / 两条 primary / `kind` 越界 / `riskLevel` 越界 / `capabilities` 为空 / 额外字段静默丢弃 / `title` 超长被拒绝（不裁剪）
-  - [ ] 3.2 使用 `BlueprintRouteSetLlmResponseSchema.safeParse(payload)` 模式，断言 `result.success` 与 `result.error?.message`
+- [x] 3. 在 `server/routes/blueprint/routeset/route-schema.test.ts` 新增 9 条 schema 单测
+  - [x] 3.1 覆盖以下场景：合法响应通过 / `routes` 缺失 / 零条 primary / 两条 primary / `kind` 越界 / `riskLevel` 越界 / `capabilities` 为空 / 额外字段静默丢弃 / `title` 超长被拒绝（不裁剪）
+  - [x] 3.2 使用 `BlueprintRouteSetLlmResponseSchema.safeParse(payload)` 模式，断言 `result.success` 与 `result.error?.message`
   - _Requirements: 3.3, 3.4, 9.2_
 
-- [ ] 4. 在 `server/routes/blueprint/routeset/route-prompt.ts` 实现确定性 prompt builder
-  - [ ] 4.1 导出常量 `ROUTE_SET_PROMPT_ID = "blueprint.routeset.v1"` 与类型 `RouteSetPromptPayload`
-  - [ ] 4.2 实现 `buildRouteSetPrompt(input)`，返回 `{ promptId, systemMessage, userMessage, userPayload }`；`answers` 按 `questionId` 字典序排序，`sources` / `assets` 按 `id` 字典序排序，`githubUrls` 保留输入顺序
-  - [ ] 4.3 按 design §4.4 实现 locale 分支：`locale === "zh-CN"` 时 `systemMessage` 使用中文规划器文案；其他情况使用英文文案（`"You are the /autopilot RouteSet planner..."`）
+- [x] 4. 在 `server/routes/blueprint/routeset/route-prompt.ts` 实现确定性 prompt builder
+  - [x] 4.1 导出常量 `ROUTE_SET_PROMPT_ID = "blueprint.routeset.v1"` 与类型 `RouteSetPromptPayload`
+  - [x] 4.2 实现 `buildRouteSetPrompt(input)`，返回 `{ promptId, systemMessage, userMessage, userPayload }`；`answers` 按 `questionId` 字典序排序，`sources` / `assets` 按 `id` 字典序排序，`githubUrls` 保留输入顺序
+  - [x] 4.3 按 design §4.4 实现 locale 分支：`locale === "zh-CN"` 时 `systemMessage` 使用中文规划器文案；其他情况使用英文文案（`"You are the /autopilot RouteSet planner..."`）
   - _Requirements: 3.1, 3.2, 6.3_
 
-- [ ] 5. 在 `server/routes/blueprint/routeset/route-prompt.test.ts` 新增 6 条 prompt 单测
-  - [ ] 5.1 断言确定性：同一输入产出 byte-identical `userMessage`
-  - [ ] 5.2 断言输入变化敏感：追加一条新的 clarification answer 后 `userMessage` 变化
-  - [ ] 5.3 断言 `answers` 按 `questionId` 字典序排序（输入 `["q-c","q-a","q-b"]` 应产出 `["q-a","q-b","q-c"]`）
-  - [ ] 5.4 断言 `locale === "zh-CN"` 时 `systemMessage` 包含 CJK 字符
-  - [ ] 5.5 断言 `locale === "en-US"` 时 `systemMessage` 以 `"You are the /autopilot RouteSet planner"` 开头
-  - [ ] 5.6 断言 `prompt.promptId` 恒等于 `"blueprint.routeset.v1"`
+- [x] 5. 在 `server/routes/blueprint/routeset/route-prompt.test.ts` 新增 6 条 prompt 单测
+  - [x] 5.1 断言确定性：同一输入产出 byte-identical `userMessage`
+  - [x] 5.2 断言输入变化敏感：追加一条新的 clarification answer 后 `userMessage` 变化
+  - [x] 5.3 断言 `answers` 按 `questionId` 字典序排序（输入 `["q-c","q-a","q-b"]` 应产出 `["q-a","q-b","q-c"]`）
+  - [x] 5.4 断言 `locale === "zh-CN"` 时 `systemMessage` 包含 CJK 字符
+  - [x] 5.5 断言 `locale === "en-US"` 时 `systemMessage` 以 `"You are the /autopilot RouteSet planner"` 开头
+  - [x] 5.6 断言 `prompt.promptId` 恒等于 `"blueprint.routeset.v1"`
   - _Requirements: 3.1, 3.2, 6.3, 9.2_
 
-- [ ] 6. 在 `server/routes/blueprint/routeset/route-llm-generator.ts` 实现工厂与主生成逻辑
-  - [ ] 6.1 按 design §4.3 定义并导出接口 `RouteSetLlmGeneratorInput` / `RouteSetLlmProvenanceExtras` / `RouteSetLlmGeneratorOutput` / `RouteSetLlmGenerator`；导出工厂 `createRouteSetLlmGenerator(ctx: BlueprintServiceContext): RouteSetLlmGenerator`
-  - [ ] 6.2 按 design §4.6 伪代码实现 `generate(input)`：`apiKey` 缺失早退到 fallback；构造 prompt；`await ctx.llm.callJson(messages, { model, temperature: 0.2, maxTokens: 2000, retryAttempts: 1, timeoutMs })`；`safeParse` 校验；成功则走 normalize，失败则走 fallback 并在 `provenanceExtras.error` 中填 `truncate(err, 400)`
-  - [ ] 6.3 实现 `buildTemplatedRoutes(input)`，对 `["primary","alternative","alternative"]` 三档调用既有 `buildRouteCandidate()` 复现当前 3 条模板路线（`"Primary SPEC asset route"` / `"Documentation-first conservative route"` / `"Preview-first exploratory route"`），保证与今天不走 LLM 的字段结构 100% 一致
-  - [ ] 6.4 按 design §4.5 实现 `normalizeToRouteCandidates(llmRoutes, input)`：primary 路线的 `id` 重写为 caller 传入的 `primaryRouteId`；alternative 路线 id 为 `${routeSetId}:alternative-${index}`；capabilities 不在注册表时保留 LLM id 并用注册表补齐 label/kind；通过 `buildRouteCandidate` 的 `externalOverrides` 参数注入 LLM 骨架，由服务端自动生成 `steps` / `outputs`
-  - [ ] 6.5 强制通过 `ctx.llm.callJson` / `ctx.llm.getConfig` 与 `ctx.logger.warn` 访问依赖；**不得** `import { callLLMJson } from "../../core/llm-client.js"` 或 `import { getAIConfig } from "../../core/ai-config.js"`
+- [x] 6. 在 `server/routes/blueprint/routeset/route-llm-generator.ts` 实现工厂与主生成逻辑
+  - [x] 6.1 按 design §4.3 定义并导出接口 `RouteSetLlmGeneratorInput` / `RouteSetLlmProvenanceExtras` / `RouteSetLlmGeneratorOutput` / `RouteSetLlmGenerator`；导出工厂 `createRouteSetLlmGenerator(ctx: BlueprintServiceContext): RouteSetLlmGenerator`
+  - [x] 6.2 按 design §4.6 伪代码实现 `generate(input)`：`apiKey` 缺失早退到 fallback；构造 prompt；`await ctx.llm.callJson(messages, { model, temperature: 0.2, maxTokens: 2000, retryAttempts: 1, timeoutMs })`；`safeParse` 校验；成功则走 normalize，失败则走 fallback 并在 `provenanceExtras.error` 中填 `truncate(err, 400)`
+  - [x] 6.3 实现 `buildTemplatedRoutes(input)`，对 `["primary","alternative","alternative"]` 三档调用既有 `buildRouteCandidate()` 复现当前 3 条模板路线（`"Primary SPEC asset route"` / `"Documentation-first conservative route"` / `"Preview-first exploratory route"`），保证与今天不走 LLM 的字段结构 100% 一致
+  - [x] 6.4 按 design §4.5 实现 `normalizeToRouteCandidates(llmRoutes, input)`：primary 路线的 `id` 重写为 caller 传入的 `primaryRouteId`；alternative 路线 id 为 `${routeSetId}:alternative-${index}`；capabilities 不在注册表时保留 LLM id 并用注册表补齐 label/kind；通过 `buildRouteCandidate` 的 `externalOverrides` 参数注入 LLM 骨架，由服务端自动生成 `steps` / `outputs`
+  - [x] 6.5 强制通过 `ctx.llm.callJson` / `ctx.llm.getConfig` 与 `ctx.logger.warn` 访问依赖；**不得** `import { callLLMJson } from "../../core/llm-client.js"` 或 `import { getAIConfig } from "../../core/ai-config.js"`
   - _Requirements: 2.1, 2.2, 2.3, 2.4, 3.4, 4.1, 4.2, 4.3, 4.4, 4.5, 6.1, 6.2, 8.1, 8.2_
 
-- [ ] 7. 在 `server/routes/blueprint/routeset/route-llm-generator.test.ts` 新增 7 条 generator 单测
-  - [ ] 7.1 Happy path：mock `callJson` 返回合法 2 条路线 → 路线来自 LLM + `provenanceExtras.generationSource === "llm"` + `promptId === "blueprint.routeset.v1"` + `error` 未定义
-  - [ ] 7.2 LLM 抛错：`throw new Error("network unreachable")` → 3 条模板路线 + `generationSource === "llm_fallback"` + `error` 匹配 `/network unreachable/`
-  - [ ] 7.3 LLM 返回 `{}`：schema 校验失败 → 3 条模板路线 + `generationSource === "llm_fallback"` + `error` 匹配 `/Schema validation failed/`
-  - [ ] 7.4 LLM 返回无 primary 路线（全是 alternative）：refine 失败 → 3 条模板路线 + `generationSource === "llm_fallback"` + `error` 包含 `/primary/i`
-  - [ ] 7.5 `apiKey` 缺失：早退 fallback + `generationSource === "llm_fallback"` + `error` 匹配 `/not configured/i`；断言 `callJson` 未被调用
-  - [ ] 7.6 断言 `provenanceExtras.model` 反映 `ctx.llm.getConfig().model`（happy path 下配 `"gpt-4-turbo"` 时返回 `"gpt-4-turbo"`）
-  - [ ] 7.7 断言 normalize 把 primary 路线 id 改写为 caller 传入的 `primaryRouteId`（即使 LLM 产出的 id 是 `"llm-primary"`）
+- [x] 7. 在 `server/routes/blueprint/routeset/route-llm-generator.test.ts` 新增 7 条 generator 单测
+  - [x] 7.1 Happy path：mock `callJson` 返回合法 2 条路线 → 路线来自 LLM + `provenanceExtras.generationSource === "llm"` + `promptId === "blueprint.routeset.v1"` + `error` 未定义
+  - [x] 7.2 LLM 抛错：`throw new Error("network unreachable")` → 3 条模板路线 + `generationSource === "llm_fallback"` + `error` 匹配 `/network unreachable/`
+  - [x] 7.3 LLM 返回 `{}`：schema 校验失败 → 3 条模板路线 + `generationSource === "llm_fallback"` + `error` 匹配 `/Schema validation failed/`
+  - [x] 7.4 LLM 返回无 primary 路线（全是 alternative）：refine 失败 → 3 条模板路线 + `generationSource === "llm_fallback"` + `error` 包含 `/primary/i`
+  - [x] 7.5 `apiKey` 缺失：早退 fallback + `generationSource === "llm_fallback"` + `error` 匹配 `/not configured/i`；断言 `callJson` 未被调用
+  - [x] 7.6 断言 `provenanceExtras.model` 反映 `ctx.llm.getConfig().model`（happy path 下配 `"gpt-4-turbo"` 时返回 `"gpt-4-turbo"`）
+  - [x] 7.7 断言 normalize 把 primary 路线 id 改写为 caller 传入的 `primaryRouteId`（即使 LLM 产出的 id 是 `"llm-primary"`）
   - _Requirements: 2.4, 3.4, 4.1, 4.2, 4.3, 4.4, 6.2, 6.3, 6.4, 8.2, 9.2_
 
-- [ ] 8. 扩展 `BlueprintServiceContext` 以接受可选 `routeSetLlmGenerator`
-  - [ ] 8.1 在 `server/routes/blueprint/context.ts` 的 `BlueprintServiceContext` 与 `BlueprintServiceContextDeps` 上追加 `routeSetLlmGenerator?: RouteSetLlmGenerator`
-  - [ ] 8.2 在 `buildBlueprintServiceContext(deps)` 中，当 `deps.routeSetLlmGenerator` 未提供时使用 `createRouteSetLlmGenerator(ctx)` 构造默认实例并挂载到 ctx 上
+- [x] 8. 扩展 `BlueprintServiceContext` 以接受可选 `routeSetLlmGenerator`
+  - [x] 8.1 在 `server/routes/blueprint/context.ts` 的 `BlueprintServiceContext` 与 `BlueprintServiceContextDeps` 上追加 `routeSetLlmGenerator?: RouteSetLlmGenerator`
+  - [x] 8.2 在 `buildBlueprintServiceContext(deps)` 中，当 `deps.routeSetLlmGenerator` 未提供时使用 `createRouteSetLlmGenerator(ctx)` 构造默认实例并挂载到 ctx 上
   - _Requirements: 6.1, 6.2, 6.3_
 
 - [x] 9. 扩展 `BlueprintRouterDeps` 并改造 `createBlueprintRouter`
