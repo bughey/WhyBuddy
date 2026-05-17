@@ -22,6 +22,7 @@ import { MissionIsland } from "./three/MissionIsland";
 import { OfficeRoom } from "./three/OfficeRoom";
 import { PetWorkers } from "./three/PetWorkers";
 import { SandboxMonitor } from "./three/SandboxMonitor";
+import type { SceneFusionMode } from "./three/scene-fusion/role-id-bridge";
 import { SceneStageFlow } from "./three/SceneStageFlow";
 import { WaitingDecisionBubble } from "./three/WaitingDecisionBubble";
 
@@ -55,9 +56,12 @@ export type ScenePerformanceProfile = "balanced" | "resizing";
  * 自动驾驶 3D 场景融合模式判别。
  * - "blueprint"：蓝图页（/autopilot），3D 场景跟随 BlueprintRealtimeStore。
  * - "mission-first"：mission-first 任务壳（/tasks 等），3D 场景跟随 mission 信号。
- * Wave B 落地 scene-fusion/role-id-bridge.ts 后回填 import 路径。
+ *
+ * Wave B：正式定义已升级到 scene-fusion/role-id-bridge.ts，本文件统一从
+ * 该模块 re-export，确保所有 mode 透传链路（Scene3D → PetWorkers /
+ * MissionIsland / SceneStageFlow）共享同一份类型来源。
  */
-export type SceneFusionMode = "blueprint" | "mission-first";
+export type { SceneFusionMode };
 
 export interface Scene3DProps {
   performanceProfile?: ScenePerformanceProfile;
@@ -270,6 +274,7 @@ export function Scene3D({
           <PetWorkers
             projectId={projectId}
             reducedOverlays={!deferredDetailsReady || reducedSceneEffects}
+            mode={mode}
           />
           <MissionIsland projectId={projectId} mode={mode} />
           <SandboxMonitor projectId={projectId} />

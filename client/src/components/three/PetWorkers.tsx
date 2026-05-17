@@ -17,6 +17,11 @@ import {
   type RolePhase,
 } from "@/lib/blueprint-realtime-store";
 import { PET_MODELS } from "@/lib/assets";
+import {
+  readBlueprintRolePhase,
+  type SceneFusionMode,
+  type MissionAgentId,
+} from "./scene-fusion/role-id-bridge";
 import type { AppLocale } from "@/lib/locale";
 import {
   resolveProjectMissionIds,
@@ -663,10 +668,12 @@ function AgentWorker({
   config,
   leaving,
   reducedOverlays = false,
+  mode = "mission-first",
 }: {
   config: SceneAgentConfig;
   leaving?: boolean;
   reducedOverlays?: boolean;
+  mode?: SceneFusionMode;
 }) {
   const { scene } = useGLTF(PET_MODELS[config.animal]);
   const cloned = useMemo(() => {
@@ -716,8 +723,15 @@ function AgentWorker({
   const prefersReducedMotion = usePrefersReducedMotion();
 
   // Task 3.1: 从 BlueprintRealtimeStore 读取角色实时 phase
-  const rolePhase = useBlueprintRealtimeStore(
-    state => state.rolePhases[config.id] as RolePhase | undefined
+  // Wave B：蓝图模式下走 readBlueprintRolePhase 桥接，把 FSD roleId 映射到
+  // mission agent id；mission-first 模式保持原有 selector 不变。
+  const rolePhase = useBlueprintRealtimeStore(state =>
+    mode === "blueprint"
+      ? readBlueprintRolePhase(
+          state.rolePhases,
+          config.id as MissionAgentId
+        )
+      : (state.rolePhases[config.id] as RolePhase | undefined)
   );
 
   const agentStatus = agentStatuses[config.id] || "idle";
@@ -1015,9 +1029,11 @@ function DepartmentMarker({
 export function PetWorkers({
   projectId = null,
   reducedOverlays = false,
+  mode = "mission-first",
 }: {
   projectId?: string | null;
   reducedOverlays?: boolean;
+  mode?: SceneFusionMode;
 }) {
   const locale = useAppStore(state => state.locale);
   const agents = useWorkflowStore(state => state.agents);
@@ -1243,6 +1259,7 @@ export function PetWorkers({
           config={config}
           leaving={guestLeavingIds.has(config.id)}
           reducedOverlays={reducedOverlays}
+          mode={mode}
         />
       ))}
     </group>
