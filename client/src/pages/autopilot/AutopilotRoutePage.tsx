@@ -802,33 +802,39 @@ function AutopilotVisualStage({
   consoleLines: ConsoleLine[];
 }) {
   return (
-    <section
-      className="overflow-hidden rounded-[14px] border border-slate-200 bg-slate-950"
-      data-testid="autopilot-visual-stage"
-    >
-      <div
-        className="relative min-h-[760px] overflow-hidden bg-slate-950 xl:min-h-[calc(100vh-104px)]"
-        data-testid="autopilot-scene-visual"
-        data-autopilot-stage={job?.stage ?? "input"}
-        data-autopilot-route-state={
-          selection ? "selected" : routeSet ? "generated" : "pending"
-        }
-        data-autopilot-crew-state={agentCrew ? "ready" : "pending"}
+    // 自动驾驶 3D 场景融合 follow-up（2026-05-13 v10 去边框去边距）：
+    // visual stage / console panel / 外包 div 移除 rounded / border / gap，
+    // 让 3D 场景与 console 紧贴页面边缘 + 列边界，最大化可视面积。
+    <div className="grid xl:flex xl:h-full xl:flex-col">
+      <section
+        className="overflow-hidden bg-slate-950"
+        data-testid="autopilot-visual-stage"
       >
-        <div className="pointer-events-none absolute inset-0">
-          <Scene3D performanceProfile="balanced" projectId={currentProjectId} mode="blueprint" blueprintJob={job} />
+        <div
+          className="relative min-h-[760px] overflow-hidden bg-slate-950 xl:aspect-[16/10] xl:min-h-0"
+          data-testid="autopilot-scene-visual"
+          data-autopilot-stage={job?.stage ?? "input"}
+          data-autopilot-route-state={
+            selection ? "selected" : routeSet ? "generated" : "pending"
+          }
+          data-autopilot-crew-state={agentCrew ? "ready" : "pending"}
+        >
+          <div className="pointer-events-none absolute inset-0">
+            <Scene3D performanceProfile="balanced" projectId={currentProjectId} mode="blueprint" blueprintJob={job} />
+          </div>
         </div>
+      </section>
 
-        {/* HUD 浮层已移除 — 指标卡固定在右栏底部(RailMetricsBlock) */}
-
-        <AutopilotConsolePanel
-          locale={locale}
-          lines={consoleLines}
-          embedded
-          className="absolute bottom-4 left-4 right-4 z-10 xl:bottom-5 xl:left-5 xl:right-[calc(40%+1rem)]"
-        />
-      </div>
-    </section>
+      {/* Console panel 独立 stacked section，xl 模式 flex-1 填高。
+          embedded 保留让内部 overflow-y-auto；className 去掉 rounded
+          实现与 visual stage 紧贴。 */}
+      <AutopilotConsolePanel
+        locale={locale}
+        lines={consoleLines}
+        embedded
+        className="!bg-slate-950 backdrop-blur-0 xl:flex-1 xl:min-h-0"
+      />
+    </div>
   );
 }
 
@@ -1713,11 +1719,11 @@ function AutopilotWorkflowRail({
 
   return (
     <aside
-      className="grid min-w-0 content-start gap-3 xl:max-h-[calc(100vh-104px)] xl:overflow-y-auto"
+      className="grid min-w-0 content-start xl:max-h-[calc(100vh-104px)] xl:overflow-y-auto"
       data-testid="autopilot-workflow-rail"
     >
       <section
-        className="min-w-0 rounded-[14px] border border-slate-200 bg-white"
+        className="min-w-0 border border-slate-200 bg-white"
         data-testid="autopilot-workflow-steps"
       >
         <div className="border-b border-slate-200 px-3 py-3">
@@ -1962,26 +1968,28 @@ function AutopilotConsolePanel({
   const visibleLines = lines.slice(embedded ? -8 : -12);
 
   return (
+    // 2026-05-13 v11 视觉收尾：去除 console panel 自身圆角、边框；
+    // 顶部 chip 同样去掉圆角与边框，与 visual stage 紧贴融合。
     <section
       className={cn(
-        "rounded-[12px] border text-white",
+        "text-white",
         embedded
-          ? "border-white/10 bg-slate-950/82 shadow-[0_24px_64px_rgba(2,6,23,0.34)] backdrop-blur-xl"
-          : "border-slate-900 bg-slate-950",
+          ? "bg-slate-950/82 shadow-[0_24px_64px_rgba(2,6,23,0.34)] backdrop-blur-xl"
+          : "bg-slate-950",
         className
       )}
       data-testid="autopilot-runtime-console"
     >
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 px-4 py-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
         <div className="flex items-center gap-2 text-xs font-black uppercase tracking-normal text-white/65">
           <Terminal className="size-3.5" aria-hidden="true" />
           {t(locale, "自动驾驶控制台", "Autopilot console")}
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <span className="rounded-[6px] border border-emerald-400/25 bg-emerald-400/10 px-2 py-1 text-[10px] font-black text-emerald-200">
+          <span className="bg-emerald-400/10 px-2 py-1 text-[10px] font-black text-emerald-200">
             {t(locale, "事件流", "Event stream")}
           </span>
-          <span className="rounded-[6px] border border-white/10 bg-white/5 px-2 py-1 text-[10px] font-black text-white/55">
+          <span className="bg-white/5 px-2 py-1 text-[10px] font-black text-white/55">
             {visibleLines.length}/{lines.length} {t(locale, "行", "lines")}
           </span>
         </div>
@@ -1990,7 +1998,12 @@ function AutopilotConsolePanel({
         className={cn(
           "px-4 py-3 font-mono text-[11px] leading-6",
           // Spec 5 布局校准:embedded 浮层限高 + 内滚,不遮挡 3D 场景。
-          embedded ? "max-h-32 overflow-y-auto" : "overflow-hidden"
+          // 自动驾驶 3D 场景融合 follow-up（2026-05-13）：
+          // 去掉 max-h 强制高度让 panel 真正自适应到 visibleLines 行数。
+          // 之前 max-h-32（128px）在只有 1-2 行 console line 时仍占满 128px，
+          // 视觉上 panel 下方留出大段 dim 浮层空白挡住 3D scene 底部。改成只
+          // 设上限不强制最低高，短消息时 panel 自然变低，不再遮挡底部地面。
+          embedded ? "max-h-[256px] overflow-y-auto" : "overflow-hidden"
         )}
       >
         {visibleLines.map(line => (
@@ -2738,8 +2751,8 @@ export default function AutopilotRoutePage() {
         </div>
       </header>
 
-      <div className="grid w-full gap-4 px-0 py-4 xl:flex-1 xl:overflow-hidden">
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] xl:overflow-hidden">
+      <div className="grid w-full px-0 py-0 xl:flex-1 xl:overflow-hidden">
+        <div className="grid xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] xl:overflow-hidden">
           <AutopilotVisualStage
             locale={locale}
             currentProjectId={currentProjectId}

@@ -94,13 +94,17 @@ describe("AutopilotRoutePage", () => {
     const markup = renderToStaticMarkup(<AutopilotRoutePage />);
 
     expect(markup).toContain("pointer-events-none absolute inset-0");
-    expect(markup).toContain("bg-slate-950/82");
     expect(markup).toContain('data-autopilot-stage="input"');
     expect(markup).toContain('data-autopilot-route-state="pending"');
     expect(markup).toContain('data-autopilot-crew-state="pending"');
     expect(markup).toContain('data-testid="autopilot-runtime-console"');
-    expect(markup).toContain("absolute bottom-4 left-4 right-4 z-10");
-    // HUD 浮层已移除;不再断言 "absolute left-4 top-4 z-10"
+    // 自动驾驶 3D 场景融合 follow-up（2026-05-13 v8 console stack）：
+    // AutopilotConsolePanel 从 visual stage 内 absolute 浮层改为独立 stacked
+    // section，xl 模式 flex-1 填高。原断言 "absolute bottom-4 left-4 right-4 z-10"
+    // / "bg-slate-950/82" 不再适用，改为断言 stack 语义关键 class。
+    expect(markup).toContain('data-testid="autopilot-visual-stage"');
+    expect(markup).toContain("xl:aspect-[16/10]");
+    expect(markup).toContain("xl:flex-1 xl:min-h-0");
     expect(markup).not.toContain("radial-gradient");
     expect(markup).not.toContain("linear-gradient(180deg");
     expect(markup).not.toContain("opacity-35");

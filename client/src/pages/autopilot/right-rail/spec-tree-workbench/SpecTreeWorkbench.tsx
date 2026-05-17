@@ -34,6 +34,7 @@
 
 import { useCallback, useMemo, useState, type FC } from "react";
 
+import { blueprintCopy } from "@/lib/blueprint-copy";
 import type { AppLocale } from "@/lib/locale";
 import { useBlueprintRealtimeStore } from "@/lib/blueprint-realtime-store";
 import {
@@ -271,6 +272,7 @@ export const SpecTreeWorkbench: FC<SpecTreeWorkbenchProps> = ({
           <SpecTreeNodeRow
             key={node.id}
             node={node}
+            locale={locale}
             isSelected={selectedNodeId === node.id}
             isExpanded={expandedNodeIds.has(node.id)}
             docs={docsByNodeId.get(node.id) ?? []}
@@ -287,6 +289,11 @@ export const SpecTreeWorkbench: FC<SpecTreeWorkbenchProps> = ({
 
 interface SpecTreeNodeRowProps {
   node: BlueprintSpecTreeNode;
+  /**
+   * 当前界面 locale，用于 node.title 通过 blueprintCopy 走中英文翻译表。
+   * 同时 chip / type 标识保持英文（结构化标识符不翻译）。
+   */
+  locale: AppLocale;
   isSelected: boolean;
   isExpanded: boolean;
   docs: ReadonlyArray<BlueprintSpecDocument>;
@@ -296,6 +303,7 @@ interface SpecTreeNodeRowProps {
 
 const SpecTreeNodeRow: FC<SpecTreeNodeRowProps> = ({
   node,
+  locale,
   isSelected,
   isExpanded,
   docs,
@@ -327,7 +335,7 @@ const SpecTreeNodeRow: FC<SpecTreeNodeRowProps> = ({
           {isExpanded ? "▼" : "▶"}
         </span>
         <span className="min-w-0 flex-1 truncate text-xs font-bold text-slate-800">
-          {node.title}
+          {blueprintCopy(node.title, locale)}
         </span>
         <span className="shrink-0 text-[9px] font-mono text-slate-400">
           · {String(node.type).replace(/_/g, " ")}

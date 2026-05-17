@@ -85,7 +85,7 @@ export interface MiroFishCardStreamProps {
 // ─── 主组件 ───────────────────────────────────────────────────────────────
 
 export const MiroFishCardStream: FC<MiroFishCardStreamProps> = ({
-  locale: _locale = "zh-CN",
+  locale = "zh-CN",
   stageFilter,
   job,
 }) => {
@@ -183,7 +183,7 @@ export const MiroFishCardStream: FC<MiroFishCardStreamProps> = ({
       className="mt-3 flex max-h-[420px] flex-col gap-2 overflow-y-auto rounded-lg border border-slate-100 bg-slate-50 p-3"
     >
       {visibleEntries.map(entry => (
-        <MiroFishCard key={entry.id} entry={entry} />
+        <MiroFishCard key={entry.id} entry={entry} locale={locale} />
       ))}
       <div ref={bottomRef} />
     </div>
@@ -192,20 +192,23 @@ export const MiroFishCardStream: FC<MiroFishCardStreamProps> = ({
 
 // ─── 分发组件 ─────────────────────────────────────────────────────────────
 
-const MiroFishCard: FC<{ entry: MiroFishStreamEntry }> = ({ entry }) => {
+const MiroFishCard: FC<{
+  entry: MiroFishStreamEntry;
+  locale: AppLocale;
+}> = ({ entry, locale }) => {
   switch (entry.kind) {
     case "reasoning":
-      return <ReasoningCard entry={entry} />;
+      return <ReasoningCard entry={entry} locale={locale} />;
     case "node_completed":
-      return <NodeCompletedCard entry={entry} />;
+      return <NodeCompletedCard entry={entry} locale={locale} />;
     case "route_decision":
-      return <RouteDecisionCard entry={entry} />;
+      return <RouteDecisionCard entry={entry} locale={locale} />;
     case "capability_invocation":
       return <CapabilityInvocationCard entry={entry} />;
     case "artifact_created":
-      return <ArtifactCreatedCard entry={entry} />;
+      return <ArtifactCreatedCard entry={entry} locale={locale} />;
     case "system_note":
-      return <SystemNoteCard entry={entry} />;
+      return <SystemNoteCard entry={entry} locale={locale} />;
   }
 };
 

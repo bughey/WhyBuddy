@@ -300,9 +300,10 @@ describe("CapabilityInvocationCard", () => {
 // ─── ArtifactCreatedCard ───────────────────────────────────────────────
 
 describe("ArtifactCreatedCard", () => {
-  it("spec_tree artifact", () => {
+  it("spec_tree artifact (en-US 保持英文 title)", () => {
     const markup = renderToStaticMarkup(
       <ArtifactCreatedCard
+        locale="en-US"
         entry={{
           id: "artifact-1",
           kind: "artifact_created",
@@ -320,6 +321,27 @@ describe("ArtifactCreatedCard", () => {
     expect(markup).toContain('data-artifact-type="spec_tree"');
     expect(markup).toContain("Derived SPEC tree");
     expect(markup).toContain("artifact · spec_tree");
+  });
+
+  // 自动驾驶 3D 场景融合 follow-up i18n（2026-05-13）：
+  // 默认 / zh-CN 时 artifact title 应通过 blueprintCopy 翻译表落到中文。
+  it("spec_tree artifact (zh-CN 默认走 blueprintCopy 翻译)", () => {
+    const markup = renderToStaticMarkup(
+      <ArtifactCreatedCard
+        entry={{
+          id: "artifact-zh",
+          kind: "artifact_created",
+          stageId: "spec_tree",
+          timestamp: BASE_TS,
+          tone: "neutral",
+          artifactId: "artifact-zh",
+          artifactType: "spec_tree",
+          title: "Derived SPEC tree",
+        }}
+      />
+    );
+    expect(markup).toContain("已推导 SPEC 树");
+    expect(markup).not.toContain("Derived SPEC tree");
   });
 
   it("requirements doc artifact", () => {

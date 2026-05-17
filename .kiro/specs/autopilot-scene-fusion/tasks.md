@@ -244,14 +244,14 @@ mission-first 路径在每个 Wave 都通过默认值（`mode = "mission-first"`
 
 目标：在 Wave A / B / C 全部 commit 后，统一跑类型检查、跑 6 个新增 / 扩展测试套件、跑相关 mission-first 路径回归，并完成 spec 三件套（requirements.md / design.md / tasks.md）的最终对齐。
 
-- [-] 1. 跑 TS 类型检查
+- [x] 1. 跑 TS 类型检查
   - 命令：`node --run check`
   - 验收：错误数 = 116（与既有基线一致，本 spec 不扩大基线）
   - 若错误数 > 116，按超出条目逐项分析：
     - 若来自本 spec 新增代码 → 本 Wave 内修复
     - 若来自既有代码偶发回归 → 单独记录到 spec 收口纪要，不阻塞本 Wave 验收
 
-- [-] 2. 跑新增 / 扩展测试套件
+- [x] 2. 跑新增 / 扩展测试套件
   - 命令（按 vitest 配置自动选择 client / server，本 spec 全部位于 client 侧）：
 
     ```sh
@@ -268,13 +268,13 @@ mission-first 路径在每个 Wave 都通过默认值（`mode = "mission-first"`
     - 不允许通过修改 mission-first 既有 case 来"绕过"失败
     - 应回到对应 Wave 修复实现，重跑该 Wave 的 commit 验收
 
-- [-] 3. 跑相关 mission-first 路径回归
+- [x] 3. 跑相关 mission-first 路径回归
   - 跑 `client/src/pages/__tests__/Home.desktop-layout.smoke.test.tsx` 等涉及 `Scene3D` 挂载的既有测试
   - 跑 `client/src/pages/autopilot/AutopilotRoutePage.test.tsx` 确认蓝图页 SSR 透传 `mode` / `blueprintJob` 不破坏既有 case
   - 视情况补跑 `client/src/components/three/__tests__/SandboxMonitor.test.tsx` 与 `client/src/components/three/__tests__/MissionIsland.test.tsx`（确认后墙左终端联动 / 任务岛 mission-first 默认路径不退化）
   - 验收：既有 case 全部通过，5140+ 测试基线不退化
 
-- [-] 4. spec 三件套收口
+- [x] 4. spec 三件套收口
   - `requirements.md`：10 条 EARS AC 完整、可验收、无 TBD
   - `design.md`：9 条决策 + Wave A/B/C/D 切分 + 4 新增 + 5 修改 + 2 调用方 + 风险与回滚说明完整
   - `tasks.md`（本文件）：全部 task 勾选 `[x]` 完成

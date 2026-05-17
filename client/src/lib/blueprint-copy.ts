@@ -182,6 +182,26 @@ const BLUEPRINT_COPY: Record<string, string> = {
     "已在路线生成前捕获并规范化执行目标与 GitHub 来源。",
   "Clarification Session": "澄清会话",
   "Project Domain Context": "项目领域上下文",
+  // 自动驾驶 3D 场景融合 follow-up i18n（2026-05-13）：补齐截图里仍走英文的
+  // artifact title。后端 createArtifact 会把仓库 URL 拼到 GitHub Source 后面
+  // （例如 "GitHub Source: 666ghj/MiroFish"），由 blueprintCopy 的 prefix
+  // matcher 兜底翻译；其余固定字面量直接进表。
+  "GitHub Source": "GitHub 仓库源",
+  "Capability registry": "能力注册表",
+  "Capability registry snapshot": "能力注册表快照",
+  "Capability invocation": "能力调用记录",
+  "Capability evidence": "能力证据",
+  "Route generation sandbox derivation":
+    "路线生成沙盒推导",
+  "Sandbox derivation job": "沙盒推导任务",
+  "Effect preview snapshot": "效果预演快照",
+  "Prompt package": "提示词包",
+  "Engineering plan": "工程计划",
+  "Engineering run": "工程运行",
+  "Role timeline": "角色时间线",
+  "Agent crew": "Agent 团队",
+  // 注：Feedback / Replay 已由表头部 line 63 / 别处覆盖，不在此重复声明，
+  // 避免 TS1117「object literal multiple properties with same name」。
   "Derived SPEC tree": "已推导 SPEC 树",
   "Initial durable SPEC tree generated from the selected primary or alternative route.":
     "已根据所选主路径或备选路径生成可沉淀的初始 SPEC 树。",
@@ -536,6 +556,32 @@ export function blueprintCopy(
   const artifactKind = normalized.match(/^Artifact\s+(.+):\s*(.+)$/);
   if (artifactKind) {
     return `资产${blueprintCopy(artifactKind[1])}：${blueprintCopy(artifactKind[2])}`;
+  }
+
+  // 自动驾驶 3D 场景融合 follow-up i18n（2026-05-13）：后端
+  // server/routes/blueprint.ts 在 createArtifact() 时会把仓库 URL / 文档名
+  // / 节点标识符直接拼进 title，例如：
+  //   "GitHub Source: 666ghj/MiroFish"
+  //   "Spec asset: requirements / Auth Module"
+  //   "Replay: blueprint-job-xxx"
+  // 这些 prefix + dynamic 后缀的组合不能逐条进 BLUEPRINT_COPY 表，
+  // 改用 prefix matcher 兜底翻译头部，后缀（仓库名、节点 id 等）保留原样。
+  const githubSource = normalized.match(/^GitHub Source:\s*(.+)$/);
+  if (githubSource) {
+    return `GitHub 仓库源：${githubSource[1]}`;
+  }
+
+  const replayPrefix = normalized.match(/^Replay:\s*(.+)$/);
+  if (replayPrefix) {
+    return `回放：${replayPrefix[1]}`;
+  }
+
+  const sandboxDerivation = normalized.match(
+    /^(?:Route generation\s+)?[Ss]andbox derivation(?:\s+job)?(?::\s*(.+))?$/
+  );
+  if (sandboxDerivation) {
+    const tail = sandboxDerivation[1];
+    return tail ? `沙盒推导任务：${tail}` : "沙盒推导任务";
   }
 
   const phraseTranslated = value

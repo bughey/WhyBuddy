@@ -3,9 +3,19 @@
  *
  * 每张卡片都是 SSR 友好的纯展示组件,共享 MiroFishCardShell 外壳,只通过
  * primaryRow / secondaryRow / icon / label / dataAttrs 注入差异。
+ *
+ * 自动驾驶 3D 场景融合 follow-up 修复（2026-05-13 i18n）：
+ * - 所有 user-facing 文本（artifact title / node title / route title /
+ *   reasoning thought&observation / system note message）都通过
+ *   `blueprintCopy(value, locale)` 走中英文翻译表。
+ * - `locale` 由 MiroFishCardStream 主组件透传,缺省 fallback 到 "zh-CN"。
+ * - 不动 label / status / icon 等结构化标识符（capability · invoking 等仍英文）。
  */
 
 import type { FC } from "react";
+
+import { blueprintCopy } from "@/lib/blueprint-copy";
+import type { AppLocale } from "@/lib/locale";
 
 import type {
   MiroFishArtifactCreatedEntry,
@@ -36,20 +46,21 @@ const REASONING_PHASE_LABEL: Record<string, string> = {
   error: "error",
 };
 
-export const ReasoningCard: FC<{ entry: MiroFishReasoningEntry }> = ({
-  entry,
-}) => {
+export const ReasoningCard: FC<{
+  entry: MiroFishReasoningEntry;
+  locale?: AppLocale;
+}> = ({ entry, locale = "zh-CN" }) => {
   const icon = REASONING_PHASE_ICON[entry.phase] ?? "·";
   const label = `${REASONING_PHASE_LABEL[entry.phase] ?? entry.phase} · ${entry.iterationLabel}`;
 
   let primary: string | undefined;
-  if (entry.thought) primary = entry.thought;
+  if (entry.thought) primary = blueprintCopy(entry.thought, locale);
   else if (entry.actionToolId) primary = `→ ${entry.actionToolId}`;
   else if (entry.observationSummary) {
     const mark = entry.observationSuccess === false ? "✗" : "✓";
-    primary = `${mark} ${entry.observationSummary}`;
-  } else if (entry.reason) primary = entry.reason;
-  else if (entry.error) primary = entry.error;
+    primary = `${mark} ${blueprintCopy(entry.observationSummary, locale)}`;
+  } else if (entry.reason) primary = blueprintCopy(entry.reason, locale);
+  else if (entry.error) primary = blueprintCopy(entry.error, locale);
 
   return (
     <MiroFishCardShell
@@ -75,9 +86,10 @@ const NODE_SOURCE_LABEL: Record<string, string> = {
   template: "template",
 };
 
-export const NodeCompletedCard: FC<{ entry: MiroFishNodeCompletedEntry }> = ({
-  entry,
-}) => {
+export const NodeCompletedCard: FC<{
+  entry: MiroFishNodeCompletedEntry;
+  locale?: AppLocale;
+}> = ({ entry, locale = "zh-CN" }) => {
   const sourceTag = entry.generationSource
     ? `· ${NODE_SOURCE_LABEL[entry.generationSource] ?? entry.generationSource}`
     : "";
@@ -88,7 +100,7 @@ export const NodeCompletedCard: FC<{ entry: MiroFishNodeCompletedEntry }> = ({
       label="node_completed"
       tone={entry.tone}
       timestamp={entry.timestamp}
-      primaryRow={`✓ ${entry.nodeTitle}`}
+      primaryRow={`✓ ${blueprintCopy(entry.nodeTitle, locale)}`}
       secondaryRow={`${docs} ${sourceTag}`.trim()}
       testid="mirofish-card-node-completed"
       dataAttrs={{
@@ -101,18 +113,25 @@ export const NodeCompletedCard: FC<{ entry: MiroFishNodeCompletedEntry }> = ({
 
 // ─── RouteDecisionCard ───────────────────────────────────────────────────
 
-export const RouteDecisionCard: FC<{ entry: MiroFishRouteDecisionEntry }> = ({
-  entry,
-}) => {
+export const RouteDecisionCard: FC<{
+  entry: MiroFishRouteDecisionEntry;
+  locale?: AppLocale;
+}> = ({ entry, locale = "zh-CN" }) => {
   const kindTag = entry.routeKind ? `· ${entry.routeKind}` : "";
+  const titleZh = blueprintCopy(entry.routeTitle, locale);
+  const reasonZh = entry.reason ? blueprintCopy(entry.reason, locale) : "";
+  const primary =
+    locale === "zh-CN"
+      ? `选择路线：${titleZh}`
+      : `Selected route: ${titleZh}`;
   return (
     <MiroFishCardShell
       icon="🛣"
       label="route_decision"
       tone={entry.tone}
       timestamp={entry.timestamp}
-      primaryRow={`选择路线：${entry.routeTitle}`}
-      secondaryRow={[entry.reason, kindTag].filter(Boolean).join("  ")}
+      primaryRow={primary}
+      secondaryRow={[reasonZh, kindTag].filter(Boolean).join("  ")}
       testid="mirofish-card-route-decision"
       dataAttrs={{
         "data-route-id": entry.routeId,
@@ -155,14 +174,15 @@ export const CapabilityInvocationCard: FC<{
 
 export const ArtifactCreatedCard: FC<{
   entry: MiroFishArtifactCreatedEntry;
-}> = ({ entry }) => {
+  locale?: AppLocale;
+}> = ({ entry, locale = "zh-CN" }) => {
   return (
     <MiroFishCardShell
       icon="📦"
       label={`artifact · ${entry.artifactType}`}
       tone={entry.tone}
       timestamp={entry.timestamp}
-      primaryRow={entry.title}
+      primaryRow={blueprintCopy(entry.title, locale)}
       testid="mirofish-card-artifact"
       dataAttrs={{
         "data-artifact-id": entry.artifactId,
@@ -174,17 +194,18 @@ export const ArtifactCreatedCard: FC<{
 
 // ─── SystemNoteCard ───────────────────────────────────────────────────────
 
-export const SystemNoteCard: FC<{ entry: MiroFishSystemNoteEntry }> = ({
-  entry,
-}) => {
+export const SystemNoteCard: FC<{
+  entry: MiroFishSystemNoteEntry;
+  locale?: AppLocale;
+}> = ({ entry, locale = "zh-CN" }) => {
   return (
     <MiroFishCardShell
       icon={entry.tone === "warning" || entry.tone === "danger" ? "⚠" : "ℹ"}
       label="system"
       tone={entry.tone}
       timestamp={entry.timestamp}
-      primaryRow={entry.message}
-      secondaryRow={entry.hint}
+      primaryRow={blueprintCopy(entry.message, locale)}
+      secondaryRow={entry.hint ? blueprintCopy(entry.hint, locale) : undefined}
       testid="mirofish-card-system-note"
     />
   );

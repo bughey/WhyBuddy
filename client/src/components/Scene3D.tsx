@@ -182,21 +182,27 @@ export function Scene3D({
 
   const camera = isMobile
     ? {
-        position: [0, 8.4, 16.2] as [number, number, number],
-        fov: 46,
+        // 自动驾驶 3D 场景融合 follow-up（2026-05-13 v9 拉近）：v7/v8 锁定
+        // canvas aspect 后，画面里 3D 场景偏小且上方留白。把相机距离从 z=14.5
+        // 拉近到 z=12.0，fov 50 不变，让 3D 几何填满 16:10 canvas 上下边界。
+        position: [0, 7.5, 13.0] as [number, number, number],
+        fov: 50,
         near: 0.1,
         far: 100,
       }
     : isTablet
       ? {
-          position: [0, 7.8, 14.6] as [number, number, number],
-          fov: 43,
+          position: [0, 7.0, 12.5] as [number, number, number],
+          fov: 50,
           near: 0.1,
           far: 100,
         }
       : {
-          position: [0, 7.3, 13.8] as [number, number, number],
-          fov: 40,
+          // desktop v9：[0, 6.5, 11.5] / fov 50。相机距离后墙 16.4m，fov 50°
+          // 视野横向 ~15.3m / 纵向 ~9.6m，配合 16:10 canvas（视角比 1.6）
+          // 完全贴合，3D 场景填满 canvas 上下边界。
+          position: [0, 6.5, 11.5] as [number, number, number],
+          fov: 50,
           near: 0.1,
           far: 100,
         };
@@ -224,7 +230,10 @@ export function Scene3D({
           gl.setClearColor(FUTURE_OFFICE_COLORS.sceneBackground);
           gl.toneMapping = ACESFilmicToneMapping;
           gl.toneMappingExposure = isMobile ? 1.04 : 1;
-          sceneCamera.lookAt(0, isMobile ? 1.6 : 1.35, 0);
+          // 自动驾驶 3D 场景融合 follow-up（2026-05-13 v7 aspect 锁定）：
+          // canvas aspect-[16/10] 后场景几何与视野匹配，lookAt 回到 1.0 中庸
+          // （地板线落在 canvas ~75%，墙面 SandboxMonitor 占上 25%）。
+          sceneCamera.lookAt(0, isMobile ? 1.2 : 1.0, 0);
         }}
       >
         <CameraController effectiveWidth={effectiveWidth} tier={tier} />
