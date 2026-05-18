@@ -44,10 +44,16 @@ pnpm run dev:all        # 全栈：前端 + 服务端 + 执行器
 
 ## 产品界面一览
 
-| | |
-|---|---|
-| ![Cube Pets Office 界面截图 A](./docs/assets/A.png) | ![Cube Pets Office 界面截图 B](./docs/assets/B.png) |
-| ![Cube Pets Office 界面截图 D](./docs/assets/D.png) | ![Cube Pets Office 界面截图 C](./docs/assets/C.png) |
+<table>
+  <tr>
+    <td width="50%"><img src="./docs/assets/A.png" alt="Cube Pets Office 界面截图 A" /></td>
+    <td width="50%"><img src="./docs/assets/B.png" alt="Cube Pets Office 界面截图 B" /></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="./docs/assets/D.png" alt="Cube Pets Office 界面截图 D" /></td>
+    <td width="50%"><img src="./docs/assets/C.png" alt="Cube Pets Office 界面截图 C" /></td>
+  </tr>
+</table>
 
 ---
 

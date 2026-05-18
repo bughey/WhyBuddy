@@ -1637,7 +1637,8 @@ function AutopilotWorkflowRail({
 
   return (
     <aside
-      className="grid min-w-0 content-start bg-white xl:h-full xl:max-h-full xl:overflow-y-auto xl:overflow-x-hidden"      data-testid="autopilot-workflow-rail"
+      className="grid min-w-0 content-start gap-3 xl:max-h-[calc(100vh-104px)] xl:overflow-y-auto xl:overflow-x-hidden"
+      data-testid="autopilot-workflow-rail"
     >
       <section
         className="min-w-0 border border-slate-200 bg-white"
