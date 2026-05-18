@@ -1018,3 +1018,39 @@
     animation: none;
   }
 }
+
+/* ── SceneStageFlow 流式 zone 脉冲（autopilot-streaming-lifecycle-weave spec Task 4.3） ── */
+/*
+ * 当流式输出活跃时，在 SceneStageFlow 的当前 zone 上显示微弱脉冲发光。
+ * 使用 CSS animation 而非 Three.js 重渲染，保证性能。
+ *
+ * 使用方式：
+ *   <div class="streaming-zone-pulse" />
+ *
+ * 视觉效果：
+ * - 微弱蓝色 box-shadow 脉冲，0.5s 周期
+ * - light theme 配色，不使用深色主题色
+ * - prefers-reduced-motion 下降级为静态微弱发光
+ */
+@keyframes streaming-zone-pulse-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 4px 1px rgba(99, 102, 241, 0.15);
+  }
+  50% {
+    box-shadow: 0 0 8px 2px rgba(99, 102, 241, 0.3);
+  }
+}
+
+.streaming-zone-pulse {
+  animation: streaming-zone-pulse-glow 0.5s ease-in-out infinite;
+  border-radius: inherit;
+}
+
+/* streaming-zone-pulse prefers-reduced-motion 降级 */
+@media (prefers-reduced-motion: reduce) {
+  .streaming-zone-pulse {
+    animation: none;
+    box-shadow: 0 0 4px 1px rgba(99, 102, 241, 0.15);
+  }
+}

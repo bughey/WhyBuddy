@@ -9,7 +9,7 @@
  * - 需求 1.5, 2.1, 2.2, 2.3
  */
 
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useMemo, type FC } from "react";
 
 import type { AppLocale } from "@/lib/locale";
@@ -39,11 +39,21 @@ const COLLAPSE_THRESHOLD = 5;
 // 动画配置
 // ---------------------------------------------------------------------------
 
-const ITEM_VARIANTS = {
-  initial: { opacity: 0, y: -4 },
-  animate: { opacity: 1, y: 0, transition: { duration: 0.2 } },
-  exit: { opacity: 0, height: 0, transition: { duration: 0.15 } },
-};
+/**
+ * 获取条目动画变体。
+ *
+ * 当 `prefers-reduced-motion` 启用时，所有 duration 设为 0，
+ * 保留状态切换但跳过视觉过渡。
+ */
+function getItemVariants(reduceMotion: boolean) {
+  const enterDuration = reduceMotion ? 0 : 0.2;
+  const exitDuration = reduceMotion ? 0 : 0.15;
+  return {
+    initial: { opacity: 0, y: -4 },
+    animate: { opacity: 1, y: 0, transition: { duration: enterDuration } },
+    exit: { opacity: 0, height: 0, transition: { duration: exitDuration } },
+  };
+}
 
 // ---------------------------------------------------------------------------
 // 辅助函数
@@ -84,6 +94,12 @@ export const BridgeInvocationTimeline: FC<BridgeInvocationTimelineProps> = ({
   invocations,
   locale,
 }) => {
+  const shouldReduceMotion = useReducedMotion();
+  const itemVariants = useMemo(
+    () => getItemVariants(!!shouldReduceMotion),
+    [shouldReduceMotion]
+  );
+
   // 分离活跃和已完成记录
   const { activeGroups, collapsedCount } = useMemo(() => {
     const completed = invocations.filter(
@@ -141,7 +157,7 @@ export const BridgeInvocationTimeline: FC<BridgeInvocationTimelineProps> = ({
         {activeGroups.map((group) => (
           <motion.div
             key={`stage-${group.stageIndex}`}
-            variants={ITEM_VARIANTS}
+            variants={itemVariants}
             initial="initial"
             animate="animate"
             exit="exit"

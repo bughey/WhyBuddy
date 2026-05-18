@@ -42,8 +42,8 @@
     - text-[10px] font-mono
     - _需求: 1.1_
 
-- [ ] 4. 创建 CapabilityBridgePanel 主容器
-  - [~] 4.1 创建 `client/src/components/right-rail/capability-panel/CapabilityBridgePanel.tsx`
+- [x] 4. 创建 CapabilityBridgePanel 主容器
+  - [x] 4.1 创建 `client/src/components/right-rail/capability-panel/CapabilityBridgePanel.tsx`
     - 组合 BridgeStatusSummary + BridgeInvocationTimeline
     - 容器样式：`bg-white border border-slate-200 rounded-lg p-2`
     - 最大高度 240px，overflow-y-auto
@@ -55,12 +55,12 @@
     - 无调用数据时不渲染面板
     - _需求: 1.1_
 
-- [ ] 6. 添加动画与降级
-  - [~] 6.1 实现 framer-motion 进入/退出动画
+- [x] 6. 添加动画与降级
+  - [x] 6.1 实现 framer-motion 进入/退出动画
     - 进入：`opacity: 0→1, y: -4→0, duration: 0.2`
     - 退出：`opacity: 1→0, height: auto→0, duration: 0.15`
     - _需求: 1.1_
-  - [~] 6.2 添加 `prefers-reduced-motion` 降级
+  - [x] 6.2 添加 `prefers-reduced-motion` 降级
     - framer-motion 动画 duration 设为 0
     - _需求: 无障碍隐含要求_
 

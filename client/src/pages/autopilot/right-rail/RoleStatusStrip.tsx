@@ -5,6 +5,9 @@
  * RolePhase，按 8 类相位着色。此组件是 store.rolePhases 在 2D 右栏的第一位
  * 消费者；3D 场景的 PetWorkers 已经在 3D 侧消费同一份数据。
  *
+ * 增强（Task 4.1）：在现有内容上方插入 RoleCrewDots 角色状态圆点序列，
+ * 并添加当前阶段标签。保持总高度 ≤ 48px。
+ *
  * 设计原则：
  * - 只读：不写 store，不订阅 socket（订阅由 AutopilotRoutePage 的两段式 useEffect 完成）
  * - 折叠态：当 rolePhases 为空（尚未到达任何 role.* 事件）时返回 null，避免空容器抢占布局
@@ -18,6 +21,9 @@ import {
   useBlueprintRealtimeStore,
   type RolePhase,
 } from "@/lib/blueprint-realtime-store";
+
+import { RoleCrewDots } from "./crew-activation/RoleCrewDots";
+import { useRoleCrewState } from "./crew-activation/useRoleCrewState";
 
 /**
  * 8 类相位 + idle 默认色到 Tailwind class 的稳定映射。
@@ -52,12 +58,26 @@ function resolvePhaseClass(phase: RolePhase | undefined): string {
   return PHASE_BADGE_CLASS[phase] ?? PHASE_BADGE_CLASS.idle;
 }
 
+/** 阶段索引到简短标签的映射 */
+const STAGE_LABELS: Record<number, string> = {
+  0: "Stage 0",
+  1: "Stage 1",
+  2: "Stage 2",
+  3: "Stage 3",
+  4: "Stage 4",
+  5: "Stage 5",
+};
+
 /**
  * 横向角色态条带。无 props：roleId 是稳定标识符（如 `planner` / `analyzer`），
  * 不需要 i18n；颜色与相位一一对应，不依赖父级布局。
+ *
+ * 增强（Task 4.1）：在现有 badge 列表上方插入 RoleCrewDots 角色状态圆点序列
+ * 与当前阶段标签，保持总高度 ≤ 48px。
  */
 export const RoleStatusStrip: FC = () => {
   const rolePhases = useBlueprintRealtimeStore((s) => s.rolePhases);
+  const { roles, currentStageIndex } = useRoleCrewState();
 
   // 防御性兜底：rolePhases 在 store 的初始 state 中即为 `{}`，正常路径下不会
   // 是 undefined / null。但为了让本组件不依赖具体测试 mock 的字段完整度，
@@ -76,18 +96,31 @@ export const RoleStatusStrip: FC = () => {
 
   return (
     <div
-      className="flex flex-wrap gap-1.5"
+      className="flex flex-col gap-1 max-h-[48px]"
       data-testid="role-status-strip"
     >
-      {sortedEntries.map(([roleId, phase]) => (
-        <span
-          key={roleId}
-          className={`px-2 py-0.5 rounded-full text-[10px] font-bold max-w-[120px] overflow-hidden text-ellipsis whitespace-nowrap ${resolvePhaseClass(phase)}`}
-          title={`${roleId} · ${phase}`}
-        >
-          {roleId}
-        </span>
-      ))}
+      {/* 角色状态圆点序列 + 阶段标签 */}
+      {roles.length > 0 && (
+        <div className="flex items-center gap-2">
+          <RoleCrewDots roles={roles} size="sm" />
+          <span className="text-[10px] font-mono text-slate-400 whitespace-nowrap">
+            {STAGE_LABELS[currentStageIndex] ?? `Stage ${currentStageIndex}`}
+          </span>
+        </div>
+      )}
+
+      {/* 原有 badge 列表 */}
+      <div className="flex flex-wrap gap-1.5">
+        {sortedEntries.map(([roleId, phase]) => (
+          <span
+            key={roleId}
+            className={`px-2 py-0.5 rounded-full text-[10px] font-bold max-w-[120px] overflow-hidden text-ellipsis whitespace-nowrap ${resolvePhaseClass(phase)}`}
+            title={`${roleId} · ${phase}`}
+          >
+            {roleId}
+          </span>
+        ))}
+      </div>
     </div>
   );
 };

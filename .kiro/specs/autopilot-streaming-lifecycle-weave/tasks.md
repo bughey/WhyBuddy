@@ -35,7 +35,7 @@
     - 合并补偿数据到已有内容，避免重复
     - _需求: 3.4_
 
-- [ ] 3. 创建 StreamingProgressOverlay 进度叠加组件
+- [x] 3. 创建 StreamingProgressOverlay 进度叠加组件
   - [x] 3.1 创建 `client/src/components/right-rail/streaming-weave/StreamingProgressOverlay.tsx`
     - 叠加在 StageProgressIndicator 上方
     - 正常流式：蓝色渐变脉冲动画
@@ -43,21 +43,21 @@
     - 重连态：红色背景 + 旋转图标 + "重新连接中" 文案
     - text-[10px]
     - _需求: 1.1, 1.4, 3.1, 3.3_
-  - [~] 3.2 实现进度条与流式状态联动
+  - [x] 3.2 实现进度条与流式状态联动
     - 流式进行中：进度条使用 streaming 模式（渐变填充 + 微弱脉冲）
     - 暂停超过 3s：切换为不确定态动画
     - 阶段跨越：平滑过渡到下一阶段进度
     - _需求: 1.2, 1.3, 1.4_
 
-- [ ] 4. 增强现有消费端组件
-  - [~] 4.1 增强 `client/src/components/right-rail/cards/` 中的活跃卡片
+- [x] 4. 增强现有消费端组件
+  - [x] 4.1 增强 `client/src/components/right-rail/cards/` 中的活跃卡片
     - 订阅 useStreamingWeave，实时追加 token 到当前活跃卡片
     - 使用 useRef 避免每次 token 触发整个列表 re-render
     - _需求: 2.1, 4.3_
-  - [~] 4.2 增强 AgentReasoningSubTimeline 的当前条目
+  - [x] 4.2 增强 AgentReasoningSubTimeline 的当前条目
     - 订阅 useStreamingWeave，实时追加 token 到当前推理条目
     - _需求: 2.2_
-  - [~] 4.3 增强 SceneStageFlow 的 zone 指示
+  - [x] 4.3 增强 SceneStageFlow 的 zone 指示
     - 流式进行中在当前 zone 显示微弱脉冲发光
     - 使用 CSS animation 而非 Three.js 重渲染
     - _需求: 2.3_

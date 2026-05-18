@@ -4,8 +4,11 @@
  * 水平排列所有角色的状态圆点，每个圆点下方显示角色简称。
  * 使用 framer-motion `layoutId` 实现位置动画。
  *
- * 对应 `.kiro/specs/autopilot-agent-crew-stage-activation` Task 2.1。
- * 需求: 1.1, 4.1
+ * 窄宽度降级（Task 6.1）：当右栏 < 280px 时隐藏角色名称仅保留圆点。
+ * 使用 `hidden sm:block` 实现响应式降级。
+ *
+ * 对应 `.kiro/specs/autopilot-agent-crew-stage-activation` Task 2.1, 6.1。
+ * 需求: 1.1, 4.1, 4.3
  */
 
 import { motion, useReducedMotion } from "framer-motion";
@@ -44,6 +47,7 @@ function getShortName(roleName: string): string {
  * 角色状态圆点序列。
  *
  * 水平排列角色圆点，下方显示角色简称。
+ * 窄宽度（< 280px / sm 断点以下）时隐藏角色名称仅保留圆点。
  */
 export function RoleCrewDots({ roles, size = "sm" }: RoleCrewDotsProps) {
   const shouldReduceMotion = useReducedMotion();
@@ -62,7 +66,7 @@ export function RoleCrewDots({ roles, size = "sm" }: RoleCrewDotsProps) {
           }
         >
           <RoleCrewDot role={role} size={size} />
-          <span className="text-[10px] leading-tight text-slate-500 select-none whitespace-nowrap">
+          <span className="hidden sm:block text-[10px] leading-tight text-slate-500 select-none whitespace-nowrap">
             {getShortName(role.roleName)}
           </span>
         </motion.div>

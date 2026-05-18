@@ -5,6 +5,10 @@
  */
 
 export { useStreamingWeave } from "./useStreamingWeave";
+export { useStreamingProgressLink } from "./useStreamingProgressLink";
+export type { StreamingProgressLinkState } from "./useStreamingProgressLink";
+export { useStreamingTokenAppend } from "./useStreamingTokenAppend";
+export type { StreamingTokenAppendReturn } from "./useStreamingTokenAppend";
 export { StreamTokenBuffer } from "./StreamTokenBuffer";
 export { StreamInterruptionDetector } from "./StreamInterruptionDetector";
 export type { InterruptionState } from "./StreamInterruptionDetector";
