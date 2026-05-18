@@ -916,6 +916,24 @@
   }
 }
 
+/* ── ReAct 循环流式光标闪烁（autopilot-llm-react-loop-inline spec Task 3.2） ── */
+/*
+ * 复用 mirofish-blink 的 keyframes（相同 opacity 0/1 step-end 逻辑），
+ * 但使用 0.8s 周期以匹配 ReAct 阶段块更紧凑的节奏。
+ * prefers-reduced-motion 下降级为静态 `|` 字符（由组件侧 fallback 处理），
+ * 动画本身直接取消。
+ */
+.animate-react-cursor-blink {
+  animation: mirofish-blink 0.8s step-end infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-react-cursor-blink {
+    animation: none;
+    opacity: 1;
+  }
+}
+
 /* ── StageProgressIndicator 动画（autopilot-stage-progress-indicator spec Task 5.1） ── */
 /*
  * 进度节奏可视化的四类自定义动画：
