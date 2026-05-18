@@ -134,7 +134,7 @@ function StageZonePulse({
           distanceFactor={10}
           style={{ pointerEvents: "none" }}
         >
-          <div className="rounded-full border border-sky-100/80 bg-white/92 px-3 py-1 text-[10px] font-semibold text-slate-700 shadow-[0_8px_22px_rgba(56,189,248,0.14)]">
+          <div className="rounded-full border border-white/15 bg-slate-950/75 px-3 py-1 text-[10px] font-black text-white/80 shadow-[0_6px_16px_rgba(2,6,23,0.3)] backdrop-blur-md">
             {label}
           </div>
         </Html>
@@ -254,28 +254,25 @@ export function SceneStageFlow({
         distanceFactor={11}
         style={{ pointerEvents: "none" }}
       >
-        <div className="min-w-[180px] max-w-[240px] rounded-[20px] border border-sky-100/80 bg-white/94 px-4 py-3 text-center shadow-[0_14px_34px_rgba(56,189,248,0.16)] backdrop-blur-sm">
+        <div className="min-w-[160px] max-w-[220px] rounded-[12px] border border-white/10 bg-slate-950/82 px-4 py-3 text-center shadow-[0_14px_34px_rgba(2,6,23,0.4)] backdrop-blur-xl">
           <div
-            className="text-[11px] font-semibold uppercase tracking-[0.2em]"
+            className="text-[10px] font-black uppercase tracking-[0.15em]"
             style={{ color: signal.color }}
           >
             {signal.statusLabel}
           </div>
-          <div className="mt-2 text-sm font-semibold text-slate-800">
+          <div className="mt-1.5 text-[13px] font-black text-white">
             {signal.stageLabel}
           </div>
           {signal.summary ? (
-            <div className="mt-2 line-clamp-2 text-xs leading-5 text-slate-500">
+            <div className="mt-1.5 line-clamp-2 text-[10px] leading-4 text-white/60">
               {signal.summary}
             </div>
           ) : null}
           {signal.progress !== null ? (
-            <div
-              className="mt-3 overflow-hidden rounded-full"
-              style={{ backgroundColor: FUTURE_OFFICE_COLORS.floorInset }}
-            >
+            <div className="mt-2.5 overflow-hidden rounded-full bg-white/10">
               <div
-                className="h-1.5 rounded-full transition-[width] duration-500"
+                className="h-1 rounded-full transition-[width] duration-500"
                 style={{
                   width: `${Math.max(0, Math.min(100, signal.progress))}%`,
                   backgroundColor: signal.color,
