@@ -545,9 +545,10 @@ export const MarkdownRenderer: FC<MarkdownRendererProps> = ({
 
   return (
     <div
-      className="space-y-2 font-sans text-xs leading-relaxed text-slate-700"
+      className="space-y-2 font-sans text-xs leading-relaxed text-slate-700 break-words"
       data-testid="streaming-doc-markdown"
       data-token-count={tokens.length}
+      style={{ wordBreak: "break-word", overflowWrap: "anywhere" }}
     >
       {tokens.map((token, index) =>
         renderToken(token, index, isStreaming, index === tokens.length - 1)

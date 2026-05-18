@@ -511,6 +511,17 @@ export const StreamingDocRenderer: FC<StreamingDocRendererProps> = ({
         />
       ) : null}
 
+      {/*
+        滚动容器宽度边界（2026-05-19 第 7 次溢出修复）：
+        - 该 div 的 cross-axis 宽度由 `<div className="flex h-full ... flex-col">`
+          父容器的 width 决定。flex column 子项的 cross-axis 默认 stretch 满父级
+          宽度，所以这里 *不能* 用 `w-0`（会被 stretch 覆盖也容易破布局）。
+        - 关键修复在于内层 streaming-doc-body 不再用 `flex max-w-prose`，避免
+          flex 横向轴在 markdown 行很长时被 inner content 撑出超大宽度。
+        - 容器自身保留 `flex-1 min-h-0 min-w-0 overflow-y-auto overflow-x-hidden`，
+          继续承担纵向滚动职责，并通过 `min-w-0` 让自己尊重外层 grid track 的
+          `minmax(0, 2fr)` 宽度边界。
+      */}
       <div
         ref={scrollRef}
         className="relative flex-1 min-h-0 min-w-0 overflow-y-auto overflow-x-hidden"
@@ -530,13 +541,31 @@ export const StreamingDocRenderer: FC<StreamingDocRendererProps> = ({
           </div>
         ) : (
           <div
-            className="mx-auto flex max-w-prose gap-4 px-4 py-4 text-xs leading-relaxed text-slate-700"
+            className="block w-full min-w-0 px-4 py-4 text-xs leading-relaxed text-slate-700"
             data-testid="streaming-doc-body"
             data-streaming-doc-body
             data-is-streaming={activeDocState.isStreaming ? "true" : "false"}
             data-raw-length={activeDocState.rawMarkdown.length}
           >
-            <div className="min-w-0 flex-1">
+            {/*
+              Task 4.1（2026-05-19 重排版）：DocOutline 改为 float-right + sticky
+              的浅辅助导航，仅在 md+ 屏幕展示。`float-right + ml-3 + mb-2` 让
+              主区 markdown 自然回流到大纲左侧，避免 flex 横向布局在窄屏下
+              因为 `max-w-prose` 与 `flex-1` 共存撑出超长行。
+            */}
+            {headings.length >= 2 ? (
+              <aside
+                className="float-right ml-3 mb-2 hidden w-32 shrink-0 md:block"
+                data-testid="streaming-doc-outline-aside"
+                style={{ position: "sticky", top: 0 }}
+              >
+                <DocOutline
+                  headings={headings}
+                  onHeadingClick={handleHeadingClick}
+                />
+              </aside>
+            ) : null}
+            <div className="min-w-0">
               {/*
                 Task 2.1 已落地：使用 MarkdownRenderer 把累积 rawMarkdown 渲染
                 为格式化 HTML；尾部叠加 StreamCursor，让用户在流式过程中看到
@@ -549,22 +578,8 @@ export const StreamingDocRenderer: FC<StreamingDocRendererProps> = ({
               />
               <StreamCursor visible={activeDocState.isStreaming} />
             </div>
-            {/*
-              Task 4.1：DocOutline 仅在 ≥2 个 h1-h3 标题时渲染（组件内部
-              判断）；单文档无标题或只有 1 个标题时占位 aside 不出现，避免
-              横向占用宽度。aside 使用 sticky 让大纲在长文档中一直可见。
-            */}
-            {headings.length >= 2 ? (
-              <aside
-                className="sticky top-0 hidden w-32 shrink-0 self-start md:block"
-                data-testid="streaming-doc-outline-aside"
-              >
-                <DocOutline
-                  headings={headings}
-                  onHeadingClick={handleHeadingClick}
-                />
-              </aside>
-            ) : null}
+            {/* clear floats so streaming-doc-body height contains the outline */}
+            <div className="clear-both" aria-hidden="true" />
           </div>
         )}
       </div>
