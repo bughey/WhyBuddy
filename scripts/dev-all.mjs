@@ -150,6 +150,8 @@ async function resolveProxyEnvironment() {
   return {
     HTTP_PROXY: proxyUrl,
     HTTPS_PROXY: proxyUrl,
+    NO_PROXY: process.env.NO_PROXY || "localhost,127.0.0.1",
+    no_proxy: process.env.NO_PROXY || process.env.no_proxy || "localhost,127.0.0.1",
     NODE_USE_ENV_PROXY: "1",
   };
 }
