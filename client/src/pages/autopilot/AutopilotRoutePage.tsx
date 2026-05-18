@@ -1639,6 +1639,18 @@ function AutopilotWorkflowRail({
     <aside
       className="grid min-w-0 content-start gap-3 xl:max-h-[calc(100vh-104px)] xl:overflow-y-auto xl:overflow-x-hidden"
       data-testid="autopilot-workflow-rail"
+      style={{
+        // 硬约束 aside 宽度。父级 grid track 是 minmax(0, 2fr)，但 grid item
+        // 的 min-width: auto 默认会让 item 的最小宽度 = min-content。当内部
+        // markdown 长行 / DocTabBar 多 tab 等内容存在时，min-content 会把整个
+        // aside 撑大到内容总宽度（曾出现过 15364px）。
+        // inline maxWidth + width 100% + overflow hidden 是最后的硬约束。
+        width: "100%",
+        maxWidth: "100%",
+        minWidth: 0,
+        overflow: "hidden",
+        boxSizing: "border-box",
+      }}
     >
       <section
         className="min-w-0 border border-slate-200 bg-white"

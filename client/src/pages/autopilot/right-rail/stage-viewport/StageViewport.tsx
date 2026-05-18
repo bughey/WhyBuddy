@@ -57,15 +57,31 @@ const StageViewport: FC<StageViewportProps> = ({
 }) => {
   return (
     <div
-      className="flex flex-col h-full w-full min-w-0 max-w-full"
+      className="flex flex-col h-full"
       data-stage-index={stageIndex}
       data-stage-key={stageKey}
+      style={{
+        width: "100%",
+        maxWidth: "100%",
+        minWidth: 0,
+        boxSizing: "border-box",
+      }}
     >
       {/* StageHeader 区域 */}
       {header}
 
       {/* StageContent 区域 — 弹性可滚动 */}
-      <div className="flex-1 w-full min-h-0 min-w-0 max-w-full overflow-y-auto overflow-x-hidden px-4 py-3">{children}</div>
+      <div
+        className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-4 py-3"
+        style={{
+          width: "100%",
+          maxWidth: "100%",
+          minWidth: 0,
+          boxSizing: "border-box",
+        }}
+      >
+        {children}
+      </div>
 
       {/* StageCTA 区域 */}
       {cta}

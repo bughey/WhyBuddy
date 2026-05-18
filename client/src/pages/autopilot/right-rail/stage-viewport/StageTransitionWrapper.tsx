@@ -125,7 +125,13 @@ const StageTransitionWrapper: FC<StageTransitionWrapperProps> = ({
         animate="center"
         exit="exit"
         transition={transition}
-        className="h-full w-full min-w-0 max-w-full"
+        className="h-full"
+        style={{
+          width: "100%",
+          maxWidth: "100%",
+          minWidth: 0,
+          boxSizing: "border-box",
+        }}
       >
         {children}
       </motion.div>

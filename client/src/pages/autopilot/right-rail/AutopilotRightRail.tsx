@@ -481,6 +481,17 @@ export const AutopilotRightRail: FC<AutopilotRightRailProps> = (props) => {
       data-autopilot-stage={currentStage}
       data-autopilot-sub-stage={activeSubStage ?? ""}
       className="px-4 py-5"
+      style={{
+        // 硬约束 aside 宽度。父级是 grid track minmax(0, 2fr)，正常情况下
+        // 应该自然限制宽度，但右栏内部多层 flex / motion.div / overflow 嵌套
+        // 容易把 min-content 推到内容总宽。inline width: 100% + maxWidth: 100%
+        // 直接锁定 aside 不超过 grid track。
+        width: "100%",
+        maxWidth: "100%",
+        minWidth: 0,
+        boxSizing: "border-box",
+        overflow: "hidden",
+      }}
     >
       {/* fabric 阶段的 placeholder 保留(供测试断言) */}
       <div data-stage-placeholder="fabric" data-active="true" className="hidden" />

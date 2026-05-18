@@ -498,10 +498,18 @@ export const StreamingDocRenderer: FC<StreamingDocRendererProps> = ({
 
   return (
     <div
-      className="flex h-full min-h-0 min-w-0 w-full flex-col rounded-lg bg-slate-50"
+      className="flex h-full min-h-0 flex-col rounded-lg bg-slate-50"
       data-testid="streaming-doc-renderer"
       role="region"
       aria-label={ariaLabel}
+      style={{
+        // 硬约束最外层宽度，防止任何 flex item 子项把容器撑出 grid track。
+        // `containIntrinsicSize` + `contain: layout size` 阻断子元素布局对外扩散。
+        width: "100%",
+        maxWidth: "100%",
+        minWidth: 0,
+        boxSizing: "border-box",
+      }}
     >
       {showTabs ? (
         <DocTabBar
@@ -524,13 +532,23 @@ export const StreamingDocRenderer: FC<StreamingDocRendererProps> = ({
       */}
       <div
         ref={scrollRef}
-        className="relative flex-1 min-h-0 min-w-0 overflow-y-auto overflow-x-hidden"
+        className="relative flex-1 min-h-0 overflow-y-auto overflow-x-hidden"
         data-testid="streaming-doc-scroll"
         data-active-doc-id={activeDocId ?? ""}
         data-scroll-position={
           activeDocId !== null ? scrollPositions[activeDocId] ?? 0 : 0
         }
         onScroll={handleScroll}
+        style={{
+          // 硬约束滚动容器宽度。父级 StageViewport content div 在 flex
+          // column 中作为 cross-axis stretch 子项，但内部 markdown 长内容
+          // 会触发 flex item min-width: auto = min-content 规则把容器撑大。
+          // inline `maxWidth: 100%` + `minWidth: 0` 强制 layout 服从父级宽度。
+          maxWidth: "100%",
+          width: "100%",
+          minWidth: 0,
+          boxSizing: "border-box",
+        }}
       >
         {isEmpty ? (
           <div
@@ -541,11 +559,21 @@ export const StreamingDocRenderer: FC<StreamingDocRendererProps> = ({
           </div>
         ) : (
           <div
-            className="block w-full min-w-0 px-4 py-4 text-xs leading-relaxed text-slate-700"
+            className="block px-4 py-4 text-xs leading-relaxed text-slate-700"
             data-testid="streaming-doc-body"
             data-streaming-doc-body
             data-is-streaming={activeDocState.isStreaming ? "true" : "false"}
             data-raw-length={activeDocState.rawMarkdown.length}
+            style={{
+              // 硬约束容器宽度，杜绝 flex/inline 子元素把容器撑出 grid track。
+              // contain: layout 阻止子元素的布局影响外部，inline-size 防止
+              // 在 flex column 内被 stretch 之外的内容增大。
+              maxWidth: "100%",
+              width: "100%",
+              minWidth: 0,
+              boxSizing: "border-box",
+              overflow: "hidden",
+            }}
           >
             {/*
               Task 4.1（2026-05-19 重排版）：DocOutline 改为 float-right + sticky
@@ -565,7 +593,16 @@ export const StreamingDocRenderer: FC<StreamingDocRendererProps> = ({
                 />
               </aside>
             ) : null}
-            <div className="min-w-0">
+            <div
+              className="block"
+              style={{
+                width: "100%",
+                maxWidth: "100%",
+                minWidth: 0,
+                wordBreak: "break-word",
+                overflowWrap: "anywhere",
+              }}
+            >
               {/*
                 Task 2.1 已落地：使用 MarkdownRenderer 把累积 rawMarkdown 渲染
                 为格式化 HTML；尾部叠加 StreamCursor，让用户在流式过程中看到
