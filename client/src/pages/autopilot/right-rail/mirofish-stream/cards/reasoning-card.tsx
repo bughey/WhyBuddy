@@ -89,7 +89,12 @@ export const ReasoningCard: FC<ReasoningCardProps> = ({
   else if (entry.actionToolId) text = `→ ${entry.actionToolId}`;
   else if (entry.observationSummary) {
     const mark = entry.observationSuccess === false ? "✗" : "✓";
-    text = `${mark} ${blueprintCopy(entry.observationSummary, locale)}`;
+    // 服务端 emitter（spec-docs-llm-generation.ts）已经在 observationSummary
+    // 头部塞了 "✓ " 或 "⚠ " 前缀，这里要先剥掉，避免与本组件追加的 mark
+    // 叠加成 "✓ ✓ ..." / "⚠ ✗ ..."。
+    const summary = blueprintCopy(entry.observationSummary, locale);
+    const stripped = summary.replace(/^[✓✗⚠]\s+/u, "");
+    text = `${mark} ${stripped}`;
   } else if (entry.reason) text = blueprintCopy(entry.reason, locale);
   else if (entry.error) text = blueprintCopy(entry.error, locale);
 

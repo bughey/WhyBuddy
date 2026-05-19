@@ -48,13 +48,8 @@ export const NodeCompletedCard: FC<NodeCompletedCardProps> = ({
       data-source={entry.generationSource ?? "unknown"}
       className="flex items-center gap-2 px-2 py-1 border-b border-slate-100"
     >
-      {/* 完成图标 + 节点名称 */}
-      <span className="text-[10px] text-emerald-500 flex-shrink-0" aria-hidden="true">
-        ✓
-      </span>
-
-      {/* 节点名称 */}
-      <span className="text-[10px] text-slate-500 truncate flex-1">
+      {/* 节点名称（包含 ✓ 完成图标） */}
+      <span className="text-[10px] text-emerald-500 truncate flex-1">
         {`✓ ${nodeTitle}`}
       </span>
 
