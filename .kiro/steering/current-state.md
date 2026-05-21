@@ -497,9 +497,9 @@ Step 8: 工程落地/Mission (Engineering Landing)
 
 | 节点 | 差距 | 严重度 | 建议 |
 | ---- | ---- | ------ | ---- |
-| knowledge_qa | cube 是 KnowledgeService 封装，管线深度取决于服务内部 | MEDIUM | 审计 knowledge-service.ts 内部实现 |
-| static_webpage_read | cube 用 regex 剥离 HTML，rbac 用 cheerio DOM 解析 | LOW | 复杂 HTML 场景可能不够 |
-| auto_agent | cube 无 ReAct 迭代循环（单次委派） | MEDIUM | Autopilot 管线的 AgentLoopStateMachine 可能已覆盖 |
+| knowledge_qa | 有真实图+向量双源检索，但无 LLM 生成步骤（retrieve+merge，非完整 RAG） | LOW | 后续可加 LLM 生成步骤，当前 mergedSummary 已可用 |
+| static_webpage_read | ~~regex 剥离~~ 已升级为 html-parser（content area 优先、metadata 提取、link 提取） | ✅ 已修复 | — |
+| auto_agent | ~~无 ReAct 循环~~ AgentLoopStateMachine 已实现完整 ReAct（比 rbac 更强） | ✅ 无差距 | cube 的 ReAct 比 rbac 多了 token/timeout 预算 + abort + 进度事件 |
 
 ### cube 反超 rbac 的节点
 
