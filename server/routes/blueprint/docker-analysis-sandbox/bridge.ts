@@ -404,24 +404,51 @@ export function createDockerCapabilityBridge(
   return async function dockerCapabilityBridge(
     input: DockerCapabilityBridgeInput
   ): Promise<DockerCapabilityBridgeOutput> {
-    // Step 1: 早退 —— bridge 未配置或未启用。
-    // debug 级别：dev 默认走这条路径，warn 会刷屏。
+    // Step 1: bridge 配置检查 + lazy re-probe。
+    // dev:all 并行启动 server 和 executor，启动时 probe 可能因 executor 还没起来而失败，
+    // 导致 isBridgeConfigured 永远返回 false。这里做一次 lazy re-probe 修复时序问题。
     if (!isBridgeConfigured(ctx)) {
-      ctx.logger.debug(
-        "Docker capability bridge: not configured, using fallback",
-        {
-          capabilityId: input.capability.id,
-          jobId: input.jobId,
+      // 如果所有依赖都在、env gate 开，只是 probe 没过 → 重试一次
+      if (
+        ctx.executorClient &&
+        ctx.executorCallbackDispatcher &&
+        ctx.dockerCapabilityPolicy &&
+        process.env.BLUEPRINT_DOCKER_CAPABILITY_BRIDGE_ENABLED === "true"
+      ) {
+        try {
+          await ctx.executorClient.assertReachable();
+          // re-probe 成功，更新 diagnostics 并继续走 real 路径（不 return）
+          ctx.runtimeDiagnostics?.recordBridgeConfiguration?.("docker", {
+            enabledByConfig: true,
+            dependencyReady: true,
+          });
+          ctx.logger.info(
+            "Docker capability bridge: lazy re-probe succeeded, proceeding with real path",
+          );
+        } catch (probeErr) {
+          const reason = `executor unreachable (lazy re-probe): ${probeErr instanceof Error ? probeErr.message : String(probeErr)}`;
+          ctx.logger.warn("Docker capability bridge: lazy re-probe failed", { reason });
+          ctx.runtimeDiagnostics?.recordBridgeInvocation?.("docker", {
+            mode: "simulated_fallback",
+            error: reason,
+          });
+          return buildFallbackOutput(input, { reason });
         }
-      );
-      // 记录 fallback 到 diagnostics，让 /api/blueprint/diagnostics 能看到调用痕迹
-      ctx.runtimeDiagnostics?.recordBridgeInvocation?.("docker", {
-        mode: "simulated_fallback",
-        error: "capability bridge not configured",
-      });
-      return buildFallbackOutput(input, {
-        reason: "capability bridge not configured",
-      });
+      } else {
+        const reason = !ctx.executorClient
+          ? "executorClient missing"
+          : !ctx.executorCallbackDispatcher
+            ? "executorCallbackDispatcher missing"
+            : !ctx.dockerCapabilityPolicy
+              ? "dockerCapabilityPolicy missing"
+              : `env gate off: ${process.env.BLUEPRINT_DOCKER_CAPABILITY_BRIDGE_ENABLED}`;
+        ctx.logger.warn("Docker capability bridge: not configured", { reason });
+        ctx.runtimeDiagnostics?.recordBridgeInvocation?.("docker", {
+          mode: "simulated_fallback",
+          error: reason,
+        });
+        return buildFallbackOutput(input, { reason });
+      }
     }
 
     const executorClient = ctx.executorClient;
