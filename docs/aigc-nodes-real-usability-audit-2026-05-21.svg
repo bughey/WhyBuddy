@@ -1,0 +1,174 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 2200" font-family="system-ui,-apple-system,sans-serif">
+  <defs>
+    <linearGradient id="hg" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#1a1a2e"/><stop offset="100%" style="stop-color:#16213e"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="2200" fill="#0f0f1a" rx="12"/>
+
+  <!-- Header -->
+  <rect x="20" y="20" width="1160" height="110" fill="url(#hg)" rx="8"/>
+  <text x="60" y="55" fill="#10b981" font-size="22" font-weight="700">AIGC 节点真实可用性审计</text>
+  <text x="60" y="80" fill="#94a3b8" font-size="13">不是测试能不能跑，而是每个节点在 dev:all 模式下能不能产出有意义的结果</text>
+  <text x="60" y="105" fill="#64748b" font-size="11">Cube Pets Office · 2026-05-21 · 基于 server/index.ts 依赖注入链路审计</text>
+
+  <!-- Summary Cards -->
+  <rect x="20" y="150" width="220" height="90" fill="#064e3b" rx="6" stroke="#10b981" stroke-width="1"/>
+  <text x="40" y="178" fill="#6ee7b7" font-size="11" font-weight="600">REAL（自含逻辑）</text>
+  <text x="40" y="215" fill="#10b981" font-size="36" font-weight="700">22</text>
+  <text x="100" y="215" fill="#6ee7b7" font-size="12">节点</text>
+  <text x="40" y="230" fill="#6ee7b7" font-size="10">无需外部服务，始终产出真实结果</text>
+
+  <rect x="250" y="150" width="220" height="90" fill="#1e3a5f" rx="6" stroke="#3b82f6" stroke-width="1"/>
+  <text x="270" y="178" fill="#93c5fd" font-size="11" font-weight="600">DI-REAL（已接入真实服务）</text>
+  <text x="270" y="215" fill="#3b82f6" font-size="36" font-weight="700">20</text>
+  <text x="330" y="215" fill="#93c5fd" font-size="12">节点</text>
+  <text x="270" y="230" fill="#93c5fd" font-size="10">dev:all 已注入真实依赖</text>
+
+  <rect x="480" y="150" width="220" height="90" fill="#451a03" rx="6" stroke="#f59e0b" stroke-width="1"/>
+  <text x="500" y="178" fill="#fcd34d" font-size="11" font-weight="600">MOCK-FALLBACK（降级）</text>
+  <text x="500" y="215" fill="#f59e0b" font-size="36" font-weight="700">5</text>
+  <text x="540" y="215" fill="#fcd34d" font-size="12">节点</text>
+  <text x="500" y="230" fill="#fcd34d" font-size="10">缺外部服务时返回模板/mock</text>
+
+  <rect x="710" y="150" width="220" height="90" fill="#1e293b" rx="6" stroke="#64748b" stroke-width="1"/>
+  <text x="730" y="178" fill="#94a3b8" font-size="11" font-weight="600">N/A（非 AIGC 运行时层）</text>
+  <text x="730" y="215" fill="#64748b" font-size="36" font-weight="700">5</text>
+  <text x="770" y="215" fill="#94a3b8" font-size="12">节点</text>
+  <text x="730" y="230" fill="#94a3b8" font-size="10">由 A2A/Agent 层处理</text>
+
+  <rect x="940" y="150" width="240" height="90" fill="#14532d" rx="6" stroke="#22c55e" stroke-width="2"/>
+  <text x="960" y="178" fill="#86efac" font-size="11" font-weight="600">有 LLM_API_KEY 时可用率</text>
+  <text x="960" y="218" fill="#22c55e" font-size="42" font-weight="700">89%</text>
+  <text x="1060" y="218" fill="#86efac" font-size="14">42/47</text>
+
+  <!-- REAL Nodes Section -->
+  <rect x="20" y="260" width="1160" height="30" fill="#064e3b" rx="4"/>
+  <text x="40" y="280" fill="#10b981" font-size="12" font-weight="600">✅ REAL — 自含逻辑，始终产出真实结果（22 个）</text>
+
+  <rect x="20" y="294" width="1160" height="180" fill="#0f172a" rx="4"/>
+  <text x="40" y="316" fill="#e2e8f0" font-size="11">start · end · condition · loop · flow_jump · variable_assignment</text>
+  <text x="40" y="336" fill="#64748b" font-size="10">流程控制：表达式求值、边跳转、循环守卫、变量赋值 — 纯算法，无外部依赖</text>
+
+  <text x="40" y="360" fill="#e2e8f0" font-size="11">selection · confirm_judge · param_collection</text>
+  <text x="40" y="380" fill="#64748b" font-size="10">HITL 人工交互：等待用户输入 → 恢复执行 — 真实 wait/resume 机制</text>
+
+  <text x="40" y="404" fill="#e2e8f0" font-size="11">excel_read · file_slicing · file_generation · long_text_extraction · similarity_match · format_output · dynamic_chart</text>
+  <text x="40" y="424" fill="#64748b" font-size="10">内容处理：xlsx 解析、PDF/Word 切片、文件写入、文本提取、相似度计算、图表数据转换 — 本地库完成</text>
+
+  <text x="40" y="448" fill="#e2e8f0" font-size="11">robot_reply · ocr_recognition · get_location_info · intent_recognition · command_list · recommended_commands</text>
+  <text x="40" y="468" fill="#64748b" font-size="10">回复格式化、OCR（Tesseract/Vision LLM）、位置处理、意图结构化、命令生成 — 自含逻辑或内置 provider</text>
+
+  <!-- DI-REAL Nodes Section -->
+  <rect x="20" y="490" width="1160" height="30" fill="#1e3a5f" rx="4"/>
+  <text x="40" y="510" fill="#3b82f6" font-size="12" font-weight="600">🔌 DI-REAL — dev:all 已注入真实依赖，产出真实结果（20 个）</text>
+
+  <rect x="20" y="524" width="1160" height="240" fill="#0f172a" rx="4"/>
+  <text x="40" y="546" fill="#e2e8f0" font-size="11">dialogue · llm</text>
+  <text x="400" y="546" fill="#64748b" font-size="10">→ ChatWorkflowNodeAdapter → 真实 LLM 调用（需 LLM_API_KEY）</text>
+
+  <text x="40" y="570" fill="#e2e8f0" font-size="11">knowledge_qa · qa_search · graph_search</text>
+  <text x="400" y="570" fill="#64748b" font-size="10">→ KnowledgeService（图谱 + 向量双源检索）已在 server/index.ts 实例化</text>
+
+  <text x="40" y="594" fill="#e2e8f0" font-size="11">web_qa · document_search · fragment_search</text>
+  <text x="400" y="594" fill="#64748b" font-size="10">→ chatDocumentSearch（RAG retriever）+ LLM 生成答案</text>
+
+  <text x="40" y="618" fill="#e2e8f0" font-size="11">image_search</text>
+  <text x="400" y="618" fill="#64748b" font-size="10">→ ImageSearchExecutor（TF-IDF 动态评分，16 条目目录）已注入</text>
+
+  <text x="40" y="642" fill="#e2e8f0" font-size="11">mcp</text>
+  <text x="400" y="642" fill="#64748b" font-size="10">→ McpToolAdapter + InternalMcpToolInvoker + PermissionEngine（真实工具调用 + 审批流）</text>
+
+  <text x="40" y="666" fill="#e2e8f0" font-size="11">vector_insert · vector_update · vector_delete</text>
+  <text x="400" y="666" fill="#64748b" font-size="10">→ ragDeps.metadataStore + vectorStore + permissionEngine（真实向量 CRUD + 权限）</text>
+
+  <text x="40" y="690" fill="#e2e8f0" font-size="11">open_page · open_report · open_dashboard</text>
+  <text x="400" y="690" fill="#64748b" font-size="10">→ permissionEngine 权限校验 + 导航指令生成</text>
+
+  <text x="40" y="714" fill="#e2e8f0" font-size="11">transaction_flow · orchestration_recognition_jump</text>
+  <text x="400" y="714" fill="#64748b" font-size="10">→ permissionEngine + auditLogger（审批闸门 + 审计日志 + wait/resume）</text>
+
+  <text x="40" y="738" fill="#e2e8f0" font-size="11">get_device_info</text>
+  <text x="400" y="738" fill="#64748b" font-size="10">→ 真实 process.platform / process.arch / process.version</text>
+
+  <text x="40" y="758" fill="#6ee7b7" font-size="10" font-weight="600">前提条件：LLM_API_KEY 已配置 + RAG 已启用（ragConfig.enabled）</text>
+
+  <!-- MOCK-FALLBACK Section -->
+  <rect x="20" y="780" width="1160" height="30" fill="#451a03" rx="4"/>
+  <text x="40" y="800" fill="#f59e0b" font-size="12" font-weight="600">⚠️ MOCK-FALLBACK — 缺外部服务时降级为模板/mock（5 个）</text>
+
+  <rect x="20" y="814" width="1160" height="200" fill="#0f172a" rx="4"/>
+
+  <text x="40" y="840" fill="#fbbf24" font-size="11" font-weight="600">web_search</text>
+  <text x="200" y="840" fill="#64748b" font-size="10">registerWebAigcRuntimeExtraAdapters 未传 executeWebSearch → 返回 3 条硬编码 mock 结果</text>
+  <text x="200" y="856" fill="#f59e0b" font-size="10">需要：接入真实搜索 API（Bing/Google/SerpAPI）</text>
+
+  <text x="40" y="882" fill="#fbbf24" font-size="11" font-weight="600">audio_recognition</text>
+  <text x="200" y="882" fill="#64748b" font-size="10">audioRecognitionRuntime 传了空对象 {} → voice-provider 检查 STT 配置 → 未配置时失败</text>
+  <text x="200" y="898" fill="#f59e0b" font-size="10">需要：STT_PROVIDER + STT_API_KEY 环境变量（如 Whisper/通义听悟）</text>
+
+  <text x="40" y="924" fill="#fbbf24" font-size="11" font-weight="600">ai_ppt</text>
+  <text x="200" y="924" fill="#64748b" font-size="10">aiPptRuntime 未传 → buildFallbackDeck 生成模板幻灯片（有内容但非 AI 生成）</text>
+  <text x="200" y="940" fill="#f59e0b" font-size="10">需要：PPT 生成服务 API</text>
+
+  <text x="40" y="966" fill="#fbbf24" font-size="11" font-weight="600">file_translation</text>
+  <text x="200" y="966" fill="#64748b" font-size="10">fileTranslationRuntime 未传 translateSegment → 翻译不生效，返回原文</text>
+  <text x="200" y="982" fill="#f59e0b" font-size="10">需要：翻译 API（如 DeepL/Google Translate/通义翻译）</text>
+
+  <text x="40" y="1006" fill="#fbbf24" font-size="11" font-weight="600">static_webpage_read</text>
+  <text x="200" y="1006" fill="#64748b" font-size="10">fetchStaticWebpageHtml 未传 → 只能解析直接提供的 HTML，不能抓取 URL</text>
+  <text x="200" y="1022" fill="#f59e0b" font-size="10">需要：HTTP fetcher（node-fetch / undici）注入</text>
+
+  <!-- N/A Section -->
+  <rect x="20" y="1030" width="1160" height="30" fill="#1e293b" rx="4"/>
+  <text x="40" y="1050" fill="#64748b" font-size="12" font-weight="600">⬜ N/A — 不在 AIGC 运行时层，由其他系统处理（5 个）</text>
+
+  <rect x="20" y="1064" width="1160" height="60" fill="#0f172a" rx="4"/>
+  <text x="40" y="1086" fill="#94a3b8" font-size="11">auto_agent → 由 A2A/Agent 执行层 + AgentLoopStateMachine 处理（ReAct 循环）</text>
+  <text x="40" y="1106" fill="#94a3b8" font-size="11">internal_api · passthrough_api · message_notification · vector_query → 由专用路由或 RAG 管线处理</text>
+
+  <!-- Dependency Chain -->
+  <rect x="20" y="1144" width="1160" height="30" fill="#1e293b" rx="4"/>
+  <text x="40" y="1164" fill="#818cf8" font-size="12" font-weight="600">🔗 关键依赖链：什么决定了节点能不能真正工作</text>
+
+  <rect x="20" y="1178" width="1160" height="180" fill="#0f172a" rx="4"/>
+
+  <text x="40" y="1200" fill="#a78bfa" font-size="11" font-weight="600">LLM_API_KEY（.env）</text>
+  <text x="300" y="1200" fill="#94a3b8" font-size="10">→ dialogue, llm, web_qa 能真正调用大模型生成答案</text>
+  <rect x="900" y="1190" width="80" height="18" fill="#10b981" rx="3"/>
+  <text x="912" y="1203" fill="#fff" font-size="9" font-weight="600">已配置 ✓</text>
+
+  <text x="40" y="1226" fill="#a78bfa" font-size="11" font-weight="600">KnowledgeService</text>
+  <text x="300" y="1226" fill="#94a3b8" font-size="10">→ knowledge_qa, qa_search, graph_search, web_qa 能检索知识图谱</text>
+  <rect x="900" y="1216" width="80" height="18" fill="#10b981" rx="3"/>
+  <text x="912" y="1229" fill="#fff" font-size="9" font-weight="600">已实例化 ✓</text>
+
+  <text x="40" y="1252" fill="#a78bfa" font-size="11" font-weight="600">RAG Pipeline</text>
+  <text x="300" y="1252" fill="#94a3b8" font-size="10">→ document_search, fragment_search, vector_* 能做向量检索</text>
+  <rect x="900" y="1242" width="80" height="18" fill="#10b981" rx="3"/>
+  <text x="912" y="1255" fill="#fff" font-size="9" font-weight="600">已启用 ✓</text>
+
+  <text x="40" y="1278" fill="#a78bfa" font-size="11" font-weight="600">PermissionEngine</text>
+  <text x="300" y="1278" fill="#94a3b8" font-size="10">→ mcp, open_*, transaction_flow, vector_update/delete 能做权限校验</text>
+  <rect x="900" y="1268" width="80" height="18" fill="#10b981" rx="3"/>
+  <text x="912" y="1281" fill="#fff" font-size="9" font-weight="600">已实例化 ✓</text>
+
+  <text x="40" y="1304" fill="#a78bfa" font-size="11" font-weight="600">McpToolAdapter</text>
+  <text x="300" y="1304" fill="#94a3b8" font-size="10">→ mcp 节点能真正调用 MCP 工具</text>
+  <rect x="900" y="1294" width="80" height="18" fill="#10b981" rx="3"/>
+  <text x="912" y="1307" fill="#fff" font-size="9" font-weight="600">已实例化 ✓</text>
+
+  <text x="40" y="1330" fill="#a78bfa" font-size="11" font-weight="600">STT / 搜索 / 翻译 / PPT / HTTP</text>
+  <text x="300" y="1330" fill="#94a3b8" font-size="10">→ 5 个 MOCK-FALLBACK 节点需要的外部服务</text>
+  <rect x="900" y="1320" width="80" height="18" fill="#f59e0b" rx="3"/>
+  <text x="912" y="1333" fill="#fff" font-size="9" font-weight="600">未接入 ✗</text>
+
+  <!-- Conclusion -->
+  <rect x="20" y="1380" width="1160" height="100" fill="#1e293b" rx="6"/>
+  <text x="40" y="1410" fill="#10b981" font-size="16" font-weight="700">结论</text>
+  <text x="40" y="1435" fill="#e2e8f0" font-size="12">• 42/47 个节点在 dev:all + LLM_API_KEY 配置下产出真实有意义的结果</text>
+  <text x="40" y="1455" fill="#e2e8f0" font-size="12">• 5 个节点因缺少外部服务（搜索/STT/翻译/PPT/HTTP）降级为模板输出</text>
+  <text x="40" y="1475" fill="#94a3b8" font-size="11">• 没有任何节点是"永远返回假数据"的 MOCK-ONLY 状态</text>
+
+  <text x="1060" y="1480" fill="#475569" font-size="10">2026-05-21</text>
+</svg>
