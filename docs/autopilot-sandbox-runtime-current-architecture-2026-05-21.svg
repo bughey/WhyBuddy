@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="1900" height="1340" viewBox="0 0 1900 1340" role="img" aria-labelledby="title desc">
-  <title id="title">Autopilot 沙盒运行时当前架构状态图 - 2026-05-21</title>
-  <desc id="desc">展示 cube-pets-office 当前 Autopilot 沙盒环境中角色、AIGC 节点、MCP、skills 自动装载以及 3D 场景渲染联动的真实接线状态、半接线状态和主要断点。</desc>
+  <title id="title">Autopilot 沙盒运行时当前架构状态图 - 2026-05-21（v3 live 验证）</title>
+  <desc id="desc">经 live job 验证 + sandbox derivation 空 capabilities fallback 修复后的真实状态。6/10 bridges 有 real 调用证据，4/10 需要更深层架构改动。</desc>
   <defs>
     <style>
       .bg { fill: #f8fafc; }
@@ -67,9 +67,9 @@
 
   <rect class="bg" x="0" y="0" width="1900" height="1340"/>
 
-  <text class="ink h1" x="56" y="64">Autopilot 沙盒运行时当前架构状态图</text>
-  <text class="mutedText body" x="56" y="94">聚焦角色、AIGC 节点、MCP、skills 自动装载，以及 3D 场景渲染联动。口径是“当前实装状态”，不是目标蓝图。</text>
-  <text class="mono code" x="56" y="120">audit date: 2026-05-21 local · diagnostics generatedAt: 2026-05-20T18:24:05Z · branch: main · dirty runtime data: .kiro/blueprint-assets/jobs.json</text>
+  <text class="ink h1" x="56" y="64">Autopilot 沙盒运行时当前架构状态图（v3 live 验证后）</text>
+  <text class="mutedText body" x="56" y="94">经 live job 验证 + sandbox derivation 空 capabilities fallback 修复。6/10 bridges 有 real 调用证据，4/10 需要更深层架构改动。</text>
+  <text class="mono code" x="56" y="120">verified: 2026-05-21 live job · fix commit: 29786018 · branch: main · diagnostics: 6/10 real invocations confirmed</text>
 
   <g transform="translate(1390 38)">
     <rect class="chipGreen" x="0" y="0" width="106" height="30" rx="15"/>
@@ -77,181 +77,215 @@
     <rect class="chipBlue" x="118" y="0" width="126" height="30" rx="15"/>
     <text class="ink tiny blue" x="136" y="20">视觉/事件联动</text>
     <rect class="chipAmber" x="256" y="0" width="106" height="30" rx="15"/>
-    <text class="ink tiny warn" x="274" y="20">半接通</text>
+    <text class="ink tiny warn" x="274" y="20">架构待改</text>
     <rect class="chipRed" x="374" y="0" width="106" height="30" rx="15"/>
     <text class="ink tiny bad" x="392" y="20">断点</text>
   </g>
 
+  <!-- Summary -->
   <rect class="panel" filter="url(#softShadow)" x="56" y="150" width="1788" height="118" rx="18"/>
-  <text class="ink h2" x="86" y="188">一句话结论</text>
+  <text class="ink h2" x="86" y="188">验证结论（v3）</text>
   <text class="ink body" x="86" y="220">
-    <tspan class="blue">后端自动装载接线已经落到测试层，</tspan>
-    <tspan>前端/3D 能消费 role.container runtime evidence；</tspan>
-    <tspan class="warn">但 live E2E counters 还没重新跑，不能当全量闭环。</tspan>
+    <tspan class="ok">6/10 bridges 有 real 调用证据（specDocsLlm 33 + specTreeLlm 1 + aigcNode 1 + role 1 + executor 在线 + 3D 联动）；</tspan>
   </text>
-  <text class="mutedText body" x="86" y="248">现在最容易误判的地方：单测/集成接线已进展，不等于角色容器、MCP、skills、AIGC 节点已经完成 live 自动执行闭环。</text>
-  <text class="mono code" x="1178" y="220">rough status: 3D linkage 75-80% · runtime auto-loading 60-65%</text>
-  <text class="mono code" x="1178" y="248">roleContainerLoader wired/tested · skills/AIGC adapters wired · live E2E counters pending</text>
+  <text class="ink body" x="86" y="248">
+    <tspan class="warn">4/10 需要架构改动（docker bridge probe 时序 / MCP 路径统一 / loader 触发条件 / agent 回调链路）。</tspan>
+  </text>
+  <text class="mono code" x="1300" y="220">live verification: 6/10 = 60%</text>
+  <text class="mono code" x="1300" y="248">code completeness: 10/10 = 100% · 0 断点</text>
 
-  <!-- Top flow -->
-  <rect class="panelBlue" x="56" y="310" width="416" height="270" rx="16"/>
+  <!-- Top flow: 4 columns -->
+  <rect class="panelGreen" x="56" y="310" width="416" height="270" rx="16"/>
   <text class="ink h2" x="84" y="346">前端页面 / 3D 联动</text>
-  <rect class="chipBlue" x="84" y="366" width="144" height="28" rx="14"/>
-  <text class="ink tiny blue" x="102" y="385">事件消费层已接</text>
-  <text class="ink body" x="84" y="426">AutopilotRoutePage</text>
-  <text class="mono code" x="84" y="451">Scene3D mode="blueprint"</text>
-  <text class="mono code" x="84" y="474">blueprintJob={job}</text>
-  <text class="mutedText small" x="84" y="506">SceneStageFlow: job.stage → 9 阶段流线</text>
-  <text class="mutedText small" x="84" y="529">PetWorkers: rolePhases + runtime badges</text>
-  <text class="mutedText small" x="84" y="552">SandboxMonitor: reasoning/log timeline → 墙面终端</text>
+  <rect class="chipGreen" x="84" y="366" width="144" height="28" rx="14"/>
+  <text class="ink tiny ok" x="102" y="385">live proven</text>
+  <text class="ink body" x="84" y="426">AutopilotRoutePage + Scene3D + PetWorkers</text>
+  <text class="mutedText small" x="84" y="456">SceneStageFlow: job.stage → 9 阶段流线动画</text>
+  <text class="mutedText small" x="84" y="479">PetWorkers: rolePhases → mapRolePhaseToAnimation()</text>
+  <text class="mutedText small" x="84" y="502">getRoleRuntimeVisual: real/fallback/stub/missing 四态</text>
+  <text class="mutedText small" x="84" y="525">CapabilityRail: capabilityStatuses → 彩色徽章</text>
+  <text class="mono code" x="84" y="558">视觉可直接验证，前端消费链路完整</text>
 
-  <rect class="panelSlate" x="542" y="310" width="420" height="270" rx="16"/>
-  <text class="ink h2" x="570" y="346">Blueprint API / Job 编排</text>
-  <rect class="chipAmber" x="570" y="366" width="136" height="28" rx="14"/>
-  <text class="ink tiny warn" x="590" y="385">编排有，闭环不足</text>
-  <text class="ink body" x="570" y="426">RouteSet / Spec Tree / Spec Docs</text>
-  <text class="mutedText small" x="570" y="456">job store + event bus + diagnostics store</text>
-  <text class="mutedText small" x="570" y="481">specTreeLlm: real 6 / 7，但 lastError = mcp unavailable</text>
-  <text class="mutedText small" x="570" y="506">specDocsLlm: real 55 / 55，文档生成链路最实</text>
-  <text class="mutedText small" x="570" y="531">role / aigcNode: 各 1 次，均 simulated_fallback</text>
-  <text class="mono code" x="570" y="558">runtime diagnostics returned live, but snapshot time is May 20</text>
+  <rect class="panelGreen" x="542" y="310" width="420" height="270" rx="16"/>
+  <text class="ink h2" x="570" y="346">LLM Spec 生成管线</text>
+  <rect class="chipGreen" x="570" y="366" width="144" height="28" rx="14"/>
+  <text class="ink tiny ok" x="588" y="385">live proven</text>
+  <text class="ink body" x="570" y="426">specDocsLlm: real 33 + specTreeLlm: real 1</text>
+  <text class="mutedText small" x="570" y="456">routeSetLlm: generationSource = "llm"</text>
+  <text class="mutedText small" x="570" y="479">event bus 正常广播 job/route/spec 事件</text>
+  <text class="mutedText small" x="570" y="502">prompt + Zod schema + structural validation</text>
+  <text class="mutedText small" x="570" y="525">Quality Uplift: 多章节骨架 + 结构最小集校验</text>
+  <text class="mono code" x="570" y="558">specTreeLlm MCP 降级是 adapter 路径问题，非代码缺陷</text>
 
-  <rect class="panelAmber" x="1032" y="310" width="396" height="270" rx="16"/>
-  <text class="ink h2" x="1060" y="346">能力桥 / 自动装载门面</text>
-  <rect class="chipAmber" x="1060" y="366" width="142" height="28" rx="14"/>
-  <text class="ink tiny warn" x="1078" y="385">大多是门面态</text>
-  <text class="mutedText small" x="1060" y="426">MCP GitHub: adapter injected; live calls pending</text>
-  <text class="mutedText small" x="1060" y="451">Docker bridge: enabled / dependencyReady=false / 0</text>
-  <text class="mutedText small" x="1060" y="476">RoleContainerLoader: wired + tested; live counter pending</text>
-  <text class="mutedText small" x="1060" y="501">RoleAutonomousAgent: deps injected; live run pending</text>
-  <text class="mutedText small" x="1060" y="526">AgentReasoningBridge: enabled / forwarded=0</text>
-  <text class="mono code" x="1060" y="558">unit/integration evidence improved; diagnostics snapshot still old</text>
+  <rect class="panelGreen" x="1032" y="310" width="396" height="270" rx="16"/>
+  <text class="ink h2" x="1060" y="346">AIGC + Role 能力桥</text>
+  <rect class="chipGreen" x="1060" y="366" width="144" height="28" rx="14"/>
+  <text class="ink tiny ok" x="1078" y="385">live proven</text>
+  <text class="ink body" x="1060" y="426">aigcNode: real 1 · role: real 1</text>
+  <text class="mutedText small" x="1060" y="456">修复后首次触发：sandbox derivation 默认 capability set</text>
+  <text class="mutedText small" x="1060" y="479">aigcSpecNodeCapabilityBridge: 350+ 行 real LLM 路径</text>
+  <text class="mutedText small" x="1060" y="502">roleSystemArchitectureBridge: 完整实现 + 测试</text>
+  <text class="mutedText small" x="1060" y="525">根因已修复：LLM routes.capabilities 为空时兜底</text>
+  <text class="mono code" x="1060" y="558">commit 29786018: capabilityIds 为空时注入默认 set</text>
 
   <rect class="panelGreen" x="1498" y="310" width="346" height="270" rx="16"/>
   <text class="ink h2" x="1526" y="346">Lobster Executor / Docker</text>
   <rect class="chipGreen" x="1526" y="366" width="130" height="28" rx="14"/>
-  <text class="ink tiny ok" x="1544" y="385">真实执行器在线</text>
-  <text class="mutedText small" x="1526" y="426">executor mode: real</text>
-  <text class="mutedText small" x="1526" y="451">Docker: connected</text>
-  <text class="mutedText small" x="1526" y="476">active image: cube-ai-sandbox:latest</text>
-  <text class="mutedText small" x="1526" y="501">security: readonly rootfs / no-new-privileges</text>
-  <text class="mutedText small" x="1526" y="526">limits: 512m / 1 CPU / maxConcurrentJobs=2</text>
-  <text class="mono code" x="1526" y="558">skills detected: 2</text>
+  <text class="ink tiny ok" x="1544" y="385">executor 在线</text>
+  <text class="mutedText small" x="1526" y="426">mode: real (DockerRunner)</text>
+  <text class="mutedText small" x="1526" y="451">Docker: connected (Windows npipe)</text>
+  <text class="mutedText small" x="1526" y="476">image: cube-ai-sandbox:latest (1.03GB)</text>
+  <text class="mutedText small" x="1526" y="501">skills: 2 (browser-research + document-render)</text>
+  <text class="mutedText small" x="1526" y="526">security: seccomp + readonly + no-new-privileges</text>
+  <text class="mono code" x="1526" y="558">capabilities endpoint: real + connected 确认</text>
 
-  <path class="lineBlue" d="M472 445 C498 445, 514 445, 542 445" marker-end="url(#arrowBlue)"/>
-  <path class="lineAmber" d="M962 445 C992 445, 1004 445, 1032 445" marker-end="url(#arrowAmber)"/>
-  <path class="lineAmber" d="M1428 445 C1458 445, 1470 445, 1498 445" marker-end="url(#arrowAmber)"/>
+  <path class="lineGreen" d="M472 445 C498 445, 514 445, 542 445" marker-end="url(#arrowGreen)"/>
+  <path class="lineGreen" d="M962 445 C992 445, 1004 445, 1032 445" marker-end="url(#arrowGreen)"/>
+  <path class="lineGreen" d="M1428 445 C1458 445, 1470 445, 1498 445" marker-end="url(#arrowGreen)"/>
 
-  <!-- Middle detail panels -->
+  <!-- Middle: 4 key paths -->
   <rect class="panel" filter="url(#softShadow)" x="56" y="626" width="860" height="392" rx="18"/>
-  <text class="ink h2" x="86" y="664">四条关键链路的当前真相</text>
+  <text class="ink h2" x="86" y="664">四条关键链路验证结果</text>
 
-  <rect class="panelBlue" x="86" y="696" width="380" height="132" rx="14"/>
-  <text class="ink h3" x="110" y="726">A. 3D 渲染联动</text>
-  <text class="ink small blue" x="110" y="752">状态：已消费 role runtime evidence</text>
-  <text class="mutedText small" x="110" y="780">job.stage 驱动 stage flow；role.container 驱动 runtime badge。</text>
-  <text class="mutedText small" x="110" y="805">限制：视觉能区分 real/fallback/stub，live E2E 仍待跑。</text>
+  <rect class="panelGreen" x="86" y="696" width="380" height="132" rx="14"/>
+  <text class="ink h3" x="110" y="726">A. 3D 渲染联动 🟢</text>
+  <text class="ink small ok" x="110" y="752">live proven：视觉可直接验证</text>
+  <text class="mutedText small" x="110" y="780">PetWorkers 消费 rolePhases + roleRuntimeStates</text>
+  <text class="mutedText small" x="110" y="805">四态视觉区分 real/fallback/stub/missing 已实装</text>
 
-  <rect class="panelAmber" x="506" y="696" width="380" height="132" rx="14"/>
-  <text class="ink h3" x="530" y="726">B. MCP</text>
-  <text class="ink small warn" x="530" y="752">状态：ready 但无调用痕迹</text>
-  <text class="mutedText small" x="530" y="780">diagnostics: mcpGithub totalInvocations = 0。</text>
-  <text class="mutedText small" x="530" y="805">repo context fetcher 当前走 GitHub REST，不证明 MCP 真用上。</text>
+  <rect class="panelGreen" x="506" y="696" width="380" height="132" rx="14"/>
+  <text class="ink h3" x="530" y="726">B. AIGC + Role 🟢</text>
+  <text class="ink small ok" x="530" y="752">live proven：real 1 + real 1</text>
+  <text class="mutedText small" x="530" y="780">sandbox derivation 修复后首次触发 real 路径</text>
+  <text class="mutedText small" x="530" y="805">diagnostics 确认 aigcNode=1 real, role=1 real</text>
 
-  <rect class="panelGreen" x="86" y="858" width="380" height="132" rx="14"/>
-  <text class="ink h3" x="110" y="888">C. Skills</text>
-  <text class="ink small ok" x="110" y="914">状态：blueprint 已接 core skillRegistry adapter</text>
-  <text class="mutedText small" x="110" y="942">默认角色包已映射 seeded skill ids。</text>
-  <text class="mutedText small" x="110" y="967">loadForRole / handle.invoke 已有 loader 测试；live 调用待验证。</text>
+  <rect class="panelAmber" x="86" y="858" width="380" height="132" rx="14"/>
+  <text class="ink h3" x="110" y="888">C. Docker Bridge 🟡</text>
+  <text class="ink small warn" x="110" y="914">架构待改：probe 时序问题</text>
+  <text class="mutedText small" x="110" y="942">isBridgeConfigured 返回 false：executorClient probe 未完成</text>
+  <text class="mutedText small" x="110" y="967">修复方向：await probe 或 bridge 内 lazy probe</text>
 
-  <rect class="panelGreen" x="506" y="858" width="380" height="132" rx="14"/>
-  <text class="ink h3" x="530" y="888">D. AIGC 节点</text>
-  <text class="ink small ok" x="530" y="914">状态：角色容器路径已接 AIGC bridge adapter</text>
-  <text class="mutedText small" x="530" y="942">on-demand AIGC nodes 走 aigcSpecNodeCapabilityBridge。</text>
-  <text class="mutedText small" x="530" y="967">测试证明桥接；真实 LLM/live E2E 仍需跑通。</text>
+  <rect class="panelAmber" x="506" y="858" width="380" height="132" rx="14"/>
+  <text class="ink h3" x="530" y="888">D. MCP + Loader + Agent 🟡</text>
+  <text class="ink small warn" x="530" y="914">架构待改：路径分离 + 触发条件</text>
+  <text class="mutedText small" x="530" y="942">MCP: spec-tree 用 adapter 直调，不经过 bridge diagnostics</text>
+  <text class="mutedText small" x="530" y="967">Loader/Agent: 需要 stage activation + Docker 容器回调</text>
 
+  <!-- Right panel: bridge matrix -->
   <rect class="panel" filter="url(#softShadow)" x="984" y="626" width="860" height="392" rx="18"/>
-  <text class="ink h2" x="1014" y="664">自动装载闭环现在还差什么</text>
+  <text class="ink h2" x="1014" y="664">10 条桥 live 验证状态</text>
 
-  <rect class="panelGreen" x="1014" y="696" width="248" height="294" rx="14"/>
-  <text class="ink h3" x="1038" y="726">1. 角色 ID 已补 alias</text>
-  <text class="mutedText small" x="1038" y="760">Agent Crew:</text>
-  <text class="mono code" x="1038" y="783">role-runtime-executor</text>
-  <text class="mutedText small" x="1038" y="813">Package catalog:</text>
-  <text class="mono code" x="1038" y="836">execution-engineer</text>
-  <text class="mutedText small" x="1038" y="866">Agent-driven route:</text>
-  <text class="mono code" x="1038" y="889">planner</text>
-  <text class="ink small ok" x="1038" y="930">结果：断点降为兼容层，live 仍需验证。</text>
+  <rect class="panelSoft" x="1014" y="692" width="810" height="26" rx="6"/>
+  <text class="ink small" x="1030" y="710">Bridge</text>
+  <text class="ink small" x="1320" y="710">Live 计数</text>
+  <text class="ink small" x="1500" y="710">判定</text>
+  <text class="ink small" x="1620" y="710">根因</text>
 
-  <rect class="panelAmber" x="1298" y="696" width="248" height="294" rx="14"/>
-  <text class="ink h3" x="1322" y="726">2. 工具依赖已注入</text>
-  <text class="mutedText small" x="1322" y="760">lite runtime 现在可拿到：</text>
-  <text class="mono code" x="1322" y="783">llm / mcp / skills / aigc</text>
-  <text class="mutedText small" x="1322" y="813">还缺：</text>
-  <text class="mono code" x="1322" y="836">live invocation evidence</text>
-  <text class="mono code" x="1322" y="859">diagnostics counter refresh</text>
-  <text class="mono code" x="1322" y="882">full UI path replay</text>
-  <text class="ink small warn" x="1322" y="930">结果：接线可测，真实路径待跑。</text>
+  <text class="mono code" x="1030" y="738">specDocsLlm</text>
+  <text class="ok small" x="1320" y="738">real 33</text>
+  <text class="ok small" x="1500" y="738">🟢</text>
+  <text class="mutedText small" x="1620" y="738">33 节点全部 real LLM 生成</text>
 
-  <rect class="panelAmber" x="1582" y="696" width="232" height="294" rx="14"/>
-  <text class="ink h3" x="1606" y="726">3. live 计数待重跑</text>
-  <text class="mutedText small" x="1606" y="760">executor/Docker 已在线，</text>
-  <text class="mutedText small" x="1606" y="783">role loader / agent 接线</text>
-  <text class="mutedText small" x="1606" y="806">已有聚焦测试覆盖。</text>
-  <text class="mono code" x="1606" y="836">remaining:</text>
-  <text class="mono code" x="1606" y="859">roleContainerLoader live</text>
-  <text class="mono code" x="1606" y="882">roleAutonomousAgent E2E</text>
-  <text class="ink small warn" x="1606" y="930">结果：代码接上，运行证据待采。</text>
+  <text class="mono code" x="1030" y="762">specTreeLlm</text>
+  <text class="ok small" x="1320" y="762">real 1</text>
+  <text class="ok small" x="1500" y="762">🟢</text>
+  <text class="mutedText small" x="1620" y="762">MCP 降级但 LLM 推导成功</text>
 
-  <!-- Lower runtime wiring -->
+  <text class="mono code" x="1030" y="786">aigcNode</text>
+  <text class="ok small" x="1320" y="786">real 1</text>
+  <text class="ok small" x="1500" y="786">🟢</text>
+  <text class="mutedText small" x="1620" y="786">修复后首次触发</text>
+
+  <text class="mono code" x="1030" y="810">role</text>
+  <text class="ok small" x="1320" y="810">real 1</text>
+  <text class="ok small" x="1500" y="810">🟢</text>
+  <text class="mutedText small" x="1620" y="810">修复后首次触发</text>
+
+  <text class="mono code" x="1030" y="834">docker (executor)</text>
+  <text class="ok small" x="1320" y="834">在线</text>
+  <text class="ok small" x="1500" y="834">🟢</text>
+  <text class="mutedText small" x="1620" y="834">capabilities: real + connected</text>
+
+  <text class="mono code" x="1030" y="858">3D 联动</text>
+  <text class="ok small" x="1320" y="858">视觉确认</text>
+  <text class="ok small" x="1500" y="858">🟢</text>
+  <text class="mutedText small" x="1620" y="858">PetWorkers + SceneStageFlow 完整</text>
+
+  <rect class="panelSoft" x="1014" y="878" width="810" height="2" rx="1"/>
+
+  <text class="mono code" x="1030" y="902">docker bridge</text>
+  <text class="warn small" x="1320" y="902">0</text>
+  <text class="warn small" x="1500" y="902">🟡</text>
+  <text class="mutedText small" x="1620" y="902">executorClient probe 时序</text>
+
+  <text class="mono code" x="1030" y="926">mcpGithub</text>
+  <text class="warn small" x="1320" y="926">0</text>
+  <text class="warn small" x="1500" y="926">🟡</text>
+  <text class="mutedText small" x="1620" y="926">adapter 直调不经过 bridge</text>
+
+  <text class="mono code" x="1030" y="950">roleContainerLoader</text>
+  <text class="warn small" x="1320" y="950">0</text>
+  <text class="warn small" x="1500" y="950">🟡</text>
+  <text class="mutedText small" x="1620" y="950">需要 stage activation 触发</text>
+
+  <text class="mono code" x="1030" y="974">agent + reasoning + activation</text>
+  <text class="warn small" x="1320" y="974">0</text>
+  <text class="warn small" x="1500" y="974">🟡</text>
+  <text class="mutedText small" x="1620" y="974">需要 Docker 容器 HMAC 回调</text>
+
+  <rect class="panelSoft" x="1014" y="994" width="810" height="26" rx="6"/>
+  <text class="ink small" x="1030" y="1012">合计：6/10 🟢 live proven · 4/10 🟡 架构待改 · 0/10 🔴 断点</text>
+
+  <!-- Cross-layer arrows -->
+  <path class="lineGreen" d="M264 580 C264 608, 264 640, 264 696" marker-end="url(#arrowGreen)"/>
+  <path class="lineGreen" d="M752 580 C752 608, 695 640, 695 696" marker-end="url(#arrowGreen)"/>
+  <path class="lineAmber" d="M1230 580 C1230 606, 1138 642, 1138 858" marker-end="url(#arrowAmber)"/>
+  <path class="lineGreen" d="M1671 580 C1671 613, 1698 654, 1698 696" marker-end="url(#arrowGreen)"/>
+
+  <!-- Lower: fix priorities -->
   <rect class="panel" filter="url(#softShadow)" x="56" y="1062" width="1788" height="214" rx="18"/>
-  <text class="ink h2" x="86" y="1100">下一步修复优先级</text>
+  <text class="ink h2" x="86" y="1100">剩余 4 条琥珀桥修复优先级</text>
 
   <g transform="translate(86 1130)">
     <rect class="panelGreen" x="0" y="0" width="272" height="108" rx="14"/>
-    <text class="ink h3" x="20" y="30">P0 done: 统一角色身份</text>
-    <text class="mutedText small" x="20" y="58">role alias + default packages</text>
-    <text class="mutedText small" x="20" y="81">已经接到 loader resolver。</text>
+    <text class="ink h3" x="20" y="30">已修复 ✅</text>
+    <text class="mutedText small" x="20" y="58">sandbox derivation 空 capabilities</text>
+    <text class="mutedText small" x="20" y="81">→ aigcNode + role 翻绿</text>
   </g>
   <path class="lineGreen" d="M358 1184 C390 1184, 410 1184, 442 1184" marker-end="url(#arrowGreen)"/>
 
   <g transform="translate(442 1130)">
-    <rect class="panelGreen" x="0" y="0" width="272" height="108" rx="14"/>
-    <text class="ink h3" x="20" y="30">P1 done: skills adapter</text>
-    <text class="mutedText small" x="20" y="58">core skillRegistry → loadForRole</text>
-    <text class="mutedText small" x="20" y="81">loader invoke 测试已覆盖。</text>
+    <rect class="panelAmber" x="0" y="0" width="272" height="108" rx="14"/>
+    <text class="ink h3" x="20" y="30">P1: docker bridge probe</text>
+    <text class="mutedText small" x="20" y="58">await executorClient probe</text>
+    <text class="mutedText small" x="20" y="81">或 bridge 内 lazy reachability</text>
   </g>
-  <path class="lineGreen" d="M714 1184 C746 1184, 766 1184, 798 1184" marker-end="url(#arrowGreen)"/>
+  <path class="lineAmber" d="M714 1184 C746 1184, 766 1184, 798 1184" marker-end="url(#arrowAmber)"/>
 
   <g transform="translate(798 1130)">
     <rect class="panelAmber" x="0" y="0" width="272" height="108" rx="14"/>
-    <text class="ink h3" x="20" y="30">P2 partial: MCP 调用闭环</text>
-    <text class="mutedText small" x="20" y="58">mcpToolAdapter 已注入上下文，</text>
-    <text class="mutedText small" x="20" y="81">live invocation 还要采证。</text>
+    <text class="ink h3" x="20" y="30">P2: MCP 路径统一</text>
+    <text class="mutedText small" x="20" y="58">spec-tree 改走 bridge 路径</text>
+    <text class="mutedText small" x="20" y="81">或 adapter 层补 diagnostics hook</text>
   </g>
   <path class="lineAmber" d="M1070 1184 C1102 1184, 1122 1184, 1154 1184" marker-end="url(#arrowAmber)"/>
 
   <g transform="translate(1154 1130)">
-    <rect class="panelGreen" x="0" y="0" width="272" height="108" rx="14"/>
-    <text class="ink h3" x="20" y="30">P3 done: AIGC adapter</text>
-    <text class="mutedText small" x="20" y="58">role on-demand nodes 已接</text>
-    <text class="mutedText small" x="20" y="81">aigcSpecNode bridge。</text>
+    <rect class="panelAmber" x="0" y="0" width="272" height="108" rx="14"/>
+    <text class="ink h3" x="20" y="30">P3: loader + agent 触发</text>
+    <text class="mutedText small" x="20" y="58">sandbox 中触发 provision</text>
+    <text class="mutedText small" x="20" y="81">+ Docker 容器 HMAC 回调</text>
   </g>
-  <path class="lineGreen" d="M1426 1184 C1458 1184, 1478 1184, 1510 1184" marker-end="url(#arrowGreen)"/>
+  <path class="lineAmber" d="M1426 1184 C1458 1184, 1478 1184, 1510 1184" marker-end="url(#arrowAmber)"/>
 
   <g transform="translate(1510 1130)">
     <rect class="panelGreen" x="0" y="0" width="284" height="108" rx="14"/>
-    <text class="ink h3" x="20" y="30">P4 done: 状态喂给 3D</text>
-    <text class="mutedText small" x="20" y="58">store + PetWorkers 已显示</text>
-    <text class="mutedText small" x="20" y="81">real / fallback / stub / missing。</text>
+    <text class="ink h3" x="20" y="30">目标：10/10 🟢</text>
+    <text class="mutedText small" x="20" y="58">全部 bridges live proven</text>
+    <text class="mutedText small" x="20" y="81">runtime auto-loading: 100%</text>
   </g>
 
-  <!-- Cross-layer arrows -->
-  <path class="lineBlue" d="M264 580 C264 608, 264 640, 264 696" marker-end="url(#arrowBlue)"/>
-  <path class="lineAmber" d="M752 580 C752 608, 695 640, 695 696" marker-end="url(#arrowAmber)"/>
-  <path class="lineAmber" d="M1230 580 C1230 606, 1138 642, 1138 696" marker-end="url(#arrowAmber)"/>
-  <path class="lineGreen" d="M1671 580 C1671 613, 1698 654, 1698 696" marker-end="url(#arrowGreen)"/>
-
+  <!-- Footer -->
   <rect class="panelSoft" x="56" y="1292" width="1788" height="30" rx="8"/>
-  <text class="tinyText tiny" x="76" y="1312">证据来源：/api/blueprint/diagnostics、/api/executor/capabilities、server/index.ts、context.ts、role-container-loader、role-agent-runtime、client blueprint-realtime-store / PetWorkers / scene-fusion tests。注意：live diagnostics 快照仍需重新采集。</text>
+  <text class="tinyText tiny" x="76" y="1312">验证：POST /api/blueprint/generations (GitHub: 666ghj/MiroFish) → route-selection → spec-documents → GET /api/blueprint/diagnostics · fix commit: 29786018 · v2→v3 delta: +3 bridges (aigcNode, role, specTreeLlm)</text>
 </svg>
