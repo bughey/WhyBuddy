@@ -1106,6 +1106,10 @@ async function startServer() {
   );
   const { createGraphSearchRouter } = await import("./routes/graph-search.js");
   const { createImageSearchRouter } = await import("./routes/image-search.js");
+  const { createImageSearchExecuteFn: createImageSearchExecuteFnEarly } = await import(
+    "./routes/node-adapters/image-search-executor.js"
+  );
+  const imageSearchExecuteFn = createImageSearchExecuteFnEarly();
   const { createOpenDashboardRouter } = await import(
     "./routes/open-dashboard.js"
   );
@@ -1379,7 +1383,7 @@ async function startServer() {
       knowledgeService,
     })
   );
-  app.use("/api/image-search", createImageSearchRouter());
+  app.use("/api/image-search", createImageSearchRouter({ executeImageSearch: imageSearchExecuteFn }));
   app.use("/api/intent-recognition", createIntentRecognitionRouter());
   app.use(
     "/api/orchestration-recognition-jump",
@@ -1448,12 +1452,14 @@ async function startServer() {
     })
   );
   serverRuntime.documentSearch = chatDocumentSearch;
+
   registerWebAigcRuntimeExtraAdapters({
     documentSearch: chatDocumentSearch,
     knowledgeService,
     executeMcp: request => mcpToolAdapter.execute(request),
     queryService,
     permissionEngine: permCheckEngine,
+    executeImageSearch: imageSearchExecuteFn,
     orchestrationRecognitionJumpRuntime: {
       permissionEngine: permCheckEngine,
       auditLogger: permAuditLogger,

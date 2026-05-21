@@ -12,6 +12,7 @@ import type {
   FileSlicingNodeInput,
   FileSlicingStrategy,
 } from "../../../shared/web-aigc-file-slicing.js";
+import { isBinaryFileType, parseFileToText } from "./file-slicing-parser.js";
 
 export type FileSlicingNodeType = "file_slicing";
 
@@ -21,6 +22,9 @@ const SUPPORTED_FILE_TYPES: FileSlicingFileType[] = [
   "json",
   "log",
   "html",
+  "pdf",
+  "docx",
+  "xlsx",
 ];
 const SUPPORTED_SOURCE_TYPES: SourceType[] = [
   "document",
@@ -348,20 +352,29 @@ function normalizeInput(input: FileSlicingNodeInput | undefined): {
   overlapChars: number;
   preserveParagraphs: boolean;
   metadata: Record<string, unknown>;
-} {
+} | Promise<{
+  sourceType: SourceType;
+  sourceId: string;
+  projectId: string;
+  fileName?: string;
+  fileType: FileSlicingFileType;
+  content: string;
+  mode: FileSlicingStrategy;
+  maxChars: number;
+  overlapChars: number;
+  preserveParagraphs: boolean;
+  metadata: Record<string, unknown>;
+}> {
   const sourceType = normalizeSourceType(input?.sourceType);
   const sourceId = normalizeString(input?.sourceId);
   const projectId = normalizeString(input?.projectId);
-  const content = normalizeString(input?.content);
+  const fileType = normalizeFileType(input?.fileType);
 
   if (!sourceId) {
     throw new Error("File slicing node input requires sourceId.");
   }
   if (!projectId) {
     throw new Error("File slicing node input requires projectId.");
-  }
-  if (!content) {
-    throw new Error("File slicing node input requires content.");
   }
 
   const mode = normalizeMode(input?.strategy?.mode);
@@ -375,12 +388,43 @@ function normalizeInput(input: FileSlicingNodeInput | undefined): {
     mode === "paragraph",
   );
 
+  // Handle binary file types via fileBase64
+  const fileBase64 = normalizeString(input?.fileBase64);
+  if (fileBase64 && isBinaryFileType(fileType)) {
+    const buffer = Buffer.from(fileBase64, "base64");
+    const parsePromise = parseFileToText(buffer, fileType).then((parsedContent) => {
+      if (!parsedContent) {
+        throw new Error("File slicing node: parsed file content is empty.");
+      }
+      return {
+        sourceType,
+        sourceId,
+        projectId,
+        fileName: normalizeString(input?.fileName),
+        fileType,
+        content: parsedContent,
+        mode,
+        maxChars,
+        overlapChars,
+        preserveParagraphs,
+        metadata: normalizeObject(input?.metadata),
+      };
+    });
+    return parsePromise;
+  }
+
+  // Text-based content path (existing behavior)
+  const content = normalizeString(input?.content);
+  if (!content) {
+    throw new Error("File slicing node input requires content (or fileBase64 for binary file types).");
+  }
+
   return {
     sourceType,
     sourceId,
     projectId,
     fileName: normalizeString(input?.fileName),
-    fileType: normalizeFileType(input?.fileType),
+    fileType,
     content,
     mode,
     maxChars,
@@ -401,7 +445,7 @@ export async function executeFileSlicingNode(
     throw new Error("Unsupported file_slicing node type.");
   }
 
-  const normalized = normalizeInput(request.input);
+  const normalized = await Promise.resolve(normalizeInput(request.input));
   const warnings: string[] = [];
 
   if (normalized.fileType === "json" && normalized.mode === "paragraph") {
@@ -409,6 +453,9 @@ export async function executeFileSlicingNode(
   }
   if (normalized.fileType === "html") {
     warnings.push("HTML 内容已执行轻量标签清洗，仅保留正文文本。");
+  }
+  if (normalized.fileType === "pdf" || normalized.fileType === "docx" || normalized.fileType === "xlsx") {
+    warnings.push(`${normalized.fileType.toUpperCase()} 文件已解析为纯文本后执行切片。`);
   }
 
   const chunks = createChunks(normalized);

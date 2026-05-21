@@ -10,7 +10,7 @@ export const WEB_AIGC_FILE_SLICING_API = {
 } as const;
 
 export type FileSlicingNodeType = "file_slicing";
-export type FileSlicingFileType = "text" | "markdown" | "json" | "log" | "html";
+export type FileSlicingFileType = "text" | "markdown" | "json" | "log" | "html" | "pdf" | "docx" | "xlsx";
 export type FileSlicingStrategy = "fixed_window" | "paragraph" | "line";
 
 export interface FileSlicingNodeInput {
@@ -20,6 +20,8 @@ export interface FileSlicingNodeInput {
   fileName?: string;
   fileType?: FileSlicingFileType;
   content?: string;
+  /** Base64-encoded file content for binary formats (pdf, docx, xlsx) */
+  fileBase64?: string;
   strategy?: {
     mode?: FileSlicingStrategy;
     maxChars?: number;
