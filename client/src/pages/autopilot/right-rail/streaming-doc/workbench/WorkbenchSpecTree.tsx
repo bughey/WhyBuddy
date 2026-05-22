@@ -299,6 +299,72 @@ function resolveNodeClickDocId(
   return node.id;
 }
 
+/**
+ * 展开态应满足树形不变量：如果某个子节点被标记为展开，它的祖先链也必须
+ * 处于有效展开态，否则用户第一次展开子节点时父分支会立即消失。
+ */
+function includeExpandedAncestors(
+  expandedNodeIds: ReadonlySet<string>,
+  nodesById: NodesById
+): ReadonlySet<string> {
+  if (expandedNodeIds.size === 0) return expandedNodeIds;
+  const next = new Set(expandedNodeIds);
+  for (const nodeId of expandedNodeIds) {
+    let parentId = nodesById.get(nodeId)?.parentId;
+    const visited = new Set<string>([nodeId]);
+    while (parentId && !visited.has(parentId)) {
+      next.add(parentId);
+      visited.add(parentId);
+      parentId = nodesById.get(parentId)?.parentId;
+    }
+  }
+  return next;
+}
+
+/**
+ * 收起父节点时同步移除所有已展开的后代，避免后代再通过
+ * `includeExpandedAncestors` 把父节点“隐式撑开”。
+ */
+function removeExpandedDescendants(
+  nodeId: string,
+  expandedNodeIds: Set<string>,
+  childrenByParent: ChildrenByParent
+): void {
+  const stack = [...(childrenByParent.get(nodeId) ?? [])];
+  while (stack.length > 0) {
+    const childId = stack.pop();
+    if (!childId) continue;
+    expandedNodeIds.delete(childId);
+    stack.push(...(childrenByParent.get(childId) ?? []));
+  }
+}
+
+function resolveEffectiveExpandedIds(input: {
+  isSearching: boolean;
+  searchMatchSet: ReadonlySet<string>;
+  expandedNodeIds: ReadonlySet<string>;
+  rootNodeIds: readonly string[];
+  nodesById: NodesById;
+  autoExpandFirstRoot: boolean;
+}): ReadonlySet<string> {
+  const {
+    isSearching,
+    searchMatchSet,
+    expandedNodeIds,
+    rootNodeIds,
+    nodesById,
+    autoExpandFirstRoot,
+  } = input;
+  if (isSearching) {
+    return searchMatchSet;
+  }
+  const baseExpandedIds =
+    autoExpandFirstRoot && expandedNodeIds.size === 0 && rootNodeIds.length > 0
+      ? new Set<string>([rootNodeIds[0]])
+      : expandedNodeIds;
+  return includeExpandedAncestors(baseExpandedIds, nodesById);
+}
+
 // ---------------------------------------------------------------------------
 // View（无 hooks，便于测试直接调用 + 遍历 props 树）
 // ---------------------------------------------------------------------------
@@ -322,6 +388,11 @@ interface WorkbenchSpecTreeViewProps {
   childrenByParent: ChildrenByParent;
   /** 根节点 id 列表。 */
   rootNodeIds: readonly string[];
+  /**
+   * 是否启用首屏默认展开第一个根节点。wrapper 在用户首次手动 toggle 后会关闭，
+   * 否则用户点击默认展开的根节点时无法真正收起。
+   */
+  autoExpandFirstRoot?: boolean;
   /** 容器层管理的 active document id。 */
   activeDocId: string | null;
   /** 容器层管理的 active node id。 */
@@ -351,6 +422,7 @@ export const WorkbenchSpecTreeView: FC<WorkbenchSpecTreeViewProps> = (props) => 
     nodesById,
     childrenByParent,
     rootNodeIds,
+    autoExpandFirstRoot = true,
     activeDocId,
     activeNodeId,
     onSelectDocument,
@@ -377,11 +449,14 @@ export const WorkbenchSpecTreeView: FC<WorkbenchSpecTreeViewProps> = (props) => 
    * - 搜索为空：使用 `expandedNodeIds`；当 `expandedNodeIds` 为空且至少有
    *   一个根节点时，默认展开第一个根，保证首次渲染可见性。
    */
-  const effectiveExpandedIds: ReadonlySet<string> = isSearching
-    ? searchMatchSet
-    : expandedNodeIds.size === 0 && rootNodeIds.length > 0
-      ? new Set<string>([rootNodeIds[0]])
-      : expandedNodeIds;
+  const effectiveExpandedIds = resolveEffectiveExpandedIds({
+    isSearching,
+    searchMatchSet,
+    expandedNodeIds,
+    rootNodeIds,
+    nodesById,
+    autoExpandFirstRoot,
+  });
 
   function renderNode(nodeId: string, depth: number): JSX.Element | null {
     const node = nodesById.get(nodeId);
@@ -552,19 +627,7 @@ export const WorkbenchSpecTree: FC<WorkbenchSpecTreeProps> = (props) => {
   const [expandedNodeIds, setExpandedNodeIds] = useState<ReadonlySet<string>>(
     () => new Set<string>()
   );
-
-  const onToggleNode = useCallback((nodeId: string) => {
-    // 仅切换该节点 id：复制 set 后增删该 id，不影响其他分支（R3.4）。
-    setExpandedNodeIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(nodeId)) {
-        next.delete(nodeId);
-      } else {
-        next.add(nodeId);
-      }
-      return next;
-    });
-  }, []);
+  const [hasManualExpansion, setHasManualExpansion] = useState(false);
 
   // observing snapshot：派生 ephemeral 标签来源，与
   // `SpecTreeWorkbench` 中现有派生方式一致。
@@ -590,6 +653,36 @@ export const WorkbenchSpecTree: FC<WorkbenchSpecTreeProps> = (props) => {
     }
     return buildTreeIndex(specTree);
   }, [specTree]);
+
+  const onToggleNode = useCallback(
+    (nodeId: string) => {
+      if (treeIndex === null) return;
+      setHasManualExpansion(true);
+      setExpandedNodeIds((prev) => {
+        const visibleExpandedIds = resolveEffectiveExpandedIds({
+          isSearching: query.trim().length > 0,
+          searchMatchSet: new Set<string>(),
+          expandedNodeIds: prev,
+          rootNodeIds: treeIndex.rootNodeIds,
+          nodesById: treeIndex.nodesById,
+          autoExpandFirstRoot: !hasManualExpansion,
+        });
+        const next = new Set(visibleExpandedIds);
+        if (visibleExpandedIds.has(nodeId)) {
+          next.delete(nodeId);
+          removeExpandedDescendants(
+            nodeId,
+            next,
+            treeIndex.childrenByParent
+          );
+        } else {
+          next.add(nodeId);
+        }
+        return next;
+      });
+    },
+    [hasManualExpansion, query, treeIndex]
+  );
 
   // ── 空态：specTree 为空 / null / nodes.length === 0 ──────────────────
   if (treeIndex === null) {
@@ -631,8 +724,9 @@ export const WorkbenchSpecTree: FC<WorkbenchSpecTreeProps> = (props) => {
       nodesById={treeIndex.nodesById}
       childrenByParent={treeIndex.childrenByParent}
       rootNodeIds={treeIndex.rootNodeIds}
-          activeDocId={activeDocId}
-          activeNodeId={activeNodeId}
+      autoExpandFirstRoot={!hasManualExpansion}
+      activeDocId={activeDocId}
+      activeNodeId={activeNodeId}
       onSelectDocument={onSelectDocument}
       onGenerateNode={onGenerateNode}
       generating={generating}
@@ -652,6 +746,9 @@ export const __testing__ = {
   groupDocsByNodeId,
   buildSearchMatchSet,
   resolveNodeClickDocId,
+  includeExpandedAncestors,
+  removeExpandedDescendants,
+  resolveEffectiveExpandedIds,
   resolveCopy,
   ROOT_KEY,
 };

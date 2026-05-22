@@ -458,4 +458,46 @@ describe("WorkbenchSpecTree (Phase 1 / Task 3)", () => {
     expect(markup).toContain("data-compact-label");
     expect(markup).not.toContain("Generate node docs");
   });
+
+  it("(h) keeps the default root branch visible when the first manual toggle expands a child node", () => {
+    const root1 = makeNode("root-1", "Auth Domain", undefined, ["child-1a"]);
+    const child1a = makeNode("child-1a", "Login Flow", "root-1", [
+      "grandchild-1",
+    ]);
+    const grandchild = makeNode("grandchild-1", "Password Reset", "child-1a");
+    const root2 = makeNode("root-2", "Profile Domain");
+    const tree = makeTree([root1, child1a, grandchild, root2]);
+
+    const element = invokeTreeView(
+      makeProps({
+        specTree: tree,
+        specDocuments: [
+          makeDoc("root-1", "requirements", "accepted"),
+          makeDoc("child-1a", "requirements", "reviewing"),
+          makeDoc("grandchild-1", "requirements", "draft"),
+        ],
+      }),
+      {
+        expandedNodeIds: new Set<string>(["child-1a"]),
+      }
+    );
+
+    const markup = renderToStaticMarkup(element);
+
+    expect(markup).toContain(
+      'data-testid="autopilot-workbench-spec-tree-node-root-1"'
+    );
+    expect(markup).toContain(
+      'data-testid="autopilot-workbench-spec-tree-node-child-1a"'
+    );
+    expect(markup).toContain(
+      'data-testid="autopilot-workbench-spec-tree-node-grandchild-1"'
+    );
+    expect(markup).toMatch(
+      /data-testid="autopilot-workbench-spec-tree-toggle-root-1"[^>]*aria-expanded="true"/
+    );
+    expect(markup).toMatch(
+      /data-testid="autopilot-workbench-spec-tree-toggle-child-1a"[^>]*aria-expanded="true"/
+    );
+  });
 });
