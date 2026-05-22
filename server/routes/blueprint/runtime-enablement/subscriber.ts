@@ -107,6 +107,13 @@ function readPayloadField(payload: unknown, key: string): unknown {
   return (payload as Record<string, unknown>)[key];
 }
 
+function readEventRootField(
+  event: BlueprintGenerationEvent,
+  key: string,
+): unknown {
+  return (event as unknown as Record<string, unknown>)[key];
+}
+
 /**
  * Coerces the provenance `executionMode` into the diagnostics store's
  * `{ "real" | "simulated_fallback" }` shape. Returns `undefined` for any
@@ -201,15 +208,18 @@ function handleRoleEvent(
     return;
   }
   const mode = toInvocationMode(
-    readPayloadField(event.payload, "activationDriverExecutionMode"),
+    readPayloadField(event.payload, "activationDriverExecutionMode") ??
+      readEventRootField(event, "activationDriverExecutionMode"),
   );
   if (mode === undefined) {
     return;
   }
 
   const error =
-    toErrorString(readPayloadField(event.payload, "fallbackReason")) ??
-    toErrorString(readPayloadField(event.payload, "error"));
+    toErrorString(
+      readPayloadField(event.payload, "fallbackReason") ??
+        readEventRootField(event, "fallbackReason"),
+    ) ?? toErrorString(readPayloadField(event.payload, "error"));
 
   store.recordBridgeInvocation("agentCrewStageActivation", {
     mode,

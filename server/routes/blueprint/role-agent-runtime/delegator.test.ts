@@ -499,6 +499,32 @@ describe("createRoleAgentDelegator - Diagnostics counter invariant", () => {
     expect(diag.lastInvocationAt).toBeUndefined();
     expect(diag.lastMode).toBeUndefined();
   });
+
+  it("notifies diagnostics subscribers with the final delegation mode and metrics", async () => {
+    vi.stubEnv(ENV_KEY, "true");
+    const onDelegationRecorded = vi.fn();
+    const liteRuntime: LiteAgentRuntime = {
+      run: vi.fn(async (jobInput) => makeAgentOutput(jobInput.jobId)),
+    };
+
+    const delegator = createRoleAgentDelegator({
+      ...makeOptions({
+        executorClient: makeExecutorClient("unreachable"),
+        liteAgentRuntime: liteRuntime,
+      }),
+      onDelegationRecorded,
+    } as CreateRoleAgentDelegatorOptions);
+
+    await delegator.delegate(makeInput({ jobId: "j-diagnostics-hook" }));
+
+    expect(onDelegationRecorded).toHaveBeenCalledTimes(1);
+    expect(onDelegationRecorded).toHaveBeenCalledWith({
+      mode: "lite",
+      iterations: 3,
+      tokens: 1500,
+      durationMs: 100,
+    });
+  });
 });
 
 describe("createRoleAgentDelegator - getStatus", () => {

@@ -19,14 +19,13 @@ import { signPayload, createCallbackHeaders } from "./hmac-signer.js";
 /** Non-empty string for HMAC secret */
 const arbSecret = fc.string({ minLength: 1, maxLength: 128 });
 
-/** ISO-like timestamp string */
+/** Unix timestamp string as accepted by the server callback verifier. */
 const arbTimestamp = fc
-  .date({
-    min: new Date("2000-01-01T00:00:00.000Z"),
-    max: new Date("2100-01-01T00:00:00.000Z"),
+  .integer({
+    min: 946684800,
+    max: 4102444800,
   })
-  .filter((d) => Number.isFinite(d.getTime()))
-  .map((d) => d.toISOString());
+  .map(String);
 
 /** Arbitrary raw body (JSON-like content) */
 const arbRawBody = fc.string({ minLength: 0, maxLength: 2048 });
@@ -64,6 +63,18 @@ describe("Property 2: HMAC 签名验证往返", () => {
       }),
       { numRuns: 200 },
     );
+  });
+
+  it("createCallbackHeaders emits a Unix seconds timestamp compatible with the server verifier", () => {
+    const fixedDate = new Date("2025-01-15T10:30:00.000Z");
+    const headers = createCallbackHeaders(
+      "exec-1",
+      "secret",
+      "{}",
+      () => fixedDate,
+    );
+
+    expect(headers["x-cube-executor-timestamp"]).toBe("1736937000");
   });
 
   it("createCallbackHeaders signature matches independent HMAC computation", () => {

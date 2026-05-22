@@ -271,6 +271,27 @@ describe("attachDiagnosticsSubscriber — role events", () => {
     );
   });
 
+  it("role.activated with driver mode on the event root records agentCrewStageActivation", () => {
+    const eventBus = createFakeEventBus();
+    const store = createSpyStore();
+    attachDiagnosticsSubscriber(eventBus, store);
+
+    eventBus.emit({
+      ...buildEvent({
+        type: BlueprintEventName.RoleActivated,
+        family: "role",
+        status: "running",
+      }),
+      activationDriverExecutionMode: "real",
+    } as BlueprintGenerationEvent);
+
+    expect(store.recordBridgeInvocation).toHaveBeenCalledTimes(1);
+    expect(store.recordBridgeInvocation).toHaveBeenCalledWith(
+      "agentCrewStageActivation",
+      { mode: "real" },
+    );
+  });
+
   it("role.activated without activationDriverExecutionMode is not recorded", () => {
     const eventBus = createFakeEventBus();
     const store = createSpyStore();

@@ -1030,6 +1030,7 @@ function refreshSpecLlmFactories(ctx: BlueprintServiceContext): void {
   ctx.specTreeLlmDerivation = createSpecTreeLlmDerivation({
     llmCall: sharedLlmCall,
     mcpToolAdapter: ctx.mcpToolAdapter,
+    httpFetcher: ctx.httpFetcher,
     liteAgentRuntime: sharedLiteAgentRuntime,
     diagnostics: ctx.runtimeDiagnostics,
     logger: ctx.logger,
@@ -1073,6 +1074,9 @@ function refreshRoleAgentDelegator(ctx: BlueprintServiceContext): void {
         createdAt: ctx.now().toISOString(),
       });
       return result.routes;
+    },
+    onDelegationRecorded: record => {
+      ctx.runtimeDiagnostics.recordDelegation("roleAutonomousAgent", record);
     },
     logger: ctx.logger,
     now: ctx.now,
@@ -1456,6 +1460,7 @@ export function buildBlueprintServiceContext(
       ctx.specTreeLlmDerivation = createSpecTreeLlmDerivation({
         llmCall: sharedLlmCall,
         mcpToolAdapter: ctx.mcpToolAdapter,
+        httpFetcher: ctx.httpFetcher,
         liteAgentRuntime: sharedLiteAgentRuntime,
         diagnostics: ctx.runtimeDiagnostics,
         logger: ctx.logger,
@@ -1562,6 +1567,9 @@ export function buildBlueprintServiceContext(
             createdAt: new Date().toISOString(),
           });
           return result.routes;
+        },
+        onDelegationRecorded: record => {
+          ctx.runtimeDiagnostics.recordDelegation("roleAutonomousAgent", record);
         },
         logger: ctx.logger,
         now: ctx.now,

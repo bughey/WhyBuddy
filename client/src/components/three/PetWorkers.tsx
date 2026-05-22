@@ -512,12 +512,6 @@ type StatusCategory =
 function getStatusCategory(status: string): StatusCategory {
   switch (status) {
     case "working":
-    case "thinking":
-    case "reviewing":
-    case "idle":
-    case "done":
-    case "error":
-      return status;
     case "executing":
     case "revising":
     case "analyzing":
@@ -534,6 +528,8 @@ function getStatusCategory(status: string): StatusCategory {
     case "reviewing":
     case "auditing":
       return "reviewing";
+    case "idle":
+      return "idle";
     case "done":
       return "done";
     case "error":

@@ -114,6 +114,20 @@ describe("BlueprintRuntimeDiagnosticsStore", () => {
     expect(docker.lastError).toBeUndefined();
   });
 
+  it("real bridge invocation marks dependencyReady true even if startup probe was stale", () => {
+    const store = createBlueprintRuntimeDiagnosticsStore({ now: fixedNow });
+
+    store.recordBridgeConfiguration("docker", {
+      enabledByConfig: true,
+      dependencyReady: false,
+    });
+    store.recordBridgeInvocation("docker", { mode: "real" });
+
+    const snapshot = store.snapshot(fixedNow);
+    expect(snapshot.bridges.docker.mode).toBe("real");
+    expect(snapshot.bridges.docker.dependencyReady).toBe(true);
+  });
+
   it("two consecutive invocations (real then simulated_fallback) accumulate counters correctly", () => {
     const store = createBlueprintRuntimeDiagnosticsStore({ now: fixedNow });
 

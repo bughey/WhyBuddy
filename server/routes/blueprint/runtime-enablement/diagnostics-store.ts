@@ -473,6 +473,7 @@ export function createBlueprintRuntimeDiagnosticsStore(
     if (result.mode === "real") {
       entry.realInvocations += 1;
       entry.mode = "real";
+      entry.dependencyReady = true;
     } else {
       entry.fallbackInvocations += 1;
       entry.mode = "fallback";

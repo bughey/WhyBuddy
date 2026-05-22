@@ -193,6 +193,46 @@ describe("buildDockerCapabilityExecutionPlan — 6.1 回调匹配 / capability /
     expect(requiredCapabilities).toContain("runtime.docker");
   });
 
+  it("uses the live executor default image and a deterministic container command", () => {
+    const bridgeInput = buildBridgeInput({
+      route: buildRouteFixture({
+        id: "route_runtime_smoke",
+        title: "Runtime smoke",
+      }),
+      request: buildRequestFixture({
+        projectId: "proj_runtime_smoke",
+        targetText: "Verify Docker runtime.",
+        githubUrls: ["https://github.com/666ghj/MiroFish"],
+      }),
+    });
+
+    const plan = buildDockerCapabilityExecutionPlan({
+      bridgeInput,
+      policy: createDefaultDockerCapabilityPolicy(),
+    });
+
+    const payload = plan.jobs[0].payload as Record<string, unknown>;
+    expect(payload.image).toBe("node:20-slim");
+    expect(payload.command).toEqual([
+      "node",
+      "-e",
+      expect.stringContaining("BLUEPRINT_ANALYSIS_INPUT"),
+    ]);
+    expect((payload.command as string[])[2]).toContain(
+      "console.log(JSON.stringify(report));",
+    );
+
+    const env = payload.env as Record<string, string>;
+    const encodedInput = JSON.parse(env.BLUEPRINT_ANALYSIS_INPUT);
+    expect(encodedInput).toEqual(payload.analysisInput);
+    expect(encodedInput).toMatchObject({
+      routeId: "route_runtime_smoke",
+      routeTitle: "Runtime smoke",
+      projectId: "proj_runtime_smoke",
+      githubUrls: ["https://github.com/666ghj/MiroFish"],
+    });
+  });
+
   it("carries blueprintJobId and capabilityId in plan.metadata", () => {
     const bridgeInput = buildBridgeInput({
       jobId: "job_abc",

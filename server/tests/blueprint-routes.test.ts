@@ -7582,19 +7582,25 @@ describe("blueprint autopilot runtime enablement E2E", () => {
       >;
       expect(diagnostics.masterSwitch).toBe("true");
       expect(diagnostics.buildTarget).toBe("production");
-      // 有 invocation 的桥 → mode === "real"；未发生 invocation 但被 configured
-      // enabled 的桥（例如 agentCrewStageActivation） → mode === "enabled"。
+      // 有 capability.completed 事件的四条能力桥必须进入 diagnostics real 轨道；
+      // 不能只停留在启动期 configuration 的 "enabled" 状态。
       for (const bridgeId of [
         "docker",
         "mcpGithub",
         "role",
         "aigcNode",
-        "agentCrewStageActivation",
       ] as const) {
         const entry = diagnostics.bridges[bridgeId];
         expect(entry).toBeDefined();
-        expect(["real", "enabled"]).toContain(entry.mode);
+        expect(entry.mode).toBe("real");
+        expect(entry.totalInvocations).toBe(1);
+        expect(entry.realInvocations).toBe(1);
+        expect(entry.fallbackInvocations).toBe(0);
       }
+
+      // agentCrewStageActivation 不产生 capability invocation；它由 role.* stage
+      // transition evidence 驱动，因此这里允许保持 enabled。
+      expect(diagnostics.bridges.agentCrewStageActivation.mode).toBe("enabled");
     });
   });
 

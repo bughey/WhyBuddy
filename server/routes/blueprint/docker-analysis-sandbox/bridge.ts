@@ -59,7 +59,10 @@ import type {
 } from "../../../../shared/blueprint/index.js";
 import type { ExecutorEvent } from "../../../../shared/executor/contracts.js";
 
-import { buildDockerCapabilityExecutionPlan } from "./execution-plan.js";
+import {
+  DEFAULT_DOCKER_ANALYSIS_IMAGE,
+  buildDockerCapabilityExecutionPlan,
+} from "./execution-plan.js";
 import { checkDockerCapabilityPolicy } from "./policy.js";
 import type {
   BlueprintExecutorCallbackDispatcher,
@@ -98,7 +101,7 @@ export interface BuildRealInvocationParams {
 /**
  * 默认 Docker 镜像（与 `execution-plan.ts` 保持一致；此处仅用于 policy 校验）。
  */
-const DEFAULT_DOCKER_IMAGE = "lobster-executor:default";
+const DEFAULT_DOCKER_IMAGE = DEFAULT_DOCKER_ANALYSIS_IMAGE;
 
 /**
  * Provenance / logs / error message 截断上限（字符数）。
@@ -449,6 +452,16 @@ export function createDockerCapabilityBridge(
         });
         return buildFallbackOutput(input, { reason });
       }
+    }
+
+    if (!isBridgeConfigured(ctx)) {
+      const reason = "dockerCapabilityBridge dependencies unavailable after lazy re-probe";
+      ctx.logger.warn("Docker capability bridge: not configured", { reason });
+      ctx.runtimeDiagnostics?.recordBridgeInvocation?.("docker", {
+        mode: "simulated_fallback",
+        error: reason,
+      });
+      return buildFallbackOutput(input, { reason });
     }
 
     const executorClient = ctx.executorClient;

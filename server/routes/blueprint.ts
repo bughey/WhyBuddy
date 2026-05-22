@@ -2842,6 +2842,8 @@ export async function createGenerationJob(
   // 重复落盘。事件名复用 `BlueprintEventName.CapabilityInvoked` /
   // `BlueprintEventName.CapabilityCompleted`，不引入新的 `BlueprintEventName`。
   const bridgeDiagnosticsCapabilityIds = new Set<string>([
+    "docker-analysis-sandbox",
+    "mcp-github-source",
     "role-system-architecture",
     "aigc-spec-node",
   ]);

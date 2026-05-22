@@ -66,6 +66,7 @@ import type {
   BlueprintLogger,
   McpToolAdapterDependency,
 } from "./context.js";
+import type { BlueprintHttpFetcher } from "./mcp-github-source/http-fetcher.js";
 import type { BlueprintRuntimeDiagnosticsStore } from "./runtime-enablement/diagnostics-store.js";
 
 // ---------------------------------------------------------------------------
@@ -105,6 +106,8 @@ export interface SpecTreeLlmDerivationDeps {
   llmCall: LlmCallFn;
   /** MCP GitHub 适配器；用于抓取仓库结构与关键文件。可选。 */
   mcpToolAdapter?: McpToolAdapterDependency;
+  /** GitHub HTTP fetcher; used as a real repo-context path when MCP cannot run. */
+  httpFetcher?: BlueprintHttpFetcher;
   /** Lite Agent 运行时；用于驱动 Think→Act→Observe 循环。可选。 */
   liteAgentRuntime?: LiteAgentRuntime;
   /** 诊断 store；记录 `specTreeLlm` entry 的所有计数与最近错误。 */
@@ -227,6 +230,43 @@ function parseGithubUrl(url: string): { owner: string; repo: string } | null {
  * 的精细化抓取与过滤暂以 best-effort 方式呈现：默认 keyFiles 为空数组，
  * 详细文件检索可在后续 PR 优化。
  */
+function trimRepoContextDigest(text: string): string {
+  const maxBytes =
+    readPositiveIntEnv(ENV_MAX_REPO_TOKENS, DEFAULT_MAX_REPO_TOKENS) *
+    APPROX_CHARS_PER_TOKEN;
+  return text.length > maxBytes
+    ? `${text.slice(0, maxBytes)}\n鈥?truncated)`
+    : text;
+}
+
+async function attemptHttpRepoFetch(
+  deps: SpecTreeLlmDerivationDeps,
+  parsed: { owner: string; repo: string },
+  subTimeoutMs: number,
+): Promise<{
+  repoTreeDigest: string;
+  keyFiles: Array<{ path: string; content: string }>;
+} | null> {
+  const fetcher = deps.httpFetcher;
+  if (!fetcher) return null;
+  const apiUrl = `https://api.github.com/repos/${encodeURIComponent(
+    parsed.owner,
+  )}/${encodeURIComponent(parsed.repo)}`;
+  const response = await fetcher.fetch(apiUrl, {
+    timeoutMs: Math.min(30_000, subTimeoutMs),
+    headers: {
+      Accept: "application/vnd.github+json",
+      "User-Agent": "blueprint-spec-tree-llm/1.0",
+    },
+  });
+  try {
+    deps.diagnostics.recordBridgeInvocation("mcpGithub", {
+      mode: "real",
+    });
+  } catch { /* diagnostics write failure is non-fatal */ }
+  return { repoTreeDigest: trimRepoContextDigest(response.body), keyFiles: [] };
+}
+
 async function attemptRepoFetch(
   deps: SpecTreeLlmDerivationDeps,
   request: SpecTreeLlmDerivationRequest,
@@ -236,11 +276,15 @@ async function attemptRepoFetch(
   keyFiles: Array<{ path: string; content: string }>;
 } | null> {
   const adapter = deps.mcpToolAdapter;
-  if (!adapter) return null;
+  const httpFetcher = deps.httpFetcher;
+  if (!adapter && !httpFetcher) return null;
   const firstUrl = request.githubUrls[0];
   if (!firstUrl) return null;
   const parsed = parseGithubUrl(firstUrl);
   if (!parsed) return null;
+  if (!adapter) {
+    return attemptHttpRepoFetch(deps, parsed, subTimeoutMs);
+  }
 
   const fetchPromise = adapter.execute({
     serverId: "github",
@@ -270,9 +314,8 @@ async function attemptRepoFetch(
   try {
     const result = await Promise.race([fetchPromise, timeoutPromise]);
     if (!result.ok || result.status !== "completed") {
-      throw new Error(
-        `mcp status=${result.status} error=${result.error ?? "n/a"}`,
-      );
+      const errMsg = `mcp status=${result.status} error=${result.error ?? "n/a"}`;
+      throw new Error(errMsg);
     }
     const responseStr = JSON.stringify(result.response ?? {}, null, 2);
     const maxBytes =
@@ -282,7 +325,38 @@ async function attemptRepoFetch(
       responseStr.length > maxBytes
         ? `${responseStr.slice(0, maxBytes)}\n…(truncated)`
         : responseStr;
+    // Record mcpGithub bridge invocation as real on success
+    try {
+      deps.diagnostics.recordBridgeInvocation("mcpGithub", {
+        mode: "real",
+      });
+    } catch { /* diagnostics write failure is non-fatal */ }
     return { repoTreeDigest, keyFiles: [] };
+  } catch (err) {
+    const mcpError = err instanceof Error ? err.message : String(err);
+    if (httpFetcher) {
+      try {
+        return await attemptHttpRepoFetch(deps, parsed, subTimeoutMs);
+      } catch (httpErr) {
+        const httpError =
+          httpErr instanceof Error ? httpErr.message : String(httpErr);
+        const combined = `http: ${httpError}; mcp: ${mcpError}`;
+        try {
+          deps.diagnostics.recordBridgeInvocation("mcpGithub", {
+            mode: "simulated_fallback",
+            error: combined,
+          });
+        } catch { /* diagnostics write failure is non-fatal */ }
+        throw new Error(combined);
+      }
+    }
+    try {
+      deps.diagnostics.recordBridgeInvocation("mcpGithub", {
+        mode: "simulated_fallback",
+        error: mcpError,
+      });
+    } catch { /* diagnostics write failure is non-fatal */ }
+    throw err;
   } finally {
     if (timer) clearTimeout(timer);
   }

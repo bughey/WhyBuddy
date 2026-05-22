@@ -110,6 +110,14 @@ export interface RoleAgentDelegatorDiagnostics {
   lastError?: string;
 }
 
+export interface RoleAgentDelegationRecord {
+  mode: "real" | "lite" | "fallback";
+  iterations: number;
+  tokens: number;
+  durationMs: number;
+  error?: string;
+}
+
 /** 工厂参数：所有外部依赖都通过注入传入。 */
 export interface CreateRoleAgentDelegatorOptions {
   /** 已有：`role-container-loader/loader.ts` 的 RoleRuntimeContextStore。 */
@@ -132,6 +140,7 @@ export interface CreateRoleAgentDelegatorOptions {
   realModeDispatcher?: RealModeDispatcher;
   /** Fallback：保持与 callLLMJson 等价的单次 LLM 调用。必填。 */
   fallbackLlmCall: FallbackLlmCall;
+  onDelegationRecorded?: (record: RoleAgentDelegationRecord) => void;
   logger: BlueprintLogger;
   now: () => Date;
 }
@@ -277,6 +286,23 @@ export function createRoleAgentDelegator(
     diag.lastInvocationAt = opts.now().toISOString();
     diag.lastMode = mode;
     diag.lastError = output.error;
+
+    try {
+      const record: RoleAgentDelegationRecord = {
+        mode,
+        iterations: Math.max(0, output.iterations | 0),
+        tokens: Math.max(0, output.totalTokens | 0),
+        durationMs: Math.max(0, output.durationMs | 0),
+      };
+      if (typeof output.error === "string" && output.error.length > 0) {
+        record.error = output.error;
+      }
+      opts.onDelegationRecorded?.(record);
+    } catch (err) {
+      opts.logger.debug("[delegator] diagnostics callback failed", {
+        error: errorMessage(err),
+      });
+    }
   }
 
   /** Tier 2 Docker 探活：任何异常都收敛为 false，不抛错。 */

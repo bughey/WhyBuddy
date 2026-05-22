@@ -19,6 +19,9 @@ export function signPayload(
  *  - x-cube-executor-signature
  *  - x-cube-executor-timestamp
  *  - x-cube-executor-id
+ *
+ * The server accepts Unix timestamps (seconds or milliseconds) for replay
+ * protection, so emit seconds here rather than an ISO string.
  */
 export function createCallbackHeaders(
   executorId: string,
@@ -26,7 +29,7 @@ export function createCallbackHeaders(
   rawBody: string,
   now?: () => Date,
 ): Record<string, string> {
-  const timestamp = (now?.() ?? new Date()).toISOString();
+  const timestamp = String(Math.floor((now?.() ?? new Date()).getTime() / 1_000));
   const signature = signPayload(secret, timestamp, rawBody);
 
   return {

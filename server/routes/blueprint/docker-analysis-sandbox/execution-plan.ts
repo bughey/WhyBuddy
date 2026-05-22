@@ -75,7 +75,25 @@ export interface BuildDockerExecutionPlanInput {
  * 分析镜像（如 `blueprint-analyzer:v1`），应在独立 spec 中扩展 allow-list
  * 并把默认值迁移到 bridge 注入参数，而非在本文件内硬切。
  */
-const DEFAULT_DOCKER_IMAGE = "lobster-executor:default";
+export const DEFAULT_DOCKER_ANALYSIS_IMAGE = "node:20-slim";
+
+const DOCKER_ANALYSIS_COMMAND = `
+const input = JSON.parse(process.env.BLUEPRINT_ANALYSIS_INPUT || "{}");
+const githubUrls = Array.isArray(input.githubUrls) ? input.githubUrls : [];
+const report = {
+  capabilityId: "docker-analysis-sandbox",
+  routeId: input.routeId ?? null,
+  routeTitle: input.routeTitle ?? null,
+  projectId: input.projectId ?? null,
+  githubUrlCount: githubUrls.length,
+  targetTextLength: typeof input.targetText === "string" ? input.targetText.length : 0,
+  checks: {
+    dockerRuntime: "ok",
+    networkPolicy: "none"
+  }
+};
+console.log(JSON.stringify(report));
+`.trim();
 
 /**
  * Job-level 超时上限（毫秒）。
@@ -114,8 +132,15 @@ export function buildDockerCapabilityExecutionPlan(
   input: BuildDockerExecutionPlanInput,
 ): ExecutionPlan {
   const { bridgeInput, policy } = input;
-  const image = input.image ?? DEFAULT_DOCKER_IMAGE;
+  const image = input.image ?? DEFAULT_DOCKER_ANALYSIS_IMAGE;
   const jobTimeoutMs = Math.min(policy.maxCallbackTimeoutMs, MAX_JOB_TIMEOUT_MS);
+  const analysisInput = {
+    routeId: bridgeInput.route.id,
+    routeTitle: bridgeInput.route.title,
+    targetText: bridgeInput.request.targetText,
+    githubUrls: bridgeInput.request.githubUrls ?? [],
+    projectId: bridgeInput.request.projectId,
+  };
 
   // `targetText` 缺失时仍需构造合法 objective；使用固定降级字符串，避免
   // 拼出 `"Analyze target undefined for route ..."` 这种 noise。
@@ -154,13 +179,11 @@ export function buildDockerCapabilityExecutionPlan(
           pidsLimit: policy.pidsLimit,
           networkPolicy: policy.networkPolicy,
           securityLevel: policy.securityLevel,
-          analysisInput: {
-            routeId: bridgeInput.route.id,
-            routeTitle: bridgeInput.route.title,
-            targetText: bridgeInput.request.targetText,
-            githubUrls: bridgeInput.request.githubUrls ?? [],
-            projectId: bridgeInput.request.projectId,
+          command: ["node", "-e", DOCKER_ANALYSIS_COMMAND],
+          env: {
+            BLUEPRINT_ANALYSIS_INPUT: JSON.stringify(analysisInput),
           },
+          analysisInput,
         },
       },
     ],

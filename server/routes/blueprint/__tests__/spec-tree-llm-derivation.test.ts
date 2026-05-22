@@ -158,6 +158,25 @@ function makeFakeMcpAdapter(overrides?: { shouldReject?: boolean; response?: unk
 }
 
 /** 创建 fake liteAgentRuntime。 */
+function makeFakeHttpFetcher(response?: unknown) {
+  return {
+    fetch: vi.fn(async () => ({
+      status: 200,
+      statusText: "OK",
+      headers: { etag: "\"commit-sha-fixture\"" },
+      body: JSON.stringify(
+        response ?? {
+          full_name: "owner/repo",
+          default_branch: "main",
+          language: "TypeScript",
+          stargazers_count: 1,
+        },
+      ),
+      finalUrl: "https://api.github.com/repos/owner/repo",
+    })),
+  };
+}
+
 function makeFakeLiteAgentRuntime(overrides?: {
   shouldReject?: boolean;
   rejectMessage?: string;
@@ -295,6 +314,40 @@ describe("createSpecTreeLlmDerivation", () => {
     expect(result.tree).toBeDefined();
   });
 
+  it("#6b MCP token failure + HTTP fetcher keeps repo context full", async () => {
+    const diagnostics = makeFakeDiagnostics();
+    const httpFetcher = makeFakeHttpFetcher();
+    const deps = makeDeps({
+      diagnostics,
+      mcpToolAdapter: makeFakeMcpAdapter({ shouldReject: true }),
+      httpFetcher,
+      liteAgentRuntime: makeFakeLiteAgentRuntime(),
+    } as Partial<SpecTreeLlmDerivationDeps> & {
+      httpFetcher: ReturnType<typeof makeFakeHttpFetcher>;
+    });
+    const derivation = createSpecTreeLlmDerivation(deps);
+    const result = await derivation.derive(makeRequest());
+
+    expect(result.generationSource).toBe("llm");
+    expect(result.contextTier).toBe("full");
+    expect(httpFetcher.fetch).toHaveBeenCalledWith(
+      "https://api.github.com/repos/owner/repo",
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          Accept: "application/vnd.github+json",
+        }),
+      }),
+    );
+    expect(diagnostics.recordBridgeInvocation).toHaveBeenCalledWith(
+      "mcpGithub",
+      expect.objectContaining({ mode: "real" }),
+    );
+    expect(diagnostics.recordBridgeInvocation).not.toHaveBeenCalledWith(
+      "mcpGithub",
+      expect.objectContaining({ mode: "simulated_fallback" }),
+    );
+  });
+
   // ─── #6 MCP 抛错 → route-only ─────────────────────────────────────────
   it("#6 adapter.execute reject → 降级 Tier 2 route-only", async () => {
     const deps = makeDeps({
@@ -397,7 +450,7 @@ describe("createSpecTreeLlmDerivation", () => {
   });
 
   // ─── #12 诊断调用 ─────────────────────────────────────────────────────
-  it("#12 Tier 1 成功时 recordBridgeInvocation 被调用 1 次，mode=real", async () => {
+  it("#12 Tier 1 成功时 recordBridgeInvocation 被调用 2 次，mcpGithub=real + specTreeLlm=real", async () => {
     const diagnostics = makeFakeDiagnostics();
     const deps = makeDeps({
       diagnostics,
@@ -407,7 +460,11 @@ describe("createSpecTreeLlmDerivation", () => {
     const derivation = createSpecTreeLlmDerivation(deps);
     await derivation.derive(makeRequest());
 
-    expect(diagnostics.recordBridgeInvocation).toHaveBeenCalledTimes(1);
+    expect(diagnostics.recordBridgeInvocation).toHaveBeenCalledTimes(2);
+    expect(diagnostics.recordBridgeInvocation).toHaveBeenCalledWith(
+      "mcpGithub",
+      expect.objectContaining({ mode: "real" }),
+    );
     expect(diagnostics.recordBridgeInvocation).toHaveBeenCalledWith(
       "specTreeLlm",
       expect.objectContaining({ mode: "real" }),

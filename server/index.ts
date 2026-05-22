@@ -26,6 +26,16 @@ dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const STARTUP_TRACE_ENABLED = process.env.STARTUP_TRACE === "1";
+
+function traceStartup(step: string): void {
+  if (!STARTUP_TRACE_ENABLED) {
+    return;
+  }
+
+  const memoryMb = Math.round(process.memoryUsage().rss / 1024 / 1024);
+  console.log(`[startup-trace] ${step} rss=${memoryMb}MB`);
+}
 
 const DEFAULT_EXECUTOR_BASE_URL = "http://127.0.0.1:3031";
 const EXECUTOR_STAGE_LABELS: Record<string, string> = {
@@ -534,21 +544,34 @@ async function startServer() {
 
   const { registry } = await import("./core/registry.js");
   registry.init();
+  traceStartup("registry initialized");
+  traceStartup("heartbeat import begin");
   const { heartbeatScheduler } = await import("./core/heartbeat.js");
+  traceStartup("heartbeat import end");
+  traceStartup("session/mission imports begin");
   const { sessionStore } = await import("./memory/session-store.js");
   const { missionRuntime } = await import("./tasks/mission-runtime.js");
+  const { recoverWorkflowsOnStartup } = await import(
+    "./startup/workflow-recovery.js"
+  );
+  traceStartup("session/mission imports end");
+  traceStartup("task/planet/feishu imports begin");
   const { createTaskRouter, createDecisionTemplatesRouter } = await import(
     "./routes/tasks.js"
   );
   const { createPlanetRouter } = await import("./routes/planets.js");
   const { createFeishuRouter } = await import("./routes/feishu.js");
+  traceStartup("task/planet/feishu imports end");
+  traceStartup("execution plan imports begin");
   const { buildExecutionPlan } = await import(
     "./core/execution-plan-builder.js"
   );
   const { ExecutorClient } = await import("./core/executor-client.js");
   const { EXECUTOR_API_ROUTES } = await import("../shared/executor/api.js");
+  traceStartup("execution plan imports end");
 
   // Wire up workflow → mission enrichment bridge (workflow-decoupling Task 4.2)
+  traceStartup("workflow runtime imports begin");
   const { serverRuntime, setOnStageCompleted } = await import(
     "./runtime/server-runtime.js"
   );
@@ -557,14 +580,18 @@ async function startServer() {
     onWorkflowStageCompleted,
     resolveWorkflowMission,
   } = await import("./core/mission-enrichment-bridge.js");
+  traceStartup("workflow runtime imports end");
   initEnrichmentBridge(missionRuntime, serverRuntime.workflowRepo);
   setOnStageCompleted(onWorkflowStageCompleted);
+  traceStartup("workflow enrichment bridge initialized");
 
   // ── ExecutionBridge: bridge WorkflowEngine deliverables → Docker executor (executor-integration Task 9.1) ──
+  traceStartup("execution bridge imports begin");
   const { createExecutionBridge, buildCallbackUrl } = await import(
     "./core/execution-bridge.js"
   );
   const { workflowEngine } = await import("./core/workflow-engine.js");
+  traceStartup("execution bridge imports end");
 
   // Wire up resolveMissionId so bridgeToExecutor can find the missionId for a workflowId
   serverRuntime.resolveMissionId = resolveWorkflowMission;
@@ -581,26 +608,19 @@ async function startServer() {
     ),
   });
   workflowEngine.executionBridge = executionBridge;
+  traceStartup("execution bridge wired");
 
-  for (const workflow of db.getWorkflows()) {
-    if (workflow.status === "running") {
-      db.updateWorkflow(workflow.id, {
-        status: "failed",
-        results: {
-          ...(workflow.results || {}),
-          last_error: "Server restarted before the workflow completed.",
-          failed_stage: workflow.current_stage || null,
-        },
-      });
-    } else if (
-      workflow.status === "completed" ||
-      workflow.status === "completed_with_errors" ||
-      workflow.status === "failed"
-    ) {
-      sessionStore.materializeWorkflowMemories(workflow.id);
-    }
-  }
+  traceStartup("workflow cleanup begin");
+  recoverWorkflowsOnStartup({
+    workflows: db.getWorkflows(),
+    updateWorkflow: (workflowId, updates) =>
+      db.updateWorkflow(workflowId, updates),
+    materializeWorkflowMemories: workflowId =>
+      sessionStore.materializeWorkflowMemories(workflowId),
+  });
+  traceStartup("workflow cleanup end");
 
+  traceStartup("route imports begin");
   const agentRoutes = (await import("./routes/agents.js")).default;
   const { createChatRouter } = await import("./routes/chat.js");
   const { createRobotReplyRouter } = await import("./routes/robot-reply.js");
@@ -647,6 +667,7 @@ async function startServer() {
     masterSwitch: process.env.AUTOPILOT_REAL_RUNTIME,
     buildTarget: process.env.BUILD_TARGET,
   });
+  traceStartup("bridge enablement resolved");
   if (
     resolvedRoleContainerLoaderEnabled !== undefined &&
     process.env.BLUEPRINT_ROLE_CONTAINER_LOADER_ENABLED !==
@@ -656,7 +677,9 @@ async function startServer() {
       resolvedRoleContainerLoaderEnabled;
   }
 
+  traceStartup("blueprint context build begin");
   const blueprintServiceContext = buildBlueprintServiceContext({});
+  traceStartup("blueprint context build end");
 
   // autopilot-agent-reasoning-stream：装配 CallbackReceiver 实例，让 Agent 推理流
   // 的 HMAC 回调有宿主侧 HTTP server 接收。仅当 Agent 驱动管线开启时才装配。
@@ -690,6 +713,7 @@ async function startServer() {
 
   const aigcMonitoringRoutes = (await import("./routes/aigc-monitoring.js"))
     .default;
+  traceStartup("post-blueprint basic route imports begin");
   const configRoutes = (await import("./routes/config.js")).default;
   const exportRoutes = (await import("./routes/export.js")).default;
   const telemetryRoutes = (await import("./routes/telemetry.js")).default;
@@ -698,6 +722,7 @@ async function startServer() {
   const { costTracker } = await import("./core/cost-tracker.js");
 
   costTracker.loadHistory();
+  traceStartup("cost history loaded");
 
   // ── Collaboration Replay ──
   const { ServerReplayStore } = await import("./replay/replay-store.js");
@@ -721,6 +746,7 @@ async function startServer() {
 
   installMissionInterceptor(missionRuntime, eventCollector);
   installMessageBusInterceptor(messageBus, eventCollector);
+  traceStartup("replay interceptors installed");
   app.use(
     "/api/executor/events",
     installExecutorInterceptor(eventCollector, resolveMissionReplayId)
@@ -789,6 +815,7 @@ async function startServer() {
   const sandboxRelay = new SandboxRelay();
   registerSandboxRelay(sandboxRelay);
   const heartbeatMonitor = new HeartbeatMonitor(missionRuntime);
+  traceStartup("knowledge and sandbox relay initialized");
 
   graphStore.onEntityChanged((entity, action) => {
     const io = getSocketIO();
@@ -800,6 +827,7 @@ async function startServer() {
   // ── RAG Pipeline ──
   const { getRAGConfig } = await import("./rag/config.js");
   const ragConfig = getRAGConfig();
+  traceStartup(`rag config read enabled=${String(ragConfig.enabled)}`);
   let ragDeps:
     | Awaited<ReturnType<(typeof import("./rag/index.js"))["initRAG"]>>
     | undefined;
@@ -811,8 +839,10 @@ async function startServer() {
       >)
     | undefined;
   if (ragConfig.enabled) {
+    traceStartup("rag init begin");
     const { initRAG } = await import("./rag/index.js");
     const initializedRagDeps = initRAG();
+    traceStartup("rag init end");
     ragDeps = initializedRagDeps;
     const { createRAGRouter } = await import("./routes/rag.js");
     const { normalizeWebAigcSearchRequest, projectDocumentSearchResponse } =
@@ -841,6 +871,7 @@ async function startServer() {
 
   // Audit chain / observability wiring
   const { auditChain } = await import("./audit/audit-chain.js");
+  traceStartup("audit imports begin");
   const { auditStore } = await import("./audit/audit-store.js");
   const { auditQuery } = await import("./audit/audit-query.js");
   const { auditVerifier } = await import("./audit/audit-verifier.js");
@@ -856,6 +887,7 @@ async function startServer() {
   auditChain.setStore(auditStore);
   auditChain.init();
   installAuditHooks({ collector: auditCollector });
+  traceStartup("audit initialized");
   setWebAigcRuntimeObservabilityDeps({
     replayCollector: eventCollector,
     auditCollector,
@@ -885,7 +917,9 @@ async function startServer() {
   const skillRoutes = (await import("./routes/skills.js")).default;
   app.use("/api/skills", skillRoutes);
   const { seedSkills } = await import("./core/skill-seed.js");
+  traceStartup("skill seed begin");
   seedSkills();
+  traceStartup("skill seed end");
   const { skillRegistry } = await import("./core/dynamic-organization.js");
   const { createCoreSkillRegistryAdapter } = await import(
     "./routes/blueprint/role-container-loader/skill-registry-adapter.js"
@@ -923,6 +957,7 @@ async function startServer() {
   const { createAuthRouter } = await import("./routes/auth.js");
   const { createProjectsRouter } = await import("./routes/projects.js");
   const persistenceConfig = readPersistenceConfig();
+  traceStartup("persistence config read");
   const authDb = createMysqlQueryExecutor(persistenceConfig.database.mysql);
   const projectsRepository = createProjectsRepository(authDb);
   const projectResourcesRepository = createProjectResourcesRepository(authDb);
@@ -945,6 +980,7 @@ async function startServer() {
     secureCookie: process.env.NODE_ENV === "production",
   });
   const authMiddleware = createAuthMiddleware(sessionService);
+  traceStartup("auth services initialized");
 
   app.use(
     "/api/tasks",
@@ -1086,6 +1122,7 @@ async function startServer() {
   );
 
   const { createMcpRouter } = await import("./routes/mcp.js");
+  traceStartup("tool route imports begin");
   const { createAudioRecognitionRouter } = await import(
     "./routes/audio-recognition.js"
   );
@@ -1179,6 +1216,7 @@ async function startServer() {
     auditLogger: permAuditLogger,
     escalationManager: permDynamicManager,
   });
+  traceStartup("mcp adapter initialized");
 
   // —— autopilot-capability-bridge-mcp (task 18) ——
   // When the feature flag is set, wire the mainline `mcpToolAdapter` + an
@@ -1190,6 +1228,7 @@ async function startServer() {
   // Task 12.2：master switch / explicit flag / BUILD_TARGET 的合一由
   // resolveAllBridgeEnablement 在启动期决策，这里只消费解析结果。
   const mcpBridgeEnabled = resolvedEnablement.mcpGithub === "true";
+  traceStartup(`blueprint router mount begin mcpBridge=${String(mcpBridgeEnabled)}`);
   if (mcpBridgeEnabled) {
     const blueprintHttpFetcher = createDefaultBlueprintHttpFetcher({
       maxResponseBodyBytes: 1_048_576,
@@ -1222,6 +1261,7 @@ async function startServer() {
       { enabledByConfig: false, dependencyReady: false },
     );
   }
+  traceStartup("blueprint router mounted");
 
   // Task 12.4（design §4.4 / requirement 5.2 / 6.1 / 6.2）：把剩余 4 条桥的
   // 启动期配置状态写入 diagnostics store。docker 桥的 configuration 由
@@ -1771,6 +1811,16 @@ async function startServer() {
     }
 
     const missionId = event.missionId.trim();
+    if (missionId.startsWith("blueprint:")) {
+      return response.status(202).json({
+        ok: true,
+        accepted: true,
+        missionId,
+        jobId: event.jobId.trim(),
+        eventId: event.eventId.trim(),
+      });
+    }
+
     const current = missionRuntime.getTask(missionId);
     if (!current) {
       return response.status(404).json({
