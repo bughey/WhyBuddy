@@ -672,6 +672,13 @@ describe("BlueprintRuntimeDiagnosticsStore — agentReasoningBridge extension", 
     expect(entry.lastEventAt).toBe(t3.toISOString());
     // forward 路径不影响 dropped 计数。
     expect(entry.droppedEntryCount).toBe(0);
+    expect(entry.mode).toBe("real");
+    expect(entry.lastMode).toBe("real");
+    expect(entry.lastInvocationAt).toBe(t3.toISOString());
+    expect(entry.dependencyReady).toBe(true);
+    // agentReasoningBridge 仍保留专属 forward 计数，不伪装成 capability invocation。
+    expect(entry.totalInvocations).toBe(0);
+    expect(entry.realInvocations).toBe(0);
   });
 
   it("recordAgentReasoningDropped 与 recordAgentReasoningForwarded 互不污染", () => {

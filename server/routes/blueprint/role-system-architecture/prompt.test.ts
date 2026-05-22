@@ -151,6 +151,31 @@ describe("buildRoleArchitecturePrompt", () => {
     }
   });
 
+  it("uses canonical blueprint stages when routeSet.stagesSummary is absent", () => {
+    const result = buildRoleArchitecturePrompt({
+      ...baseInput,
+      routeSet: {
+        routes: baseInput.routeSet.routes,
+      },
+    });
+    const selectedRoute = result.userPayload.selectedRoute as {
+      stagesSummary: Array<{ stage: string; label: string }>;
+    };
+
+    expect(selectedRoute.stagesSummary.map((stage) => stage.stage)).toEqual([
+      "input",
+      "clarification",
+      "route_generation",
+      "spec_tree",
+      "spec_docs",
+      "effect_preview",
+      "prompt_packaging",
+      "runtime_capability",
+      "engineering_handoff",
+      "engineering_landing",
+    ]);
+  });
+
   // 10.7 userMessage content inclusion and clarification undefined handling
   it("includes targetText, githubUrls, primaryRouteId in userMessage; omits clarification when undefined", () => {
     const inputWithUrls: BuildRoleArchitecturePromptInput = {

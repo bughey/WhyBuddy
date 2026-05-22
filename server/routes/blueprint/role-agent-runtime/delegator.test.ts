@@ -723,3 +723,37 @@ describe("createRoleAgentDelegator - error 字段传递", () => {
     expect(diag.lastError).toBe("budget exceeded");
   });
 });
+
+describe("createRoleAgentDelegator - callback binding", () => {
+  it("passes callback URL and secret resolved at delegate time into Lite runtime", async () => {
+    vi.stubEnv(ENV_KEY, "true");
+    let callbackUrl: string | undefined;
+    let capturedInput: AgentJobInput | undefined;
+    const liteRuntime: LiteAgentRuntime = {
+      run: vi.fn(async (jobInput) => {
+        capturedInput = jobInput;
+        return makeAgentOutput(jobInput.jobId);
+      }),
+    };
+    const delegator = createRoleAgentDelegator({
+      ...makeOptions({ liteAgentRuntime: liteRuntime }),
+      resolveCallback: () => ({
+        callbackUrl,
+        callbackSecret: "runtime-secret",
+      }),
+    } as CreateRoleAgentDelegatorOptions & {
+      resolveCallback: () => {
+        callbackUrl?: string;
+        callbackSecret?: string;
+      };
+    });
+
+    callbackUrl = "http://127.0.0.1:3001/api/blueprint/agent/progress";
+    await delegator.delegate(makeInput({ jobId: "job-callback-bound" }));
+
+    expect(capturedInput?.callbackUrl).toBe(
+      "http://127.0.0.1:3001/api/blueprint/agent/progress",
+    );
+    expect(capturedInput?.callbackSecret).toBe("runtime-secret");
+  });
+});

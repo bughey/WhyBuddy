@@ -88,6 +88,14 @@ export type RealModeDispatcher = (
   input: AgentJobInput,
 ) => Promise<AgentJobOutput>;
 
+export interface AgentProgressCallbackBinding {
+  callbackUrl?: string;
+  callbackSecret?: string;
+}
+
+export type ResolveAgentProgressCallback =
+  () => AgentProgressCallbackBinding | undefined;
+
 /**
  * Fallback LLM 调用函数签名。
  *
@@ -138,6 +146,8 @@ export interface CreateRoleAgentDelegatorOptions {
    * 3. 返回最终 AgentJobOutput。
    */
   realModeDispatcher?: RealModeDispatcher;
+  /** Resolves callback receiver URL and secret at delegate time. */
+  resolveCallback?: ResolveAgentProgressCallback;
   /** Fallback：保持与 callLLMJson 等价的单次 LLM 调用。必填。 */
   fallbackLlmCall: FallbackLlmCall;
   onDelegationRecorded?: (record: RoleAgentDelegationRecord) => void;
@@ -394,6 +404,25 @@ export function createRoleAgentDelegator(
    * - `callbackUrl` / `callbackSecret`：由 Task 7 的 callback receiver 填充；
    *   本模块在 Task 5 阶段仅提供占位，dispatcher 真实实现会覆盖。
    */
+  function resolveCallbackBinding(): Required<AgentProgressCallbackBinding> {
+    try {
+      const binding = opts.resolveCallback?.();
+      return {
+        callbackUrl:
+          typeof binding?.callbackUrl === "string" ? binding.callbackUrl : "",
+        callbackSecret:
+          typeof binding?.callbackSecret === "string"
+            ? binding.callbackSecret
+            : "",
+      };
+    } catch (err) {
+      opts.logger.debug("[delegator] callback resolver failed", {
+        error: errorMessage(err),
+      });
+      return { callbackUrl: "", callbackSecret: "" };
+    }
+  }
+
   function buildAgentJobInput(input: DelegateInput): AgentJobInput {
     const ctx = opts.roleRuntimeContextStore?.get(
       canonicalKey({
@@ -404,6 +433,7 @@ export function createRoleAgentDelegator(
       }),
     );
     const tools = ctx ? buildToolDefinitions(ctx) : buildBuiltinOnlyTools();
+    const callback = resolveCallbackBinding();
     return {
       jobId: input.jobId,
       roleId: input.roleId,
@@ -414,8 +444,8 @@ export function createRoleAgentDelegator(
       budget: input.budget,
       context: input.context,
       // 由 Task 7 callback 收方补齐；Task 5 阶段保留占位。
-      callbackUrl: "",
-      callbackSecret: "",
+      callbackUrl: callback.callbackUrl,
+      callbackSecret: callback.callbackSecret,
     };
   }
 

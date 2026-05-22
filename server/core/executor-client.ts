@@ -3,6 +3,8 @@ import {
   EXECUTOR_CALLBACK_HEADERS,
   type CreateExecutorJobResponse,
   type ExecutorCapabilitiesResponse,
+  type ExecutorJobDetail,
+  type ExecutorJobDetailResponse,
 } from "../../shared/executor/api.js";
 import {
   EXECUTOR_CONTRACT_VERSION,
@@ -294,6 +296,70 @@ export class ExecutorClient {
     return (parsedBody as ExecutorCapabilitiesResponse).capabilities;
   }
 
+  async getJob(jobId: string): Promise<ExecutorJobDetail> {
+    const encodedJobId = encodeURIComponent(jobId);
+    const url = joinUrl(this.options.baseUrl, `${EXECUTOR_API_ROUTES.createJob}/${encodedJobId}`);
+
+    let response: Response;
+    try {
+      response = await this.request(url, { method: "GET" });
+    } catch (error) {
+      throw new ExecutorClientError(
+        `Executor job detail request failed for ${url}.`,
+        "unavailable",
+        undefined,
+        { cause: error },
+      );
+    }
+
+    const rawBody = await response.text();
+    let parsedBody: unknown;
+    try {
+      parsedBody = rawBody ? JSON.parse(rawBody) : {};
+    } catch {
+      throw new ExecutorClientError(
+        `Executor returned a non-JSON response while reading job detail at ${url}.`,
+        "protocol",
+        response.status,
+      );
+    }
+
+    if (!response.ok) {
+      const errorMessage =
+        typeof parsedBody === "object" &&
+        parsedBody !== null &&
+        "error" in parsedBody &&
+        typeof parsedBody.error === "string"
+          ? parsedBody.error
+          : `HTTP ${response.status}`;
+      const details = parseExecutorErrorDetails(parsedBody);
+
+      throw new ExecutorClientError(
+        `Executor job detail request was rejected: ${errorMessage}${formatExecutorErrorDetails(details)}`,
+        "rejected",
+        response.status,
+        { details },
+      );
+    }
+
+    if (
+      !parsedBody ||
+      typeof parsedBody !== "object" ||
+      parsedBody === null ||
+      !("ok" in parsedBody) ||
+      !("job" in parsedBody) ||
+      !isExecutorJobDetail((parsedBody as { job?: unknown }).job)
+    ) {
+      throw new ExecutorClientError(
+        "Executor job detail response is missing required fields.",
+        "protocol",
+        response.status,
+      );
+    }
+
+    return (parsedBody as ExecutorJobDetailResponse).job;
+  }
+
   async validatePlanCapabilities(
     plan: ExecutionPlan,
     capabilities?: ExecutorCapabilities,
@@ -447,4 +513,26 @@ export class ExecutorClient {
       clearTimeout(timer);
     }
   }
+}
+
+function isExecutorJobDetail(value: unknown): value is ExecutorJobDetail {
+  if (!value || typeof value !== "object" || value === null) return false;
+  const record = value as Record<string, unknown>;
+  return (
+    typeof record.requestId === "string" &&
+    typeof record.missionId === "string" &&
+    typeof record.jobId === "string" &&
+    typeof record.jobKey === "string" &&
+    typeof record.jobLabel === "string" &&
+    typeof record.kind === "string" &&
+    typeof record.status === "string" &&
+    typeof record.progress === "number" &&
+    typeof record.message === "string" &&
+    typeof record.receivedAt === "string" &&
+    typeof record.artifactCount === "number" &&
+    Array.isArray(record.artifacts) &&
+    Array.isArray(record.events) &&
+    typeof record.dataDirectory === "string" &&
+    typeof record.logFile === "string"
+  );
 }

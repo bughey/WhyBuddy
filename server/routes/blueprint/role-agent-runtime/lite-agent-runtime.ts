@@ -52,7 +52,10 @@ import type { SkillRegistryDependency } from "../role-container-loader/skills-bi
 
 import { AgentLoopStateMachine } from "./state-machine.js";
 import type { LlmCallFn } from "./llm-call.js";
-import { createNoopProgressEmitter } from "./progress-emitter.js";
+import {
+  createHttpProgressEmitter,
+  createNoopProgressEmitter,
+} from "./progress-emitter.js";
 import type {
   ToolInvokeRequest,
   ToolInvokeResult,
@@ -82,6 +85,8 @@ export interface CreateLiteAgentRuntimeOptions {
    * 每次 run 为 jobId 创建一个子目录。
    */
   workspaceRoot?: string;
+  /** Optional fetch used by the HTTP progress emitter. */
+  progressFetch?: typeof fetch;
   logger: BlueprintLogger;
   now: () => Date;
 }
@@ -374,7 +379,6 @@ export function createLiteAgentRuntime(
 ): LiteAgentRuntime {
   const workspaceBase =
     opts.workspaceRoot ?? pathJoin(tmpdir(), "role-agent-lite");
-  const progressEmitter = createNoopProgressEmitter();
 
   return {
     async run(input: AgentJobInput): Promise<AgentJobOutput> {
@@ -402,6 +406,17 @@ export function createLiteAgentRuntime(
         logger: opts.logger,
         now: opts.now,
       });
+      const callbackUrl = input.callbackUrl.trim();
+      const progressEmitter =
+        callbackUrl && input.callbackSecret
+          ? createHttpProgressEmitter({
+              callbackUrl,
+              callbackSecret: input.callbackSecret,
+              fetch: opts.progressFetch,
+              logger: opts.logger,
+              now: opts.now,
+            })
+          : createNoopProgressEmitter();
 
       const stateMachine = new AgentLoopStateMachine(enrichedInput, {
         llmCall: opts.llmCall,

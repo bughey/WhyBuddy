@@ -43,6 +43,7 @@ import type { SkillRegistryDependency } from "./role-container-loader/skills-bin
 import type { RoleAgentDelegator } from "./role-agent-runtime/delegator.js";
 import { createRoleAgentDelegator } from "./role-agent-runtime/delegator.js";
 import type { CallbackReceiver } from "./role-agent-runtime/callback-receiver.js";
+import { createExecutorRoleAgentDispatcher } from "./role-agent-runtime/executor-real-mode-dispatcher.js";
 import { createLlmCall } from "./role-agent-runtime/llm-call.js";
 import { createLiteAgentRuntime } from "./role-agent-runtime/lite-agent-runtime.js";
 import type { RoleCapabilityPackage } from "../../../shared/blueprint/index.js";
@@ -1061,7 +1062,19 @@ function refreshRoleAgentDelegator(ctx: BlueprintServiceContext): void {
   ctx.roleAgentDelegator = createRoleAgentDelegator({
     roleRuntimeContextStore: ctx.roleRuntimeContextStore,
     executorClient: ctx.executorClient,
+    realModeDispatcher: ctx.executorClient
+      ? createExecutorRoleAgentDispatcher({
+          executorClient: ctx.executorClient,
+          logger: ctx.logger,
+          now: ctx.now,
+        })
+      : undefined,
     liteAgentRuntime: createSharedLiteAgentRuntime(ctx, llmCall),
+    resolveCallback: () => ({
+      callbackUrl: ctx.callbackReceiver?.callbackUrl,
+      callbackSecret:
+        process.env.EXECUTOR_CALLBACK_SECRET ?? "dev-callback-secret-2026",
+    }),
     fallbackLlmCall: async (delegateInput) => {
       const result = await routeSetGen({
         request: delegateInput.context.request as any,
@@ -1555,7 +1568,19 @@ export function buildBlueprintServiceContext(
       ctx.roleAgentDelegator = createRoleAgentDelegator({
         roleRuntimeContextStore: ctx.roleRuntimeContextStore,
         executorClient: ctx.executorClient,
+        realModeDispatcher: ctx.executorClient
+          ? createExecutorRoleAgentDispatcher({
+              executorClient: ctx.executorClient,
+              logger: ctx.logger,
+              now: ctx.now,
+            })
+          : undefined,
         liteAgentRuntime: createSharedLiteAgentRuntime(ctx, llmCall),
+        resolveCallback: () => ({
+          callbackUrl: ctx.callbackReceiver?.callbackUrl,
+          callbackSecret:
+            process.env.EXECUTOR_CALLBACK_SECRET ?? "dev-callback-secret-2026",
+        }),
         fallbackLlmCall: async (delegateInput) => {
           const result = await routeSetGen({
             request: delegateInput.context.request as any,

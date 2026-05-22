@@ -84,6 +84,7 @@ function createRoleEvidence(overrides: {
         executionMode,
         routeSetId,
         routeId: primaryRouteId,
+        primaryRouteId,
         promptId,
         structuredRoles,
       },
@@ -106,6 +107,24 @@ describe("findRoleArchitectureEvidence", () => {
     if (result.status === "real") {
       expect(result.payload.roles.length).toBe(2);
     }
+  });
+
+  it("matches by provenance.primaryRouteId when invocation routeId belongs to another route", () => {
+    const artifact = createRoleEvidence({
+      routeSetId: "rs-abc",
+      primaryRouteId: "rs-abc:primary",
+    }) as any;
+    artifact.payload.provenance.routeId = "rs-abc:alternative-3";
+
+    const job = createJob([artifact]);
+    const result = findRoleArchitectureEvidence({
+      job,
+      routeSetId: "rs-abc",
+      primaryRouteId: "rs-abc:primary",
+      policy,
+    });
+
+    expect(result.status).toBe("real");
   });
 
   it("job === null → 'job not found'", () => {

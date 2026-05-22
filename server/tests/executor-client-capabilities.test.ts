@@ -151,6 +151,63 @@ describe("ExecutorClient.getCapabilities", () => {
   });
 });
 
+describe("ExecutorClient.getJob", () => {
+  it("returns executor job detail from the job detail endpoint", async () => {
+    const body = {
+      ok: true,
+      job: {
+        requestId: "request-1",
+        missionId: "mission-1",
+        jobId: "executor-job-1",
+        jobKey: "role_agent.run",
+        jobLabel: "Run role agent",
+        kind: "execute",
+        status: "completed",
+        progress: 100,
+        message: "done",
+        receivedAt: "2026-05-22T00:00:00.000Z",
+        finishedAt: "2026-05-22T00:00:01.000Z",
+        callbackMode: "pending",
+        artifactCount: 1,
+        artifacts: [
+          {
+            kind: "report",
+            name: "agent-output.json",
+            path: "executor-data/jobs/mission-1/executor-job-1/workspace/artifacts/agent-output.json",
+            previewType: "json",
+          },
+        ],
+        events: [],
+        dataDirectory: "executor-data/jobs/mission-1/executor-job-1",
+        logFile: "executor-data/jobs/mission-1/executor-job-1/executor.log",
+      },
+    };
+    const client = new ExecutorClient({
+      baseUrl: "http://executor.test",
+      callbackUrl: "http://server.test/api/executor/events",
+      fetchImpl: async (url) => {
+        expect(String(url)).toBe("http://executor.test/api/executor/jobs/executor-job-1");
+        return jsonResponse(body);
+      },
+    });
+
+    await expect(client.getJob("executor-job-1")).resolves.toEqual(body.job);
+  });
+
+  it("throws protocol errors for malformed job detail responses", async () => {
+    const client = new ExecutorClient({
+      baseUrl: "http://executor.test",
+      callbackUrl: "http://server.test/api/executor/events",
+      fetchImpl: async () => jsonResponse({ ok: true, job: { jobId: 123 } }),
+    });
+
+    await expect(client.getJob("executor-job-1")).rejects.toMatchObject({
+      name: "ExecutorClientError",
+      kind: "protocol",
+    } satisfies Partial<ExecutorClientError>);
+  });
+});
+
 describe("ExecutorClient.dispatchPlan capability errors", () => {
   it("preserves structured executor rejection details from create-job", async () => {
     let callCount = 0;

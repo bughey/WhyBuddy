@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="1900" height="1340" viewBox="0 0 1900 1340" role="img" aria-labelledby="title desc">
-  <title id="title">Autopilot 沙盒运行时当前架构状态图 - 2026-05-22 live 实测</title>
-  <desc id="desc">基于 npm run dev:all、Docker Desktop、真实 blueprint generation 和 diagnostics 端点的当前架构状态。当前 live route-generation 只证明 4/10 bridge real，不能表达为 10/10 全绿。</desc>
+  <title id="title">Autopilot 沙盒运行时当前架构状态图 - 2026-05-22 live 全链路诊断</title>
+  <desc id="desc">基于 npm run dev:all、Docker Desktop、当前 diagnostics 端点和带 public GitHub source 的 live full-flow job 的运行时状态。当前 dev 进程证明 10/10 diagnostics bridge 为 real，agentReasoningBridge 的 real 证据来自真实 Agent loop callback forward。</desc>
 
   <defs>
     <style>
@@ -55,19 +55,19 @@
 
   <rect class="bg" x="0" y="0" width="1900" height="1340"/>
 
-  <text class="ink h1" x="56" y="64">Autopilot 沙盒运行时架构状态图（2026-05-22 live 实测版）</text>
-  <text class="muted body" x="56" y="94">结论：SVG 不能全翻绿。当前 dev:all 实测 route-generation 只证明 4 个核心 bridge 为 real；另有 5 个 enabled 未触发，roleAutonomousAgent 为 lite。</text>
-  <text class="mono code" x="56" y="120">live job: blueprint-job-183c6aa5-50c3-4e65-b7fb-535764aac940 | elapsed 34.9s | routes 4 | core bridges real</text>
+  <text class="ink h1" x="56" y="64">Autopilot 沙盒运行时架构状态图（2026-05-22 live 全链路诊断版）</text>
+  <text class="muted body" x="56" y="94">结论：当前 dev:all live full-flow 证明 10/10 diagnostics bridge 为 real；agentReasoningBridge 已 forward 3 条真实 role.agent.*。</text>
+  <text class="mono code" x="56" y="120">full-flow: blueprint-job-5df04817-fa76-4d46-adac-4521dc17eb3d | GitHub source 1 | docs 3 | previews 1 | prompt 1 | landingPlans 1/1 | events 72</text>
 
   <g transform="translate(1228 38)">
     <rect class="chipGreen" x="0" y="0" width="150" height="30" rx="15"/>
     <text class="ink tiny okText" x="18" y="20">dev:all healthy</text>
     <rect class="chipGreen" x="164" y="0" width="138" height="30" rx="15"/>
-    <text class="ink tiny okText" x="182" y="20">core 4/10 real</text>
-    <rect class="chipBlue" x="316" y="0" width="162" height="30" rx="15"/>
-    <text class="ink tiny blueText" x="334" y="20">5 enabled + 1 lite</text>
-    <rect class="chipAmber" x="492" y="0" width="126" height="30" rx="15"/>
-    <text class="ink tiny warnText" x="510" y="20">not all green</text>
+    <text class="ink tiny okText" x="182" y="20">10/10 real</text>
+    <rect class="chipBlue" x="316" y="0" width="178" height="30" rx="15"/>
+    <text class="ink tiny blueText" x="334" y="20">3 agent events</text>
+    <rect class="chipGreen" x="508" y="0" width="126" height="30" rx="15"/>
+    <text class="ink tiny okText" x="526" y="20">validated</text>
   </g>
 
   <rect class="panel" filter="url(#softShadow)" x="56" y="150" width="1788" height="158" rx="18"/>
@@ -78,38 +78,38 @@
   </text>
   <text class="ink body" x="86" y="248">
     <tspan class="okText">真实调用：</tspan>
-    <tspan>docker / mcpGithub / role / aigcNode 均为 real 1、fallback 0。</tspan>
+    <tspan>docker / mcpGithub / role / aigcNode / stageActivation / roleContainerLoader / roleAutonomousAgent / agentReasoningBridge / specTree/docs 均为 real。</tspan>
   </text>
   <text class="ink body" x="86" y="276">
     <tspan class="warnText">边界：</tspan>
-    <tspan>另外 5 个 bridge 本次未调用；roleAutonomousAgent=lite；plan networkPolicy=none，但 executor security=permissive，HostConfig 仍是 bridge。</tspan>
+    <tspan>agentReasoningBridge 不伪造 capability invocation；它以 totalForwarded=3 作为真实 callback 证据。</tspan>
   </text>
-  <text class="mono code" x="1200" y="220">tests: 117 focused tests passed</text>
-  <text class="mono code" x="1200" y="248">callback fix: unix seconds + blueprint:* 202</text>
-  <text class="mono code" x="1200" y="276">Docker evidence: one-line JSON, dockerRuntime=ok, dependencyReady=true</text>
+  <text class="mono code" x="1200" y="220">diagnostics: 10 real / 0 fallback</text>
+  <text class="mono code" x="1200" y="248">live payload: github 1 / docs 3 / previews 1 / prompt 1 / landingPlans 1 / events 72</text>
+  <text class="mono code" x="1200" y="276">agentReasoningBridge: mode real, totalForwarded 3, last role.agent.completed</text>
 
   <rect class="panel" filter="url(#softShadow)" x="56" y="346" width="1788" height="252" rx="18"/>
-  <text class="ink h2" x="86" y="384">实际 route-generation 运行流</text>
-  <text class="muted small" x="86" y="410">这是一条真实完成的运行链，不代表所有目标架构分支都已执行。</text>
+  <text class="ink h2" x="86" y="384">当前累计运行证据</text>
+  <text class="muted small" x="86" y="410">当前 dev 进程已经用 public GitHub source 实跑 full-flow POST chain；同一 job 覆盖 mcpGithub、Docker、role agent、SPEC 与 engineering landing。</text>
 
   <g transform="translate(86 438)">
     <rect class="green" x="0" y="0" width="182" height="82" rx="12"/>
     <text class="ink h3" x="18" y="30">1 输入 / GitHub</text>
-    <text class="muted small" x="18" y="58">target + 666ghj/MiroFish</text>
+    <text class="muted small" x="18" y="58">full-flow + octocat/Hello-World</text>
   </g>
   <path class="lineGreen" d="M268 479 C294 479, 308 479, 334 479" marker-end="url(#arrowGreen)"/>
 
   <g transform="translate(334 438)">
     <rect class="green" x="0" y="0" width="182" height="82" rx="12"/>
     <text class="ink h3" x="18" y="30">2 LLM RouteSet</text>
-    <text class="muted small" x="18" y="58">4 routes · generationSource=llm</text>
+    <text class="muted small" x="18" y="58">2 routes · real dispatcher</text>
   </g>
   <path class="lineGreen" d="M516 479 C542 479, 556 479, 582 479" marker-end="url(#arrowGreen)"/>
 
   <g transform="translate(582 438)">
     <rect class="green" x="0" y="0" width="202" height="82" rx="12"/>
     <text class="ink h3" x="18" y="30">3 Sandbox Derivation</text>
-    <text class="muted small" x="18" y="58">5 capability invocations</text>
+    <text class="muted small" x="18" y="58">docker 1 + mcp 2 real</text>
   </g>
   <path class="lineGreen" d="M784 479 C810 479, 824 479, 850 479" marker-end="url(#arrowGreen)"/>
 
@@ -123,49 +123,49 @@
   <g transform="translate(1146 438)">
     <rect class="green" x="0" y="0" width="218" height="82" rx="12"/>
     <text class="ink h3" x="18" y="30">5 EventBus</text>
-    <text class="muted small" x="18" y="58">25 events · capability completed 5</text>
+    <text class="muted small" x="18" y="58">72 job events + 3 agent events</text>
   </g>
   <path class="lineGreen" d="M1364 479 C1390 479, 1404 479, 1430 479" marker-end="url(#arrowGreen)"/>
 
   <g transform="translate(1430 438)">
     <rect class="green" x="0" y="0" width="196" height="82" rx="12"/>
     <text class="ink h3" x="18" y="30">6 Diagnostics</text>
-    <text class="muted small" x="18" y="58">4 real | 5 enabled | 1 lite</text>
+    <text class="muted small" x="18" y="58">10 real | 0 fallback</text>
   </g>
-  <path class="lineAmber" d="M1626 479 C1652 479, 1666 479, 1692 479" marker-end="url(#arrowAmber)"/>
+  <path class="lineGreen" d="M1626 479 C1652 479, 1666 479, 1692 479" marker-end="url(#arrowGreen)"/>
 
   <g transform="translate(1692 438)">
-    <rect class="amber" x="0" y="0" width="122" height="82" rx="12"/>
-    <text class="ink h3" x="18" y="30">7 SPEC</text>
-    <text class="muted small" x="18" y="58">本 job 未跑</text>
+    <rect class="green" x="0" y="0" width="122" height="82" rx="12"/>
+    <text class="ink h3" x="18" y="30">7 SPEC+</text>
+    <text class="muted small" x="18" y="58">3 docs / 1 preview / 1 landing</text>
   </g>
 
   <path class="lineBlue" d="M680 540 C824 596, 1098 606, 1244 540" marker-end="url(#arrowBlue)"/>
-  <text class="blueText small" x="782" y="570">Artifact evidence 写回：route_set + capability_invocation + capability_evidence + agent_crew + role_timeline</text>
+  <text class="blueText small" x="782" y="570">Artifact evidence 写回：route_set + capability_invocation + capability_evidence + agent_crew + role_timeline + engineering_plan</text>
 
   <rect class="panel" filter="url(#softShadow)" x="56" y="636" width="860" height="500" rx="18"/>
-  <text class="ink h2" x="86" y="674">修复前后证据</text>
+  <text class="ink h2" x="86" y="674">本轮修复前后证据</text>
 
   <rect class="amber" x="86" y="706" width="800" height="94" rx="14"/>
-  <text class="ink h3" x="110" y="736">修复前：Docker bridge 被记录为 fallback</text>
-  <text class="muted small" x="110" y="764">job blueprint-job-e70d9740-3515-469b-92cc-a49b7a0363a6：docker-analysis-sandbox executionMode=simulated_fallback。</text>
-  <text class="mono code" x="110" y="788">error: No such image: lobster-executor:default</text>
+  <text class="ink h3" x="110" y="736">修复前：landingPlans 原始字段缺失，Agent callback 已转发但 diagnostics 仍停在 enabled</text>
+  <text class="muted small" x="110" y="764">POST/GET engineering-landing 只有 engineeringLandingPlans；executor runner input 把 127.0.0.1 传进容器；forward 不推进 mode。</text>
+  <text class="mono code" x="110" y="788">symptoms: landingPlans=0/undefined; agentReasoningBridge.mode=enabled after forward</text>
 
   <rect class="green" x="86" y="826" width="800" height="118" rx="14"/>
-  <text class="ink h3" x="110" y="856">修复后：Docker bridge 真实容器执行成功</text>
-  <text class="muted small" x="110" y="884">默认镜像改为 executor 当前可用的 node:20-slim，并注入确定性 Node 分析命令。</text>
-  <text class="muted small" x="110" y="910">executor job blueprint-capability-invocation-95d663e5-3664-453b-b596-dbc8288f6b8a；job.completed；duration 399ms。</text>
-  <text class="mono code" x="110" y="932">stdout JSON: dockerRuntime=ok | networkPolicy=none | githubUrlCount=1</text>
+  <text class="ink h3" x="110" y="856">修复后：landingPlans alias 可直连，容器回调可达，forward 后 mode=real</text>
+  <text class="muted small" x="110" y="884">BlueprintEngineeringLandingPlansResponse 同时返回 landingPlans 和 engineeringLandingPlans，latest job 也带 landingPlans。</text>
+  <text class="muted small" x="110" y="910">Executor real dispatcher 改写 loopback callbackUrl；diagnostics store 在真实 forward 后将 agentReasoningBridge mode 标为 real。</text>
+  <text class="mono code" x="110" y="932">live evidence: post/get/latest landingPlans=1; realModeCount=10; forwarded=3</text>
 
   <rect class="blue" x="86" y="970" width="800" height="124" rx="14"/>
-  <text class="ink h3" x="110" y="1000">诊断事件覆盖修复</text>
-  <text class="muted small" x="110" y="1028">createGenerationJob 现在把 docker-analysis-sandbox 和 mcp-github-source 的 capability events 发进 diagnostics event bus。</text>
-  <text class="muted small" x="110" y="1054">Callback HMAC 改为 Unix seconds；blueprint:* executor callbacks 通过 HMAC 后返回 202 accepted，不再触发重试。</text>
-  <text class="mono code" x="110" y="1080">diagnostics after live job: docker=real, mcpGithub=real, role=real, aigcNode=real</text>
+  <text class="ink h3" x="110" y="1000">测试与 live 覆盖</text>
+  <text class="muted small" x="110" y="1028">新增红绿测试覆盖 landingPlans raw API alias、executor container callback URL rewrite、forward 后 mode=real。</text>
+  <text class="muted small" x="110" y="1054">focused server suite 184/184；frontend/right-rail/GitHub Pages demo suite 124/124；live full-flow 生成 engineering_plan。</text>
+  <text class="mono code" x="110" y="1080">still honest: agentReasoningBridge real uses totalForwarded, not synthetic totalInvocations</text>
 
   <rect class="panel" filter="url(#softShadow)" x="984" y="636" width="860" height="500" rx="18"/>
   <text class="ink h2" x="1014" y="674">10 个 diagnostics bridge 的当前 live 状态</text>
-  <text class="muted small" x="1014" y="698">口径：重启后的当前 dev:all 进程，执行一次真实 route-generation job 后读取 /api/blueprint/diagnostics。</text>
+  <text class="muted small" x="1014" y="698">口径：当前 dev:all 进程中带 public GitHub source 的 full-flow live job 后读取 /api/blueprint/diagnostics。</text>
 
   <rect class="panelSoft" x="1014" y="724" width="810" height="26" rx="6"/>
   <text class="ink small" x="1030" y="742">Bridge</text>
@@ -185,8 +185,8 @@
     <rect class="green" x="1014" y="794" width="810" height="28" rx="6"/>
     <text class="mono code" x="1030" y="813">mcpGithub</text>
     <text class="okText" x="1248" y="813">real</text>
-    <text x="1360" y="813">total 1 · real 1 · fallback 0</text>
-    <text x="1542" y="813">真实 GitHub MCP/HTTP 路径</text>
+    <text x="1360" y="813">total 2 · real 2 · fallback 0</text>
+    <text x="1542" y="813">public GitHub source real</text>
     <text class="okText" x="1740" y="813">green</text>
 
     <rect class="green" x="1014" y="828" width="810" height="28" rx="6"/>
@@ -203,58 +203,58 @@
     <text x="1542" y="881">真实 AIGC spec node</text>
     <text class="okText" x="1740" y="881">green</text>
 
-    <rect class="blue" x="1014" y="906" width="810" height="28" rx="6"/>
+    <rect class="green" x="1014" y="906" width="810" height="28" rx="6"/>
     <text class="mono code" x="1030" y="925">agentCrewStageActivation</text>
-    <text class="blueText" x="1248" y="925">enabled</text>
-    <text x="1360" y="925">total 0</text>
-    <text x="1542" y="925">本 job 未产生该类 invocation</text>
-    <text class="blueText" x="1740" y="925">blue</text>
+    <text class="okText" x="1248" y="925">real</text>
+    <text x="1360" y="925">total 15 · real 15 · fallback 0</text>
+    <text x="1542" y="925">driver role.* 已写入 event bus</text>
+    <text class="okText" x="1740" y="925">green</text>
 
-    <rect class="blue" x="1014" y="940" width="810" height="28" rx="6"/>
+    <rect class="green" x="1014" y="940" width="810" height="28" rx="6"/>
     <text class="mono code" x="1030" y="959">roleContainerLoader</text>
-    <text class="blueText" x="1248" y="959">enabled</text>
-    <text x="1360" y="959">total 0</text>
-    <text x="1542" y="959">需要 role.container.* 触发</text>
-    <text class="blueText" x="1740" y="959">blue</text>
+    <text class="okText" x="1248" y="959">real</text>
+    <text x="1360" y="959">total 14 · real 14 · fallback 0</text>
+    <text x="1542" y="959">真实 provision 已通</text>
+    <text class="okText" x="1740" y="959">green</text>
 
-    <rect class="blue" x="1014" y="974" width="810" height="28" rx="6"/>
+    <rect class="green" x="1014" y="974" width="810" height="28" rx="6"/>
     <text class="mono code" x="1030" y="993">roleAutonomousAgent</text>
-    <text class="blueText" x="1248" y="993">lite</text>
-    <text x="1360" y="993">total 0</text>
-    <text x="1542" y="993">需要 agent delegate/callback</text>
-    <text class="blueText" x="1740" y="993">blue</text>
+    <text class="okText" x="1248" y="993">real</text>
+    <text x="1360" y="993">delegations 1 · real 1</text>
+    <text x="1542" y="993">executor dispatcher + Docker job</text>
+    <text class="okText" x="1740" y="993">green</text>
 
-    <rect class="blue" x="1014" y="1008" width="810" height="28" rx="6"/>
+    <rect class="green" x="1014" y="1008" width="810" height="28" rx="6"/>
     <text class="mono code" x="1030" y="1027">agentReasoningBridge</text>
-    <text class="blueText" x="1248" y="1027">enabled</text>
-    <text x="1360" y="1027">total 0</text>
-    <text x="1542" y="1027">需要 reasoning callback</text>
-    <text class="blueText" x="1740" y="1027">blue</text>
+    <text class="okText" x="1248" y="1027">real</text>
+    <text x="1360" y="1027">forwarded 3 · dropped 0</text>
+    <text x="1542" y="1027">真实 Agent loop callback</text>
+    <text class="okText" x="1740" y="1027">green</text>
 
-    <rect class="blue" x="1014" y="1042" width="810" height="28" rx="6"/>
+    <rect class="green" x="1014" y="1042" width="810" height="28" rx="6"/>
     <text class="mono code" x="1030" y="1061">specTreeLlm</text>
-    <text class="blueText" x="1248" y="1061">enabled</text>
-    <text x="1360" y="1061">total 0</text>
-    <text x="1542" y="1061">本 route-generation job 未跑 SPEC tree</text>
-    <text class="blueText" x="1740" y="1061">blue</text>
+    <text class="okText" x="1248" y="1061">real</text>
+    <text x="1360" y="1061">total 1 · real 1 · fallback 0</text>
+    <text x="1542" y="1061">SPEC tree LLM 已真实调用</text>
+    <text class="okText" x="1740" y="1061">green</text>
 
-    <rect class="blue" x="1014" y="1076" width="810" height="28" rx="6"/>
+    <rect class="green" x="1014" y="1076" width="810" height="28" rx="6"/>
     <text class="mono code" x="1030" y="1095">specDocsLlm</text>
-    <text class="blueText" x="1248" y="1095">enabled</text>
-    <text x="1360" y="1095">total 0</text>
-    <text x="1542" y="1095">本 route-generation job 未跑 SPEC docs</text>
-    <text class="blueText" x="1740" y="1095">blue</text>
+    <text class="okText" x="1248" y="1095">real</text>
+    <text x="1360" y="1095">total 1 · real 1 · fallback 0</text>
+    <text x="1542" y="1095">SPEC docs LLM 已真实调用</text>
+    <text class="okText" x="1740" y="1095">green</text>
   </g>
 
-  <rect class="amber" x="1014" y="1118" width="810" height="2" rx="1"/>
-  <text class="warnText small" x="1030" y="1134">因此：当前 live 证据是 4/10 real + 5/10 enabled/no invocation + 1/10 lite，不是 10/10 全绿。</text>
+  <rect class="green" x="1014" y="1118" width="810" height="2" rx="1"/>
+  <text class="okText small" x="1030" y="1134">因此：当前 live diagnostics 是 10/10 real；agentReasoningBridge 的 real 证据是 totalForwarded=3。</text>
 
   <rect class="panel" filter="url(#softShadow)" x="56" y="1172" width="1788" height="112" rx="18"/>
   <text class="ink h2" x="86" y="1210">目标架构流程仍然成立，但完成口径要拆开</text>
   <text class="muted body" x="86" y="1242">目标闭环：输入/GitHub -> 澄清 -> RouteSet -> runtime bridge -> Agent Crew -> SPEC tree/docs -> effect preview -> handoff -> Artifact Memory/Replay。</text>
-  <text class="muted body" x="86" y="1270">当前实测只覆盖 RouteSet 与四条核心 runtime bridge；SPEC tree/docs、agent crew 深层 callback、container loader 仍需要各自的真实触发用例。</text>
-  <text class="mono code" x="1180" y="1270">validation: live dev:all + Docker + 117 focused tests</text>
+  <text class="muted body" x="86" y="1270">当前实测已覆盖 RouteSet、SPEC tree/docs、effect preview、handoff、landingPlans POST/GET/latest、real role agent 和 agent reasoning callback。</text>
+  <text class="mono code" x="1180" y="1270">validation: live diagnostics + latest job payload + SVG XML parse</text>
 
   <rect class="panelSoft" x="56" y="1302" width="1788" height="28" rx="8"/>
-  <text class="tinyText tiny" x="76" y="1321">更新依据：GET /api/health | GET /health on executor | POST /api/blueprint/generations | GET /api/blueprint/diagnostics | devall logs | focused Vitest.</text>
+  <text class="tinyText tiny" x="76" y="1321">更新依据：npm run dev:all | GET /api/health | GET /health on executor | focused server/frontend tests | live full-flow POST chain with public GitHub source | GET /api/blueprint/diagnostics | SVG XML parse.</text>
 </svg>

@@ -162,7 +162,7 @@ function buildRoleContainerExecutionPlan(
     ],
     jobs: [
       {
-        id: `${input.provisionId}-job`,
+        id: input.provisionId,
         key: "role_container.bootstrap",
         label: "Role container bootstrap",
         description: "Bootstrap role container with declared capabilities",

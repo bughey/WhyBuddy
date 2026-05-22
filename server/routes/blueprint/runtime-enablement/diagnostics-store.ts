@@ -162,6 +162,7 @@ export interface BridgeDiagnosticEntry {
    * - `totalForwarded`：成功 forward 到 `BlueprintEventBus` 的 `role.agent.*` 事件计数。
    * - `droppedEntryCount`：listener 翻译 / emit 异常导致的丢弃计数。
    * - `lastEventAt` / `lastEventType`：最近一次 forward 成功的事件元信息。
+   * - `mode`：成功 forward 后切到 `"real"`，但不复用 invocation 计数器。
    *
    * snapshot 时即使 env off 也保证 `enabled / totalForwarded / droppedEntryCount`
    * 至少有 0 / false 默认值，便于诊断端点向后兼容地暴露稳定 shape。
@@ -600,6 +601,10 @@ export function createBlueprintRuntimeDiagnosticsStore(
     entry.totalForwarded = (entry.totalForwarded ?? 0) + 1;
     entry.lastEventAt = now.toISOString();
     entry.lastEventType = eventType;
+    entry.lastInvocationAt = now.toISOString();
+    entry.lastMode = "real";
+    entry.mode = "real";
+    entry.dependencyReady = true;
     if (entry.droppedEntryCount === undefined) {
       entry.droppedEntryCount = 0;
     }

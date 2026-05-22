@@ -2291,6 +2291,7 @@ export interface BlueprintImplementationPromptPackagesResponse {
 export interface BlueprintEngineeringLandingPlansResponse {
   job: BlueprintGenerationJob;
   specTree: BlueprintSpecTree;
+  landingPlans: BlueprintEngineeringLandingPlan[];
   engineeringLandingPlans: BlueprintEngineeringLandingPlan[];
 }
 
@@ -2361,6 +2362,7 @@ export interface BlueprintLatestGenerationJobResponse {
   capabilityInvocations?: BlueprintCapabilityInvocation[];
   capabilityEvidence?: BlueprintCapabilityEvidence[];
   sandboxDerivationJobs?: BlueprintSandboxDerivationJob[];
+  landingPlans?: BlueprintEngineeringLandingPlan[];
   engineeringLandingPlans?: BlueprintEngineeringLandingPlan[];
   engineeringRuns?: BlueprintEngineeringRun[];
   artifactLedgerEntries?: BlueprintArtifactMemoryEntry[];

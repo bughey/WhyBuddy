@@ -541,6 +541,89 @@ describe("createAgentCrewStageActivationDriver", () => {
     // Both emitted when suppression is off
     expect(emit2).toHaveBeenCalledTimes(2);
   });
+
+  it("11.13 resolves primary route from route_set artifact when job has no top-level routeSet", () => {
+    const { ctx, emitSpy } = makeCtx();
+    const driver = createAgentCrewStageActivationDriver(ctx);
+
+    const job = makeJob({
+      roles: [
+        { id: "planner", label: "Planner", activationStages: ["input"], responsibilities: [] },
+      ],
+      stages: ["input", "spec_tree"] as BlueprintGenerationStage[],
+    });
+
+    const routeSet = (job as any).routeSet;
+    delete (job as any).routeSet;
+    job.artifacts = job.artifacts.concat({
+      id: "art-route-set",
+      type: "route_set",
+      title: "Route Set",
+      createdAt: "2026-01-01T00:00:00.000Z",
+      payload: routeSet,
+    } as any);
+
+    driver.onStageTransition({
+      jobId: "job-1",
+      stageId: "input" as BlueprintGenerationStage,
+      transition: "stage_started",
+      job,
+    });
+
+    expect(driver.executionMode).toBe("real");
+    expect(emitSpy).toHaveBeenCalledTimes(1);
+    expect(emitSpy.mock.calls[0][0]).toMatchObject({
+      type: BlueprintEventName.RoleActivated,
+      roleId: "planner",
+      presenceState: "active",
+      activationDriverExecutionMode: "real",
+    });
+  });
+
+  it("11.14 uses the canonical blueprint stage order when a route_set artifact has no route stages", () => {
+    const { ctx, emitSpy } = makeCtx();
+    const driver = createAgentCrewStageActivationDriver(ctx);
+
+    const job = makeJob({
+      roles: [
+        { id: "architect", label: "Architect", activationStages: ["spec_tree"], responsibilities: [] },
+      ],
+      stages: ["input", "spec_tree"] as BlueprintGenerationStage[],
+    });
+
+    const routeSet = {
+      ...(job as any).routeSet,
+      routes: (job as any).routeSet.routes.map((route: any) => ({
+        id: route.id,
+        title: "Route without stage field",
+        summary: "Matches production RouteSet artifacts.",
+      })),
+    };
+    delete (job as any).routeSet;
+    job.artifacts = job.artifacts.concat({
+      id: "art-route-set",
+      type: "route_set",
+      title: "Route Set",
+      createdAt: "2026-01-01T00:00:00.000Z",
+      payload: routeSet,
+    } as any);
+
+    driver.onStageTransition({
+      jobId: "job-1",
+      stageId: "spec_tree" as BlueprintGenerationStage,
+      transition: "stage_started",
+      job,
+    });
+
+    expect(driver.executionMode).toBe("real");
+    expect(emitSpy).toHaveBeenCalledTimes(1);
+    expect(emitSpy.mock.calls[0][0]).toMatchObject({
+      type: BlueprintEventName.RoleActivated,
+      roleId: "architect",
+      presenceState: "active",
+      activationDriverExecutionMode: "real",
+    });
+  });
 });
 
 

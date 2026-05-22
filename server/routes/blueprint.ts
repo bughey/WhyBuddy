@@ -1690,10 +1690,8 @@ export function createBlueprintRouter(deps: BlueprintRouterDeps = {}): Router {
     }
 
     res.json({
-      job,
-      specTree,
-      engineeringLandingPlans: extractEngineeringLandingPlans(job),
-    } satisfies BlueprintEngineeringLandingPlansResponse);
+      ...buildEngineeringLandingPlansResponse(job, specTree),
+    });
   });
 
   router.post("/jobs/:jobId/engineering-runs", (req, res) => {
@@ -2995,30 +2993,35 @@ export async function createGenerationJob(
   // 响应里的 `job.events` 与后续 GET `/api/blueprint/jobs/:id/events` 不一致
   // （否则 `eventsBody.events.length === created.job.events.length` 这类断言会失败）。
   const refreshedJob = options.store.get(jobId) ?? job;
+  const stageActivationJob: BlueprintGenerationJob = {
+    ...refreshedJob,
+    status: "running",
+    completedAt: undefined,
+  };
 
   // 伴随式介入修复：在 route_generation 之前先触发 input 和 clarification
   // 两个阶段的 stage_started，让角色状态机能正确派生这两个阶段的角色状态
   // （例如"决策者"在 input 阶段应为 active）。之前这两个阶段没有 job 对象
   // 所以无法触发；现在 job 创建后补发，让前端 3D 场景里的角色态势回溯正确。
   ctx.agentCrewStageActivationDriver?.onStageTransition({
-    jobId: refreshedJob.id,
+    jobId: stageActivationJob.id,
     stageId: "input",
     transition: "stage_started",
-    job: refreshedJob,
+    job: stageActivationJob,
   });
   ctx.agentCrewStageActivationDriver?.onStageTransition({
-    jobId: refreshedJob.id,
+    jobId: stageActivationJob.id,
     stageId: "clarification",
     transition: "stage_started",
-    job: refreshedJob,
+    job: stageActivationJob,
   });
 
   // Task 14.2: Hook point — route_generation stage started after job creation.
   ctx.agentCrewStageActivationDriver?.onStageTransition({
-    jobId: refreshedJob.id,
+    jobId: stageActivationJob.id,
     stageId: "route_generation",
     transition: "stage_started",
-    job: refreshedJob,
+    job: stageActivationJob,
   });
 
   return {
@@ -3212,9 +3215,13 @@ async function createRouteGenerationSandboxDerivation(
     "role-system-architecture",
     "skill-svg-architecture",
   ];
-  const selectedCapabilityIds = uniqueStrings(
+  const requestedDefaultCapabilityIds =
     capabilityIds.length > 0
       ? defaultCapabilitySet.filter(id => capabilityIds.includes(id))
+      : [];
+  const selectedCapabilityIds = uniqueStrings(
+    requestedDefaultCapabilityIds.length > 0
+      ? requestedDefaultCapabilityIds
       : defaultCapabilitySet
   );
   const routeGenerationCapabilities = selectedCapabilityIds
@@ -4924,6 +4931,19 @@ function extractEngineeringLandingPlans(
     );
 }
 
+function buildEngineeringLandingPlansResponse(
+  job: BlueprintGenerationJob,
+  specTree: BlueprintSpecTree
+): BlueprintEngineeringLandingPlansResponse {
+  const landingPlans = extractEngineeringLandingPlans(job);
+  return {
+    job,
+    specTree,
+    landingPlans,
+    engineeringLandingPlans: landingPlans,
+  };
+}
+
 function extractEngineeringRuns(
   job: BlueprintGenerationJob
 ): BlueprintEngineeringRun[] {
@@ -6507,6 +6527,8 @@ function createJobDetailsPayload(
     ? stores?.projectContexts.get(projectContextProjectId)
     : undefined;
 
+  const engineeringLandingPlans = extractEngineeringLandingPlans(job);
+
   return {
     job: projectHandoffOntoJob(job),
     routeSet: extractRouteSet(job),
@@ -6525,7 +6547,8 @@ function createJobDetailsPayload(
     capabilityEvidence: extractCapabilityEvidence(job),
     sandboxDerivationJobs: extractSandboxDerivationJobs(job),
     specTreeVersions: extractSpecTreeVersions(job),
-    engineeringLandingPlans: extractEngineeringLandingPlans(job),
+    landingPlans: engineeringLandingPlans,
+    engineeringLandingPlans,
     engineeringRuns: extractEngineeringRuns(job),
     artifactLedgerEntries: buildArtifactLedger(job),
     artifactReplays: extractArtifactReplays(job),
@@ -10162,11 +10185,7 @@ async function generateEngineeringLandingPlansAsync(
 
   return {
     ok: true,
-    response: {
-      job: updatedJob,
-      specTree,
-      engineeringLandingPlans: extractEngineeringLandingPlans(updatedJob),
-    },
+    response: buildEngineeringLandingPlansResponse(updatedJob, specTree),
   };
 }
 

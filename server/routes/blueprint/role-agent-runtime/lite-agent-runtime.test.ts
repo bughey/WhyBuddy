@@ -604,3 +604,48 @@ describe("createLiteAgentRuntime - AIGC adapter 注入", () => {
     expect(observing?.observation?.result).toMatchObject({ nodeRanOk: true });
   });
 });
+
+describe("createLiteAgentRuntime - progress callbacks", () => {
+  it("emits HTTP progress callbacks when callback URL and secret are provided", async () => {
+    const sentEvents: Array<{ type: string; jobId: string }> = [];
+    const progressFetch = vi.fn(
+      async (_url: string | URL | Request, init?: RequestInit) => {
+        sentEvents.push(
+          JSON.parse(String(init?.body)) as { type: string; jobId: string },
+        );
+        return { ok: true, status: 202 } as Response;
+      },
+    );
+    const llm = scriptedLlm([makeFinishOutput({ ok: true })]);
+    const runtime = createLiteAgentRuntime({
+      llmCall: llm,
+      workspaceRoot,
+      progressFetch,
+      logger: buildLogger(),
+      now: () => new Date("2026-05-22T06:30:00Z"),
+    });
+
+    const out = await runtime.run(
+      buildInput({
+        jobId: "job-progress-http",
+        callbackUrl: "http://callback.test/api/blueprint/agent/progress",
+        callbackSecret: "test-secret",
+      }),
+    );
+
+    expect(out.status).toBe("completed");
+    expect(progressFetch).toHaveBeenCalledTimes(3);
+    expect(sentEvents.map((event) => event.type)).toEqual([
+      "agent.started",
+      "agent.thinking",
+      "agent.completed",
+    ]);
+    expect(sentEvents.every((event) => event.jobId === "job-progress-http")).toBe(
+      true,
+    );
+    const [, init] = progressFetch.mock.calls[0] ?? [];
+    const headers = new Headers(init?.headers);
+    expect(headers.get("X-Agent-EventType")).toBe("agent.started");
+    expect(headers.get("X-Agent-Signature")).toBeTruthy();
+  });
+});

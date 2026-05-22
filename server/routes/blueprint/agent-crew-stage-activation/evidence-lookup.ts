@@ -71,7 +71,12 @@ export function findRoleArchitectureEvidence(input: {
   const realCandidates = candidates.filter((e) => {
     if (e.provenance?.executionMode !== "real") return false;
     if (routeSetId && e.provenance?.routeSetId !== routeSetId) return false;
-    if (primaryRouteId && e.provenance?.routeId !== primaryRouteId) return false;
+    const provenance = e.provenance as Record<string, unknown> | undefined;
+    const evidencePrimaryRouteId =
+      typeof provenance?.primaryRouteId === "string"
+        ? provenance.primaryRouteId
+        : e.provenance?.routeId;
+    if (primaryRouteId && evidencePrimaryRouteId !== primaryRouteId) return false;
     return true;
   });
 

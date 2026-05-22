@@ -680,6 +680,104 @@ describe("blueprint specs route", () => {
     });
   });
 
+  it("falls back to default sandbox capabilities when LLM routes only contain unknown capability ids", async () => {
+    await withServer(
+      tempRoot,
+      async baseUrl => {
+        const createResponse = await fetch(`${baseUrl}/api/blueprint/jobs`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            targetText:
+              "Verify route generation still invokes runtime bridges when the LLM returns custom capabilities.",
+            githubUrls: ["https://github.com/octocat/hello-world"],
+          }),
+        });
+
+        expect(createResponse.status).toBe(201);
+        const created = (await createResponse.json()) as Record<string, any>;
+        const routeSandboxJob = created.job.artifacts.find(
+          (artifact: any) => artifact.type === "sandbox_derivation_job"
+        )?.payload;
+
+        expect(created.routeSet.provenance.generationSource).toBe("llm");
+        expect(
+          created.routeSet.routes.flatMap((route: any) =>
+            route.capabilities.map((capability: any) => capability.id)
+          )
+        ).toEqual([
+          "runtime-flow-tracing",
+          "role-container-diagnostics",
+        ]);
+        expect(routeSandboxJob.capabilityIds).toEqual(
+          expect.arrayContaining([
+            "mcp-github-source",
+            "docker-analysis-sandbox",
+            "aigc-spec-node",
+            "role-system-architecture",
+            "skill-svg-architecture",
+          ])
+        );
+        expect(routeSandboxJob.invocationIds).toHaveLength(5);
+        expect(routeSandboxJob.evidenceIds).toHaveLength(5);
+      },
+      createMemoryBlueprintJobStore(),
+      {
+        generateClarificationQuestions: async input => ({
+          questions: input.templateQuestions,
+          source: "template",
+        }),
+        routeSetLlmGenerator: async input => ({
+          routes: [
+            {
+              id: input.primaryRouteId,
+              kind: "primary",
+              title: "LLM custom runtime route",
+              summary:
+                "The LLM selected custom capabilities that are not registered runtime bridge adapters.",
+              rationale:
+                "Unknown capability labels should not disable the default sandbox derivation bridge set.",
+              riskLevel: "medium",
+              costLevel: "medium",
+              complexity: "balanced",
+              estimatedEffort: "1 verification pass",
+              capabilities: [
+                {
+                  id: "runtime-flow-tracing",
+                  label: "Runtime flow tracing",
+                  kind: "role",
+                  purpose: "Trace route-generation connectivity.",
+                },
+                {
+                  id: "role-container-diagnostics",
+                  label: "Role container diagnostics",
+                  kind: "role",
+                  purpose: "Inspect role container readiness.",
+                },
+              ],
+              steps: [
+                {
+                  id: "trace-runtime-flow",
+                  title: "Trace runtime flow",
+                  description:
+                    "Verify route-generation sandbox derivation still invokes default runtime bridges.",
+                  role: "Runtime verifier",
+                  status: "ready",
+                },
+              ],
+              outputs: ["Runtime bridge evidence"],
+            },
+          ],
+          provenanceExtras: {
+            generationSource: "llm",
+            promptId: "test-routeset-unknown-capabilities",
+            model: "test-routeset-model",
+          },
+        }),
+      }
+    );
+  });
+
   it("exposes intake and project context on the latest job payload", async () => {
     await withServer(tempRoot, async baseUrl => {
       const intakeResponse = await fetch(`${baseUrl}/api/blueprint/intake`, {
@@ -2728,6 +2826,8 @@ describe("blueprint specs route", () => {
       expect(landed.engineeringLandingPlans).toHaveLength(1);
 
       const plan = landed.engineeringLandingPlans[0];
+      expect(landed.landingPlans).toHaveLength(1);
+      expect(landed.landingPlans[0].id).toBe(plan.id);
       expect(plan).toMatchObject({
         jobId: selected.job.id,
         treeId: selected.specTree.id,
@@ -2782,6 +2882,8 @@ describe("blueprint specs route", () => {
       const read = (await readResponse.json()) as Record<string, any>;
       expect(read.engineeringLandingPlans).toHaveLength(1);
       expect(read.engineeringLandingPlans[0].id).toBe(plan.id);
+      expect(read.landingPlans).toHaveLength(1);
+      expect(read.landingPlans[0].id).toBe(plan.id);
 
       const latestResponse = await fetch(
         `${baseUrl}/api/blueprint/jobs/latest`
@@ -2789,6 +2891,8 @@ describe("blueprint specs route", () => {
       const latest = (await latestResponse.json()) as Record<string, any>;
       expect(latest.engineeringLandingPlans).toHaveLength(1);
       expect(latest.engineeringLandingPlans[0].id).toBe(plan.id);
+      expect(latest.landingPlans).toHaveLength(1);
+      expect(latest.landingPlans[0].id).toBe(plan.id);
       expect(latest.engineeringRuns).toEqual([]);
     });
   });
@@ -6087,44 +6191,49 @@ describe("blueprint agent-crew stage-activation driver E2E", () => {
 
       // The driver should emit events because the patching store ensures
       // structuredRoles is present in evidence. If the hook passes the job
-      // from the store (via get), the driver will find valid evidence.
-      // If the hook passes a local job reference, the driver may still fallback.
-      // Either way, verify the integration is stable:
-      // 1. Job completes successfully with driver enabled
+      // through the stage-start path before terminal completion, the driver
+      // will find valid evidence and record real activation diagnostics.
       expect(created.job.status).toBe("completed");
 
-      // 2. Role events exist (at minimum from static buildRolePresence path)
+      expect(driverRoleEvents.length).toBeGreaterThan(0);
+
+      const diagnosticsResponse = await fetch(`${baseUrl}/api/blueprint/diagnostics`);
+      expect(diagnosticsResponse.status).toBe(200);
+      const diagnostics = (await diagnosticsResponse.json()) as Record<string, any>;
+      expect(diagnostics.bridges.agentCrewStageActivation.mode).toBe("real");
+      expect(
+        diagnostics.bridges.agentCrewStageActivation.realInvocations
+      ).toBeGreaterThan(0);
+
+      // Role events exist from both static buildRolePresence and driver paths.
       const allRoleEvents = (eventsBody.events as any[]).filter((e: any) => e.family === "role");
       expect(allRoleEvents.length).toBeGreaterThan(0);
 
-      // 3. All role event types are valid BlueprintEventName values
+      // All role event types are valid BlueprintEventName values.
       const validTypes = Object.values(BlueprintEventName);
       for (const event of allRoleEvents) {
         expect(validTypes).toContain(event.type);
       }
 
-      // 4. Expected role event types present (role.activated at minimum from static path)
+      // Expected role event types present (role.activated at minimum from static path).
       const roleEventTypes = allRoleEvents.map((e: any) => e.type);
       expect(roleEventTypes).toEqual(expect.arrayContaining([BlueprintEventName.RoleActivated]));
 
-      // 5. If driver events are present, validate their full structure
-      if (driverRoleEvents.length > 0) {
-        for (const event of driverRoleEvents) {
-          expect(event.activationDriverExecutionMode).toBe("real");
-          expect(event.stageAttempt).toBe(1);
-          expect(event.triggeredBy).toBe("stage_started");
-          expect(typeof event.roleLabel).toBe("string");
-          expect(typeof event.sourceEvidenceId).toBe("string");
-          expect(event.presenceState).toBeDefined();
-          expect(event.roleId).toBeDefined();
-          expect(event.stage).toBeDefined();
-        }
-        // Stable role ordering (role-first per payload order)
-        const roleIds = driverRoleEvents.map((e: any) => e.roleId);
-        const payloadOrder = threeRolePayload.roles.map(r => r.id);
-        for (const id of [...new Set(roleIds)]) {
-          expect(payloadOrder).toContain(id);
-        }
+      for (const event of driverRoleEvents) {
+        expect(event.activationDriverExecutionMode).toBe("real");
+        expect(event.stageAttempt).toBe(1);
+        expect(event.triggeredBy).toBe("stage_started");
+        expect(typeof event.roleLabel).toBe("string");
+        expect(typeof event.sourceEvidenceId).toBe("string");
+        expect(event.presenceState).toBeDefined();
+        expect(event.roleId).toBeDefined();
+        expect(event.stage).toBeDefined();
+      }
+      // Stable role ordering (role-first per payload order).
+      const roleIds = driverRoleEvents.map((e: any) => e.roleId);
+      const payloadOrder = threeRolePayload.roles.map(r => r.id);
+      for (const id of [...new Set(roleIds)]) {
+        expect(payloadOrder).toContain(id);
       }
     }, patchingStore);
   });
@@ -7598,9 +7707,12 @@ describe("blueprint autopilot runtime enablement E2E", () => {
         expect(entry.fallbackInvocations).toBe(0);
       }
 
-      // agentCrewStageActivation 不产生 capability invocation；它由 role.* stage
-      // transition evidence 驱动，因此这里允许保持 enabled。
-      expect(diagnostics.bridges.agentCrewStageActivation.mode).toBe("enabled");
+      // agentCrewStageActivation 不产生 capability_invocation artifact；它由
+      // driver-tagged role.* stage transition evidence 驱动 diagnostics real 轨道。
+      const activationEntry = diagnostics.bridges.agentCrewStageActivation;
+      expect(activationEntry.mode).toBe("real");
+      expect(activationEntry.realInvocations).toBeGreaterThan(0);
+      expect(activationEntry.fallbackInvocations).toBe(0);
     });
   });
 

@@ -3,6 +3,8 @@ import type {
   ExecutorEvent,
   ExecutorJobRequest,
   ExecutorJobStatus,
+  ExecutionPlanArtifact,
+  ExecutionPlanJob,
 } from "./contracts.js";
 
 export const EXECUTOR_API_ROUTES = {
@@ -99,6 +101,38 @@ export interface SubmitExecutorEventResponse {
 export interface ExecutorCapabilitiesResponse {
   ok: true;
   capabilities: ExecutorCapabilities;
+}
+
+export interface ExecutorJobSummary {
+  requestId: string;
+  missionId: string;
+  jobId: string;
+  jobKey: string;
+  jobLabel: string;
+  kind: ExecutionPlanJob["kind"];
+  status: ExecutorJobStatus;
+  progress: number;
+  message: string;
+  receivedAt: string;
+  startedAt?: string;
+  finishedAt?: string;
+  errorCode?: string;
+  errorMessage?: string;
+  summary?: string;
+  callbackMode: "pending";
+  artifactCount: number;
+}
+
+export interface ExecutorJobDetail extends ExecutorJobSummary {
+  artifacts: ExecutionPlanArtifact[];
+  events: ExecutorEvent[];
+  dataDirectory: string;
+  logFile: string;
+}
+
+export interface ExecutorJobDetailResponse {
+  ok: true;
+  job: ExecutorJobDetail;
 }
 
 export interface ExecutorApiErrorResponse {

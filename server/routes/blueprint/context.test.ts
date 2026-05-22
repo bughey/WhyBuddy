@@ -1,3 +1,7 @@
+import { mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
+
 import { describe, expect, it, vi } from "vitest";
 
 import type {
@@ -5,6 +9,7 @@ import type {
   BlueprintGenerationJob,
 } from "../../../shared/blueprint/index.js";
 import { BlueprintEventName } from "../../../shared/blueprint/events.js";
+import type { ExecutorClient } from "../../core/executor-client.js";
 import { createMemoryBlueprintJobStore } from "../blueprint.js";
 
 import {
@@ -213,6 +218,149 @@ describe("buildBlueprintServiceContext", () => {
     const e2 = makeEvent("e2");
     ctx.eventBus.emit(e2);
     expect(received).toEqual([e1]);
+  });
+
+  it("assembles roleAgentDelegator with executor real-mode dispatcher when agent pipeline is enabled", async () => {
+    const previousAgentPipeline = process.env.BLUEPRINT_AGENT_DRIVEN_PIPELINE_ENABLED;
+    const previousRoleAgent = process.env.BLUEPRINT_ROLE_AUTONOMOUS_AGENT_ENABLED;
+    const previousBuildTarget = process.env.BUILD_TARGET;
+    process.env.BLUEPRINT_AGENT_DRIVEN_PIPELINE_ENABLED = "true";
+    process.env.BLUEPRINT_ROLE_AUTONOMOUS_AGENT_ENABLED = "true";
+    process.env.BUILD_TARGET = "development";
+
+    const tempDir = mkdtempSync(path.join(tmpdir(), "context-role-agent-real-"));
+    const artifactPath = path.join(tempDir, "agent-output.json");
+    const agentOutput = {
+      jobId: "context-real-job",
+      roleId: "planner",
+      status: "completed" as const,
+      output: {
+        routes: [
+          {
+            title: "Primary runtime path",
+            summary: "Use executor-backed role agent runtime.",
+            kind: "primary",
+          },
+          {
+            title: "Fallback runtime path",
+            summary: "Keep lite mode available for degraded execution.",
+            kind: "alternative",
+          },
+        ],
+      },
+      iterations: 1,
+      totalTokens: 0,
+      durationMs: 25,
+      trace: [],
+    };
+    writeFileSync(artifactPath, `${JSON.stringify(agentOutput)}\n`, "utf-8");
+
+    const assertReachable = vi.fn(async () => undefined);
+    const dispatchPlan = vi.fn(async (_plan, dispatch: { jobId?: string } = {}) => ({
+      request: { executor: "lobster", jobId: dispatch.jobId ?? "executor-job" },
+      response: {
+        ok: true,
+        accepted: true,
+        requestId: "request-1",
+        missionId: "context-real-job",
+        jobId: dispatch.jobId ?? "executor-job",
+        receivedAt: "2026-05-22T00:00:00.000Z",
+      },
+    }));
+    const getJob = vi.fn(async () => ({
+      requestId: "request-1",
+      missionId: "context-real-job",
+      jobId: "executor-job",
+      jobKey: "role_agent.run",
+      jobLabel: "Run role agent",
+      kind: "execute",
+      status: "completed",
+      progress: 100,
+      message: "done",
+      receivedAt: "2026-05-22T00:00:00.000Z",
+      callbackMode: "pending",
+      artifactCount: 1,
+      artifacts: [
+        {
+          kind: "report",
+          name: "agent-output.json",
+          path: artifactPath,
+          previewType: "json",
+        },
+      ],
+      events: [],
+      dataDirectory: tempDir,
+      logFile: path.join(tempDir, "executor.log"),
+    }));
+
+    try {
+      const ctx = buildBlueprintServiceContext({
+        jobStore: createMemoryBlueprintJobStore(),
+        llm: {
+          callJson: vi.fn(async () => ({
+            finish: { output: agentOutput.output },
+            thought: "test fallback",
+          })) as unknown as typeof ctxLlmCallJsonFixture,
+          getConfig: vi.fn().mockReturnValue({
+            apiKey: "fake",
+            baseURL: "https://example.test",
+            model: "fake-model",
+          }),
+        },
+        executorClient: {
+          assertReachable,
+          dispatchPlan,
+          getJob,
+        } as unknown as ExecutorClient,
+      });
+
+      expect(ctx.roleAgentDelegator).toBeDefined();
+      const out = await ctx.roleAgentDelegator!.delegate({
+        roleId: "planner",
+        stageId: "route_generation",
+        jobId: "context-real-job",
+        goal: "Generate routes through real mode",
+        systemPrompt: "You are a planner",
+        context: {
+          routeSetId: "routeset-context",
+          primaryRouteId: "routeset-context:primary",
+          request: { targetText: "Runtime connectivity" },
+        },
+        budget: {
+          maxIterations: 5,
+          maxTokens: 20_000,
+          timeoutMs: 30_000,
+          toolTimeoutMs: 5_000,
+          allowParallelTools: false,
+        },
+        outputSchema: {
+          type: "object",
+          required: ["routes"],
+          properties: { routes: { type: "array" } },
+        },
+      });
+
+      expect(out.executionMode).toBe("real");
+      expect(assertReachable).toHaveBeenCalled();
+      expect(dispatchPlan).toHaveBeenCalledTimes(1);
+      expect(getJob).toHaveBeenCalled();
+    } finally {
+      if (previousAgentPipeline === undefined) {
+        delete process.env.BLUEPRINT_AGENT_DRIVEN_PIPELINE_ENABLED;
+      } else {
+        process.env.BLUEPRINT_AGENT_DRIVEN_PIPELINE_ENABLED = previousAgentPipeline;
+      }
+      if (previousRoleAgent === undefined) {
+        delete process.env.BLUEPRINT_ROLE_AUTONOMOUS_AGENT_ENABLED;
+      } else {
+        process.env.BLUEPRINT_ROLE_AUTONOMOUS_AGENT_ENABLED = previousRoleAgent;
+      }
+      if (previousBuildTarget === undefined) {
+        delete process.env.BUILD_TARGET;
+      } else {
+        process.env.BUILD_TARGET = previousBuildTarget;
+      }
+    }
   });
 });
 

@@ -22,6 +22,19 @@ import { createHash } from "node:crypto";
 
 export const ROLE_ARCHITECTURE_PROMPT_ID = "blueprint.role-architecture.v1";
 
+const CANONICAL_BLUEPRINT_STAGES = [
+  { stage: "input", label: "Input" },
+  { stage: "clarification", label: "Clarification" },
+  { stage: "route_generation", label: "Route Generation" },
+  { stage: "spec_tree", label: "SPEC Tree" },
+  { stage: "spec_docs", label: "SPEC Documents" },
+  { stage: "effect_preview", label: "Effect Preview" },
+  { stage: "prompt_packaging", label: "Prompt Packaging" },
+  { stage: "runtime_capability", label: "Runtime Capability" },
+  { stage: "engineering_handoff", label: "Engineering Handoff" },
+  { stage: "engineering_landing", label: "Engineering Landing" },
+] as const;
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -133,7 +146,10 @@ export function buildRoleArchitecturePrompt(
   }));
 
   // selectedRoute.stagesSummary: preserve routeSet.stagesSummary input order
-  const stagesSummary = routeSet.stagesSummary ?? [];
+  const stagesSummary =
+    routeSet.stagesSummary && routeSet.stagesSummary.length > 0
+      ? routeSet.stagesSummary
+      : CANONICAL_BLUEPRINT_STAGES.map((stage) => ({ ...stage }));
 
   // alternativeRoutes: exclude primaryRouteId, preserve input order, keep id/title/summary
   const alternativeRoutes = routeSet.routes

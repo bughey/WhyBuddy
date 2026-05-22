@@ -97,6 +97,105 @@ function createId(prefix: string): string {
   return `${prefix}-${randomUUID()}`;
 }
 
+type DriverRoute = {
+  id: string;
+  stages?: BlueprintGenerationStage[];
+};
+
+type DriverRouteSet = {
+  id?: string;
+  primaryRouteId?: string;
+  routes: DriverRoute[];
+};
+
+const CANONICAL_BLUEPRINT_STAGES: BlueprintGenerationStage[] = [
+  "input",
+  "clarification",
+  "route_generation",
+  "spec_tree",
+  "spec_docs",
+  "effect_preview",
+  "prompt_packaging",
+  "runtime_capability",
+  "engineering_handoff",
+  "engineering_landing",
+];
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function readRouteSet(value: unknown): DriverRouteSet | undefined {
+  if (!isRecord(value) || !Array.isArray(value.routes)) {
+    return undefined;
+  }
+
+  const routes = value.routes
+    .filter(isRecord)
+    .map((route): DriverRoute | undefined => {
+      if (typeof route.id !== "string" || route.id.length === 0) {
+        return undefined;
+      }
+      return {
+        id: route.id,
+        stages: Array.isArray(route.stages)
+          ? route.stages.filter(
+              (stage): stage is BlueprintGenerationStage =>
+                typeof stage === "string",
+            )
+          : undefined,
+      };
+    })
+    .filter((route): route is DriverRoute => route !== undefined);
+
+  if (routes.length === 0) {
+    return undefined;
+  }
+
+  return {
+    id: typeof value.id === "string" ? value.id : undefined,
+    primaryRouteId:
+      typeof value.primaryRouteId === "string" ? value.primaryRouteId : undefined,
+    routes,
+  };
+}
+
+function resolveRouteSet(job: BlueprintGenerationJob): DriverRouteSet | undefined {
+  const direct = readRouteSet((job as Record<string, unknown>).routeSet);
+  if (direct) {
+    return direct;
+  }
+
+  for (const artifact of job.artifacts) {
+    if (artifact.type !== ("route_set" as string)) {
+      continue;
+    }
+    const fromArtifact = readRouteSet(artifact.payload);
+    if (fromArtifact) {
+      return fromArtifact;
+    }
+  }
+
+  return undefined;
+}
+
+function resolvePrimaryRouteId(
+  job: BlueprintGenerationJob,
+  routeSet: DriverRouteSet | undefined,
+): string | undefined {
+  const stageState = (job as Record<string, unknown>).stageState;
+  const nextAction = isRecord(stageState)
+    ? stageState.nextAction
+    : undefined;
+  const stageRouteId = isRecord(nextAction)
+    ? nextAction.routeId
+    : undefined;
+
+  return typeof stageRouteId === "string"
+    ? stageRouteId
+    : routeSet?.primaryRouteId;
+}
+
 // ─── Factory (§4.6 7-step algorithm) ────────────────────────────────────────
 
 export function createAgentCrewStageActivationDriver(
@@ -189,24 +288,11 @@ export function createAgentCrewStageActivationDriver(
       }
 
       // Step 4: Evidence lookup (5 gates)
+      const routeSet = resolveRouteSet(input.job);
       const routeSetId =
         (input.job.request as Record<string, unknown> | undefined)
-          ?.routeSetId as string | undefined;
-      const primaryRouteId =
-        (
-          (input.job as Record<string, unknown>).stageState as
-            | Record<string, unknown>
-            | undefined
-        )?.nextAction
-          ? ((
-              (input.job as Record<string, unknown>).stageState as Record<
-                string,
-                unknown
-              >
-            ).nextAction as Record<string, unknown>).routeId as
-              | string
-              | undefined
-          : undefined;
+          ?.routeSetId as string | undefined ?? routeSet?.id;
+      const primaryRouteId = resolvePrimaryRouteId(input.job, routeSet);
 
       const lookup = findRoleArchitectureEvidence({
         job: input.job,
@@ -224,10 +310,6 @@ export function createAgentCrewStageActivationDriver(
       const { evidence, payload } = lookup;
 
       // Step 5: Parse primaryRoute
-      const routeSet = (input.job as Record<string, unknown>).routeSet as
-        | { routes: Array<{ id: string; stages?: BlueprintGenerationStage[] }> }
-        | undefined;
-
       const primaryRoute = routeSet?.routes.find(
         (r) => r.id === primaryRouteId
       ) ?? routeSet?.routes[0];
@@ -238,11 +320,9 @@ export function createAgentCrewStageActivationDriver(
       }
 
       const primaryRouteStages: BlueprintGenerationStage[] =
-        primaryRoute.stages ?? [];
-      if (primaryRouteStages.length === 0) {
-        enterFallback("primary route has no stages");
-        return;
-      }
+        primaryRoute.stages && primaryRoute.stages.length > 0
+          ? primaryRoute.stages
+          : CANONICAL_BLUEPRINT_STAGES;
 
       // Step 6: Derive state map
       const stateMap = deriveStageRoleStateMap({

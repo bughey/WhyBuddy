@@ -87,6 +87,10 @@ describe("LifecycleManager.createWithFallback", () => {
       expect(container.image).toBe("lobster-executor:default");
     }
     expect(dispatchPlan).toHaveBeenCalledTimes(1);
+    const [plan, dispatchOptions] = dispatchPlan.mock.calls[0]!;
+    expect((plan as { jobs: Array<{ id: string }> }).jobs[0].id).toBe(
+      dispatchOptions?.jobId,
+    );
   });
 
   it("(b) real unreachable → lite 带 fallbackReason", async () => {
