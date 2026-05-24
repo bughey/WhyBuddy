@@ -6,7 +6,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { useBlueprintRealtimeStore, __setSocket } from "../blueprint-realtime-store.js";
+import { useBlueprintRealtimeStore, __setSocket, __setHydrateHistoricalEventsForTest } from "../blueprint-realtime-store.js";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -170,5 +170,61 @@ describe("BlueprintRealtimeStore — agentReasoning slice", () => {
       payload: { iteration: 3, roleId: "planner", stageId: "route_generation" },
     }));
     expect(useBlueprintRealtimeStore.getState().agentReasoning.status).toBe("completed");
+  });
+
+  it("subscribe(jobId) 后 hydrate 历史 role.agent.* 事件 → entries 被 seed，重复 id 不会被覆盖", async () => {
+    // 注入 mock socket，避免真实连接
+    const mockSocket = {
+      on: vi.fn(),
+      off: vi.fn(),
+      emit: vi.fn(),
+      connected: true,
+    };
+    __setSocket(mockSocket as any);
+
+    // 注入 hydration mock：返回两条历史 role.agent.* 事件
+    const historicalEvents = [
+      {
+        id: "evt-h-1",
+        jobId: "job-restored",
+        type: "role.agent.iteration_started",
+        family: "role",
+        occurredAt: "2026-05-24T10:00:00.000Z",
+        stage: "spec_docs",
+        status: "running",
+        payload: { iteration: 1, roleId: "spec-writer", stageId: "spec_docs" },
+      },
+      {
+        id: "evt-h-2",
+        jobId: "job-restored",
+        type: "role.agent.thinking",
+        family: "role",
+        occurredAt: "2026-05-24T10:00:01.000Z",
+        stage: "spec_docs",
+        status: "running",
+        payload: { iteration: 1, roleId: "spec-writer", stageId: "spec_docs", thought: "起草 requirements" },
+      },
+    ];
+    __setHydrateHistoricalEventsForTest(async () => historicalEvents as any);
+
+    try {
+      // subscribe → 应当触发 hydration
+      useBlueprintRealtimeStore.getState().subscribe("job-restored");
+
+      // hydration 是 async；等一个 microtask 让 promise 跑完
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+
+      const state = useBlueprintRealtimeStore.getState();
+      expect(state.subscribedJobId).toBe("job-restored");
+      expect(state.agentReasoning.jobId).toBe("job-restored");
+      expect(state.agentReasoning.entries.length).toBe(2);
+      // currentIteration 应根据 iteration_started 推进
+      expect(state.agentReasoning.currentIteration).toBe(1);
+    } finally {
+      __setHydrateHistoricalEventsForTest(null);
+      __setSocket(null as any);
+    }
   });
 });

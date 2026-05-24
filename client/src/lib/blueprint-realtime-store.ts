@@ -29,6 +29,38 @@ import type { BlueprintGenerationEvent } from "@shared/blueprint/contracts";
 // 场景下消费同一份 contract（Task 8.1 要求保留该 import）。
 export type { AgentReasoningEntry, AgentReasoningPhase };
 
+// `autopilot-history-replay` integration（2026-05-24）：
+// 页面刷新或阶段切换后，前端 store 默认空。Socket 房间不会重放历史事件，
+// 因此需要从 REST `/api/blueprint/jobs/:id/events` 拉取已落盘的 `role.agent.*`
+// 事件并 seed 到 agentReasoning slice。fetch 函数延迟 import，避免循环依赖
+// 与 SSR 路径在没有 fetch polyfill 时报错。
+type HydrateHistoricalEventsFn = (jobId: string) => Promise<
+  BlueprintGenerationEvent[] | null
+>;
+let hydrateHistoricalEvents: HydrateHistoricalEventsFn = async (jobId) => {
+  if (typeof window === "undefined" || typeof fetch === "undefined") {
+    return null;
+  }
+  try {
+    const mod = await import("./blueprint-api");
+    const result = await mod.fetchBlueprintJobEvents(jobId);
+    if (!result.ok) return null;
+    return result.data.events;
+  } catch {
+    return null;
+  }
+};
+
+/**
+ * 仅供测试注入的 hydration 入口；测试可替换为返回 mock 历史事件的 fn，避免
+ * 在 vitest 环境中触发真实 fetch。
+ */
+export function __setHydrateHistoricalEventsForTest(
+  fn: HydrateHistoricalEventsFn | null
+): void {
+  hydrateHistoricalEvents = fn ?? (async () => null);
+}
+
 // ---------------------------------------------------------------------------
 // 类型定义
 // ---------------------------------------------------------------------------
@@ -502,6 +534,46 @@ function buildLogEntry(event: BlueprintRelayedEvent): BlueprintLogEntry {
  * 该适配只服务于 agentReasoning slice 写入，不影响既有 logEntries / agentProgress
  * 等其它 slice 的字段 shape。
  */
+/**
+ * Flatten a persisted `BlueprintGenerationEvent`'s payload fields onto the
+ * top-level event shape so that `buildEntryFromSocketEvent` (which reads
+ * top-level only via the `ExtendedAgentEvent` intersection) can hydrate the
+ * AgentReasoningEntry correctly. Used during REST history replay where events
+ * come back in their persisted shape (iteration / thought / stageId in payload,
+ * per `server/routes/blueprint/stage-progress-emitter.ts`).
+ */
+function flattenHistoricalAgentEvent(
+  event: BlueprintGenerationEvent
+): BlueprintGenerationEvent {
+  const payloadRecord = (event.payload ?? {}) as Record<string, unknown>;
+  return {
+    ...event,
+    iteration: pickFiniteNumber(payloadRecord.iteration) ?? event.iteration,
+    stageId: pickStringField(payloadRecord.stageId) ?? event.stageId,
+    roleId: pickStringField(payloadRecord.roleId) ?? event.roleId,
+    thought: pickStringField(payloadRecord.thought) ?? event.thought,
+    actionToolId:
+      pickStringField(payloadRecord.actionToolId) ?? event.actionToolId,
+    observationSuccess:
+      typeof payloadRecord.observationSuccess === "boolean"
+        ? payloadRecord.observationSuccess
+        : event.observationSuccess,
+    observationSummary:
+      pickStringField(payloadRecord.observationSummary) ??
+      event.observationSummary,
+    error: pickStringField(payloadRecord.error) ?? event.error,
+    degraded:
+      typeof payloadRecord.degraded === "boolean"
+        ? payloadRecord.degraded
+        : event.degraded,
+    reason: pickStringField(payloadRecord.reason) ?? event.reason,
+    tokensUsed:
+      pickFiniteNumber(payloadRecord.tokensUsed) ?? event.tokensUsed,
+    budgetRemaining:
+      pickFiniteNumber(payloadRecord.budgetRemaining) ?? event.budgetRemaining,
+  };
+}
+
 function buildAgentReasoningEvent(
   event: BlueprintRelayedEvent
 ): BlueprintGenerationEvent {
@@ -695,6 +767,62 @@ export const useBlueprintRealtimeStore = create<
       s.emit("blueprint:subscribe", { jobId });
       set({ connectionState: "connected" });
     }
+
+    // `autopilot-history-replay` integration（2026-05-24）：
+    // 页面刷新 / 阶段切换后从 REST 拉取已落盘的 role.agent.* 事件,seed 到
+    // agentReasoning.entries,避免"暂无推理记录"占位永远停留。fire-and-forget;
+    // 失败时静默回退到只显示实时事件。重入安全：通过 subscribedJobId 比对
+    // 防止竞态时旧 hydration 覆盖新 jobId 的状态。
+    void hydrateHistoricalEvents(jobId).then((historicalEvents) => {
+      if (!historicalEvents || historicalEvents.length === 0) return;
+      const currentState = get();
+      if (currentState.subscribedJobId !== jobId) return;
+
+      const seedEntries: AgentReasoningEntry[] = [];
+      let maxIteration = currentState.agentReasoning.currentIteration;
+      for (const event of historicalEvents) {
+        // 持久化事件把 iteration / thought / stageId 等字段写在 payload 里
+        // （见 server/routes/blueprint/stage-progress-emitter.ts），与实时
+        // socket relay 事件相同。先做一次与 buildAgentReasoningEvent() 等价
+        // 的扁平化，让 buildEntryFromSocketEvent 能正确读到字段。
+        const flattened = flattenHistoricalAgentEvent(event);
+        const entry = buildEntryFromSocketEvent(flattened);
+        if (entry === null) continue;
+        seedEntries.push(entry);
+        if (
+          event.type === "role.agent.iteration_started" &&
+          typeof entry.iteration === "number" &&
+          entry.iteration > maxIteration
+        ) {
+          maxIteration = entry.iteration;
+        }
+      }
+      if (seedEntries.length === 0) return;
+
+      // 与 dispatchEvent 收到的实时事件按 entry.id 去重：相同 id 优先保留
+      // 历史事件版本（更稳定），实时增量只补充新 id。
+      const dedup = new Map<string, AgentReasoningEntry>();
+      for (const entry of seedEntries) dedup.set(entry.id, entry);
+      for (const entry of currentState.agentReasoning.entries) {
+        if (!dedup.has(entry.id)) dedup.set(entry.id, entry);
+      }
+      let next = Array.from(dedup.values());
+      if (next.length > MAX_AGENT_REASONING_ENTRIES) {
+        next = next.slice(-MAX_AGENT_REASONING_ENTRIES);
+      }
+
+      set((latest) => {
+        if (latest.subscribedJobId !== jobId) return {};
+        return {
+          agentReasoning: {
+            jobId,
+            entries: next,
+            currentIteration: maxIteration,
+            status: latest.agentReasoning.status,
+          },
+        };
+      });
+    });
 
     function handleConnect() {
       set({ connectionState: "connected" });

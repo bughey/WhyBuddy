@@ -8621,7 +8621,14 @@ async function selectRouteForSpecTree(
     createdAt: selectedAt,
     payload: roleTimelineCollection,
   };
-  const events = job.events.concat([
+  // 2026-05-24 修复：spec_tree 派生过程中通过 stage-progress-emitter 发射的
+  // role.agent.* 事件会被 BlueprintEventBus.persistToJobStore 写入到 jobStore，
+  // 但本函数收到的 `job` 参数是 derive 开始前的 snapshot，直接 `job.events.concat`
+  // 会把这些异步落盘的事件丢掉，导致刷新页面后 GET /jobs/:id/events 看不到推理流。
+  // 此处从 jobStore 读取最新 events 作为基准，避免覆盖。
+  const latestPersistedEvents =
+    options.store.get(job.id)?.events ?? job.events;
+  const events = latestPersistedEvents.concat([
     createGenerationEvent({
       jobId: job.id,
       stage: "spec_tree",
