@@ -37,6 +37,8 @@ export interface UseAutoAdvanceOptions {
   specTree: BlueprintSpecTree | null;
   rightRailSpecTree?: BlueprintSpecTree | null;
   generationActions?: UseAutoAdvanceActions;
+  /** User's preferred locale, passed to generation requests. */
+  locale?: "zh-CN" | "en-US";
   /** 当阶段推进成功后调用,让父组件刷新数据 */
   onAdvanced: (nextSubStage?: AutopilotRailSubStage) => void;
 }
@@ -94,6 +96,7 @@ export function useAutoAdvance({
   specTree,
   rightRailSpecTree,
   generationActions,
+  locale,
   onAdvanced,
 }: UseAutoAdvanceOptions): UseAutoAdvanceResult {
   const [advancing, setAdvancing] = useState(false);
@@ -284,6 +287,7 @@ export function useAutoAdvance({
       void advance("spec_docs", async () => {
         const result = await actions.generateSpecDocuments(jobId, {
           types: ["requirements", "design", "tasks"],
+          locale,
         });
         return { ok: result.ok, error: result.ok ? undefined : result.error };
       });

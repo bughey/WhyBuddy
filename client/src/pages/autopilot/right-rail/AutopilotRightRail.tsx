@@ -80,7 +80,6 @@ import {
   type AutopilotLocalStage,
   type RightRailStaleArtifact,
 } from "../stage-edit";
-import { HistoryEntryPoint, useFamilyData } from "../version-history";
 import {
   RAIL_SUB_STAGE_ORDER,
   type AutopilotRailSubStage,
@@ -529,11 +528,29 @@ function ActiveNodeContent({
 }) {
   const isZh = locale === "zh-CN";
   const isSpecTreeStage = subStage === "spec_tree";
+  const anyGenerating = generating !== null;
+  const generatingAll = generating === "all";
 
   return (
     <div className="px-2 py-1.5 space-y-2">
-      <div className="font-mono text-[10px] text-slate-400">
-        {summary.apiPath}
+      <div className="flex items-center justify-between gap-2">
+        <div className="font-mono text-[10px] text-slate-400 truncate">
+          {summary.apiPath}
+        </div>
+        {/* 一键生成全部规格文档按钮 — 放在 API path 右侧，醒目位置 */}
+        {isSpecTreeStage && (
+          <button
+            type="button"
+            data-testid="spec-tree-generate-all-header"
+            disabled={anyGenerating}
+            onClick={onGenerateAll}
+            className="flex-shrink-0 rounded-md bg-slate-900 px-3 py-1 text-[11px] font-bold text-white transition hover:bg-slate-700 disabled:bg-slate-400 disabled:cursor-not-allowed"
+          >
+            {generatingAll
+              ? (isZh ? "生成中..." : "Generating...")
+              : (isZh ? "生成全部" : "Generate All")}
+          </button>
+        )}
       </div>
       <div className="text-xs leading-5 text-slate-600">
         {summary.summary}
@@ -621,16 +638,6 @@ export const AutopilotRightRail: FC<AutopilotRightRailProps> = (props) => {
       explicitSubStage: currentSubStageFromProps,
       jobStage: job?.stage,
     });
-  const historyJobId = props.jobId || props.job?.id || null;
-  const historyFamilyState = useFamilyData({
-    jobId: historyJobId,
-    enabled: Boolean(historyJobId),
-    disableRemoteFetch: IS_GITHUB_PAGES,
-  });
-  const historyFamilyCount = resolveHistoryEntryFamilyCount({
-    familyJobCount: historyFamilyState.data?.jobs.length,
-    hasParentJob: Boolean(props.job?.parentJobId),
-  });
 
   const activeIndex =
     activeSubStage !== undefined
@@ -1016,7 +1023,7 @@ export const AutopilotRightRail: FC<AutopilotRightRailProps> = (props) => {
       setSpecDocsError(null);
       const result = await generateSpecDocuments(
         props.jobId,
-        scope === "single" && nodeId !== undefined ? { nodeId } : {}
+        scope === "single" && nodeId !== undefined ? { nodeId, locale } : { locale }
       );
       setSpecDocsGenerating(null);
       if (result.ok) {
@@ -1030,6 +1037,7 @@ export const AutopilotRightRail: FC<AutopilotRightRailProps> = (props) => {
       props.jobId,
       specDocsGenerating,
       props.onSpecDocumentsGenerated,
+      locale,
     ]
   );
 
@@ -1074,17 +1082,6 @@ export const AutopilotRightRail: FC<AutopilotRightRailProps> = (props) => {
     replanReason,
   ]);
 
-  const handleOpenHistory = useCallback((jobId: string) => {
-    if (typeof window === "undefined") return;
-    const url = new URL(window.location.href);
-    url.searchParams.set("history", "1");
-    url.searchParams.set("activeJob", jobId);
-    window.history.pushState({}, "", url);
-    window.dispatchEvent(
-      new CustomEvent("autopilot:history-open", { detail: { jobId } }),
-    );
-  }, []);
-
   const handleRegenerateStaleStage = useCallback(
     (stage: AutopilotLocalStage) => {
       if (stage === "spec_documents" || stage === "spec_tree") {
@@ -1124,6 +1121,7 @@ export const AutopilotRightRail: FC<AutopilotRightRailProps> = (props) => {
       data-autopilot-stage={currentStage}
       data-autopilot-sub-stage={activeSubStage ?? ""}
       className="flex h-full flex-col p-2"
+      data-mf-card
       style={{
         // 硬约束 aside 宽度。父级是 grid track minmax(0, 2fr)，正常情况下
         // 应该自然限制宽度，但右栏内部多层 flex / motion.div / overflow 嵌套
@@ -1143,18 +1141,9 @@ export const AutopilotRightRail: FC<AutopilotRightRailProps> = (props) => {
 
       {/* autopilot-streaming-experience integration-gap-2026-05-16 UI 消费面 Step 1：角色态条带 */}
       <div
-        className="mb-2 flex flex-wrap items-center gap-2 px-1"
+        className="mb-2 flex flex-shrink-0 flex-wrap items-center gap-2 px-1"
         data-testid="autopilot-right-rail-action-strip"
       >
-        <HistoryEntryPoint
-          jobId={historyJobId}
-          locale={locale}
-          familyCount={historyFamilyCount}
-          staleCount={props.job?.staleArtifactIds?.length ?? 0}
-          staticPreview={IS_GITHUB_PAGES}
-          disabled={IS_GITHUB_PAGES}
-          onOpen={handleOpenHistory}
-        />
         <ReplanButton
           viewingStage={currentGenerationStage}
           stageStatus={normalizeReplanStatus(props.job?.status)}
@@ -1201,7 +1190,9 @@ export const AutopilotRightRail: FC<AutopilotRightRailProps> = (props) => {
         onRegenerate={handleRegenerateStaleStage}
       />
 
-      <RoleStatusStrip />
+      <div className="flex-shrink-0 overflow-x-auto pt-1">
+        <RoleStatusStrip />
+      </div>
 
       {/* 阶段独占视口 — 包一层 flex-1 min-h-0 让它占满 aside 剩余高度，
           避免大屏下 StageViewport 内容只占 content-height、底部出现白色空白带。 */}

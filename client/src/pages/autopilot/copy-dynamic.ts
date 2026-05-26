@@ -18,11 +18,29 @@
 import type { AppLocale } from "@/lib/locale";
 
 const DYNAMIC_ZH_COPY: Record<string, string> = {
+  // ─── Route names ──────────────────────────────────────────────────────────
   "Primary SPEC asset route": "主路线：SPEC 资产路线",
   "Documentation-first conservative route": "备选路线：文档优先稳态路线",
   "Preview-first exploratory route": "备选路线：效果预演探索路线",
+  "Primary runtime path": "主路线：运行时路径",
+  "Fallback runtime path": "备选路线：降级运行时路径",
+  "LLM custom runtime route": "LLM 自定义运行时路线",
+
+  // ─── Route descriptions / summaries ───────────────────────────────────────
   "Primary and alternative routes prepared for SPEC tree derivation.":
     "已为 SPEC 树推导准备主路线与备选路线。",
+  "Use executor-backed role agent runtime.":
+    "使用执行器支撑的角色代理运行时。",
+  "Keep lite mode available for degraded execution.":
+    "保留轻量模式以支持降级执行。",
+  "Clarify the requested product direction, derive the durable SPEC tree, then expand documents, preview, and implementation prompts.":
+    "澄清产品方向，推导可沉淀的 SPEC 树，再扩展规格文档、效果预演和实现提示词。",
+  "Create a narrower SPEC tree first, freeze requirements/design/tasks, then preview and package prompts after review.":
+    "先创建更收敛的 SPEC 树，评审后冻结 requirements / design / tasks，再生成预演和提示词。",
+  "Push route analysis toward effect preview early, then backfill SPEC documents from the selected prototype direction.":
+    "更早进入效果预演，再从选定的原型方向回填 SPEC 文档。",
+
+  // ─── Stage step labels ────────────────────────────────────────────────────
   "Clarify execution intent": "澄清执行意图",
   "Scan GitHub source": "扫描 GitHub 源码",
   "Map capability pool": "映射能力池",
@@ -37,15 +55,20 @@ const DYNAMIC_ZH_COPY: Record<string, string> = {
     "将主路线与备选路线节点转成可编辑的 SPEC 树资产。",
   "Prepare the downstream effect preview, architecture diagram, and implementation prompt package.":
     "准备下游效果预演、架构图与实现提示词包。",
-  "Clarify the requested product direction, derive the durable SPEC tree, then expand documents, preview, and implementation prompts.":
-    "澄清产品方向，推导可沉淀的 SPEC 树，再扩展规格文档、效果预演和实现提示词。",
-  "Create a narrower SPEC tree first, freeze requirements/design/tasks, then preview and package prompts after review.":
-    "先创建更收敛的 SPEC 树，评审后冻结 requirements / design / tasks，再生成预演和提示词。",
-  "Push route analysis toward effect preview early, then backfill SPEC documents from the selected prototype direction.":
-    "更早进入效果预演，再从选定的原型方向回填 SPEC 文档。",
   "Analyze source safely in an isolated runtime.":
     "在隔离运行时中安全分析源码。",
   "Build RBAC with audit evidence.": "构建带审计证据的 RBAC。",
+  "Specification document generation": "规格文档生成",
+  "Confirm source SPEC coverage": "确认源 SPEC 覆盖度",
+  "Select a route for SPEC tree derivation.": "选择路线以推导 SPEC 树。",
+
+  // ─── Clarification legacy patterns ────────────────────────────────────────
+  "What is the primary goal of this project?": "这个项目的主要目标是什么？",
+  "Who are the target users?": "目标用户是谁？",
+  "What are the key constraints or boundaries?": "关键约束或边界是什么？",
+  "What does success look like for this feature?": "这个功能的成功标准是什么？",
+  "Are there any existing systems this needs to integrate with?":
+    "是否有需要集成的现有系统？",
 };
 
 export function copyDynamic(locale: AppLocale, value: string | undefined): string {

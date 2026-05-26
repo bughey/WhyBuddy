@@ -113,16 +113,19 @@ describe("RoleStatusStrip render contract", () => {
 
     const markup = renderToStaticMarkup(<RoleStatusStrip />);
 
-    const analyzerIdx = markup.indexOf(">analyzer<");
-    const plannerIdx = markup.indexOf(">planner<");
-    const reviewerIdx = markup.indexOf(">reviewer<");
+    // autopilot-i18n-consistency: roleIds are now localized via resolveRoleLabel.
+    // Default locale is zh-CN, so we check for Chinese labels.
+    // Sort order is still by raw roleId (alphabetical): analyzer < planner < reviewer
+    const analyzerIdx = markup.indexOf(">分析师<");
+    const plannerIdx = markup.indexOf(">规划师<");
+    const reviewerIdx = markup.indexOf(">评审员<");
 
-    // 三个 badge 都必须出现
+    // 三个 badge 都必须出现（以本地化标签形式）
     expect(analyzerIdx).toBeGreaterThan(-1);
     expect(plannerIdx).toBeGreaterThan(-1);
     expect(reviewerIdx).toBeGreaterThan(-1);
 
-    // 字母序：analyzer < planner < reviewer
+    // 字母序（按 raw roleId 排序）：analyzer < planner < reviewer
     expect(analyzerIdx).toBeLessThan(plannerIdx);
     expect(plannerIdx).toBeLessThan(reviewerIdx);
   });

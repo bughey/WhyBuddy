@@ -21,9 +21,12 @@ import {
   useBlueprintRealtimeStore,
   type RolePhase,
 } from "@/lib/blueprint-realtime-store";
+import { useAppStore } from "@/lib/store";
+import type { AppLocale } from "@/lib/locale";
 
 import { RoleCrewDots } from "./crew-activation/RoleCrewDots";
 import { useRoleCrewState } from "./crew-activation/useRoleCrewState";
+import { resolveRoleLabel, resolveStageLabel } from "./role-labels";
 
 /**
  * 8 类相位 + idle 默认色到 Tailwind class 的稳定映射。
@@ -58,15 +61,8 @@ function resolvePhaseClass(phase: RolePhase | undefined): string {
   return PHASE_BADGE_CLASS[phase] ?? PHASE_BADGE_CLASS.idle;
 }
 
-/** 阶段索引到简短标签的映射 */
-const STAGE_LABELS: Record<number, string> = {
-  0: "Stage 0",
-  1: "Stage 1",
-  2: "Stage 2",
-  3: "Stage 3",
-  4: "Stage 4",
-  5: "Stage 5",
-};
+/** 阶段索引到简短标签的映射 — 已迁移到 role-labels.ts，此处保留注释供追溯 */
+// See: ./role-labels.ts — resolveStageLabel(index, locale)
 
 /**
  * 横向角色态条带。无 props：roleId 是稳定标识符（如 `planner` / `analyzer`），
@@ -78,6 +74,10 @@ const STAGE_LABELS: Record<number, string> = {
 export const RoleStatusStrip: FC = () => {
   const rolePhases = useBlueprintRealtimeStore((s) => s.rolePhases);
   const { roles, currentStageIndex } = useRoleCrewState();
+  // Explicit exception to right-rail props-only convention: RoleStatusStrip
+  // already consumes useBlueprintRealtimeStore directly as a store-consumer
+  // observation strip, so reading locale from useAppStore is consistent.
+  const locale = useAppStore((s) => s.locale) as AppLocale;
 
   // 防御性兜底：rolePhases 在 store 的初始 state 中即为 `{}`，正常路径下不会
   // 是 undefined / null。但为了让本组件不依赖具体测试 mock 的字段完整度，
@@ -96,7 +96,7 @@ export const RoleStatusStrip: FC = () => {
 
   return (
     <div
-      className="flex flex-col gap-1 max-h-[48px]"
+      className="flex flex-col gap-1"
       data-testid="role-status-strip"
     >
       {/* 角色状态圆点序列 + 阶段标签 */}
@@ -104,12 +104,12 @@ export const RoleStatusStrip: FC = () => {
         <div className="flex items-center gap-2">
           <RoleCrewDots roles={roles} size="sm" />
           <span className="text-[10px] font-mono text-slate-400 whitespace-nowrap">
-            {STAGE_LABELS[currentStageIndex] ?? `Stage ${currentStageIndex}`}
+            {resolveStageLabel(currentStageIndex, locale)}
           </span>
         </div>
       )}
 
-      {/* 原有 badge 列表 */}
+      {/* 原有 badge 列表 — 现在使用 resolveRoleLabel 显示本地化标签 */}
       <div className="flex flex-wrap gap-1.5">
         {sortedEntries.map(([roleId, phase]) => (
           <span
@@ -117,7 +117,7 @@ export const RoleStatusStrip: FC = () => {
             className={`px-2 py-0.5 rounded-full text-[10px] font-bold max-w-[120px] overflow-hidden text-ellipsis whitespace-nowrap ${resolvePhaseClass(phase)}`}
             title={`${roleId} · ${phase}`}
           >
-            {roleId}
+            {resolveRoleLabel(roleId, locale)}
           </span>
         ))}
       </div>

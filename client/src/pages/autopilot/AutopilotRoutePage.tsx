@@ -29,6 +29,9 @@ import type { LucideIcon } from "lucide-react";
 
 import { Scene3D } from "@/components/Scene3D";
 import { HoloDrawer } from "@/components/HoloDrawer";
+import { MirofishThemeProvider } from "@/contexts/MirofishThemeContext";
+import { useMirofishTheme } from "@/hooks/useMirofishTheme";
+import { useMirofishMotionProps } from "@/hooks/useMirofishMotionProps";
 import { PROJECTS_PATH, SPECS_PATH } from "@/components/navigation-config";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -114,6 +117,7 @@ import {
 import { EditModeField, runInlineEditFlow } from "./stage-edit";
 import {
   CompareView,
+  HistoryEntryPoint,
   ReplanTimelineView,
   VersionTreeView,
   useFamilyData,
@@ -121,6 +125,7 @@ import {
   withActiveJobSearchParam,
   type VersionHistoryJob,
 } from "./version-history";
+import { resolveHistoryEntryFamilyCount } from "./right-rail/AutopilotRightRail";
 
 const AUTOPILOT_HISTORY_OPEN_EVENT = "autopilot:history-open";
 
@@ -211,6 +216,8 @@ function PageTransitionWrapper({
 }) {
   const direction = state.direction ?? "forward";
   const offset = direction === "forward" ? 24 : -24;
+  const motionOverrides = useMirofishMotionProps();
+  const isReduced = Object.keys(motionOverrides).length > 0;
 
   return (
     <div
@@ -223,10 +230,10 @@ function PageTransitionWrapper({
         <motion.div
           key={page}
           custom={direction}
-          initial={{ x: offset, opacity: 0 }}
-          animate={{ x: 0, opacity: 1 }}
-          exit={{ x: -offset, opacity: 0 }}
-          transition={{ duration: 0.18, ease: "easeInOut" }}
+          initial={isReduced ? false : { x: offset, opacity: 0 }}
+          animate={isReduced ? false : { x: 0, opacity: 1 }}
+          exit={isReduced ? undefined : { x: -offset, opacity: 0 }}
+          transition={isReduced ? { duration: 0 } : { duration: 0.18, ease: "easeInOut" }}
           className="h-full min-w-0"
         >
           {children}
@@ -282,7 +289,7 @@ const DRAWER_TIER_COPY: Record<
   },
 };
 
-type FlowStatus = "waiting" | "active" | "done" | "blocked";
+export type FlowStatus = "waiting" | "active" | "done" | "blocked";
 
 type AutopilotWorkflowStage =
   | "input"
@@ -931,7 +938,25 @@ function ApiErrorNotice({
   error: ApiRequestError | null;
   className?: string;
 }) {
+  const isMirofish = useMirofishTheme();
   if (!error) return null;
+
+  if (isMirofish) {
+    return (
+      <div
+        className={cn(
+          "border-l-4 border-l-black bg-white px-3 py-3 text-sm font-semibold text-black",
+          className
+        )}
+        role="alert"
+        data-testid="autopilot-api-error"
+      >
+        <div className="font-bold">{error.message}</div>
+        <div className="mt-1 leading-5 text-black/70">{error.detail}</div>
+      </div>
+    );
+  }
+
   return (
     <div
       className={cn(
@@ -958,6 +983,24 @@ export function MetricBox({
   tone?: "neutral" | "good" | "warn";
   dark?: boolean;
 }) {
+  const isMirofish = useMirofishTheme();
+
+  if (isMirofish) {
+    return (
+      <div
+        data-mf-card
+        className="min-w-0 border border-[--mf-color-border] bg-[--mf-color-bg] px-3 py-2"
+      >
+        <div className="truncate font-[family-name:var(--mf-font-mono)] text-[10px] font-bold uppercase tracking-widest opacity-70">
+          {label}
+        </div>
+        <div className="mt-1 truncate font-[family-name:var(--mf-font-mono)] text-sm font-bold">
+          {value}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       className={cn(
@@ -990,9 +1033,21 @@ function AutopilotLanguageSwitch({
   locale: AppLocale;
   onLocaleChange: (locale: AppLocale) => void;
 }) {
+  // NOTE: This component is currently rendered in the topbar header which is
+  // OUTSIDE the MirofishThemeProvider boundary. Therefore `isMirofish` will
+  // always be `false` here. The MiroFish branch is retained as harmless dead
+  // code and will activate when the topbar is brought into the provider scope
+  // in a future batch.
+  const isMirofish = useMirofishTheme();
+
   return (
     <div
-      className="inline-flex rounded-[8px] border border-slate-200 bg-white p-1"
+      className={cn(
+        "inline-flex p-1",
+        isMirofish
+          ? "border border-[--mf-color-border] rounded-[2px] bg-[--mf-color-bg]"
+          : "rounded-[8px] border border-slate-200 bg-white"
+      )}
       data-testid="autopilot-language-switch"
       aria-label={t(locale, "切换语言", "Switch language")}
     >
@@ -1008,10 +1063,20 @@ function AutopilotLanguageSwitch({
             key={itemLocale}
             type="button"
             className={cn(
-              "min-h-8 rounded-[6px] px-3 text-xs font-black transition",
-              active
-                ? "bg-slate-950 text-white"
-                : "text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+              "min-h-8 px-3 text-xs transition",
+              isMirofish
+                ? cn(
+                    "rounded-[0px] font-[family-name:var(--mf-font-mono)]",
+                    active
+                      ? "bg-black text-white"
+                      : "bg-transparent text-black"
+                  )
+                : cn(
+                    "rounded-[6px] font-black",
+                    active
+                      ? "bg-slate-950 text-white"
+                      : "text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+                  )
             )}
             aria-pressed={active}
             onClick={() => onLocaleChange(itemLocale)}
@@ -1022,6 +1087,65 @@ function AutopilotLanguageSwitch({
         );
       })}
     </div>
+  );
+}
+
+/**
+ * FlowStepIndicator — 流程步骤状态指示器。
+ *
+ * MiroFish 变体使用 ■ (U+25A0) 表示 done/active 状态，□ (U+25A1) 表示 waiting/blocked 状态。
+ * 非 MiroFish 作用域下渲染原始彩色圆形图标。
+ *
+ * @see Requirements 8.4
+ */
+export function FlowStepIndicator({
+  status,
+  icon: Icon,
+}: {
+  status: FlowStatus;
+  icon?: LucideIcon;
+}) {
+  const isMirofish = useMirofishTheme();
+
+  if (isMirofish) {
+    const isFilledState = status === "done" || status === "active";
+    const symbol = isFilledState ? "\u25A0" : "\u25A1";
+    const opacity = status === "active" ? "opacity-100" : "opacity-60";
+    return (
+      <span
+        className={`font-[family-name:var(--mf-font-mono)] text-sm ${opacity}`}
+        data-testid="flow-step-indicator"
+        data-status={status}
+        aria-label={status}
+      >
+        {symbol}
+      </span>
+    );
+  }
+
+  // Original colored circle icon rendering
+  const colorClass =
+    status === "done"
+      ? "text-emerald-500"
+      : status === "active"
+        ? "text-blue-500"
+        : status === "blocked"
+          ? "text-rose-400"
+          : "text-slate-300";
+
+  return (
+    <span
+      className={`inline-flex items-center justify-center ${colorClass}`}
+      data-testid="flow-step-indicator"
+      data-status={status}
+      aria-label={status}
+    >
+      {Icon ? (
+        <Icon className="size-4" aria-hidden="true" />
+      ) : (
+        <span className="inline-block size-2.5 rounded-full bg-current" />
+      )}
+    </span>
   );
 }
 
@@ -1259,6 +1383,7 @@ function IntakeSummary({
         <div
           key={source.id}
           className="flex min-w-0 items-start gap-2 rounded-[8px] border border-slate-200 bg-slate-50 px-3 py-2"
+          data-mf-card
         >
           <GitBranch className="mt-0.5 size-4 shrink-0 text-slate-500" />
           <div className="min-w-0">
@@ -1486,6 +1611,7 @@ function RouteOption({
         "rounded-[8px] border bg-slate-50 px-3 py-3",
         selected ? "border-emerald-300 bg-emerald-50" : "border-slate-200"
       )}
+      data-mf-card
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
@@ -1990,27 +2116,6 @@ function AutopilotWorkflowRail({
                         isViewingCompletedStage={Boolean(selection)}
                         label={t(locale, "目标输入", "Target input")}
                       />
-                      {parsedGithub.urls.map((url, sourceIndex) => (
-                        <EditModeField
-                          key={`${url}-${sourceIndex}`}
-                          value={url}
-                          onSubmit={(value) =>
-                            onSubmitGithubUrlEdit(sourceIndex, value)
-                          }
-                          canEdit
-                          impactSummary={{ downstreamCount: 3 }}
-                          fieldKey={`github-url-${sourceIndex}`}
-                          fromStage="input"
-                          isAdvancingThroughStage={autoAdvancing}
-                          isStaticPreview={IS_GITHUB_PAGES}
-                          isViewingCompletedStage={Boolean(selection)}
-                          label={t(locale, "GitHub 来源", "GitHub source")}
-                        />
-                      ))}
-                      <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-                        <div className="text-[10px] font-bold uppercase text-slate-400">{t(locale, "目标输入", "Target input")}</div>
-                        <div className="mt-1 whitespace-pre-wrap break-words text-xs text-slate-700">{targetText || "—"}</div>
-                      </div>
                       {/*
                         autopilot-streaming-experience integration-gap-2026-05-16：
                         历史版本会在此分支再渲染一遍 "GitHub 来源" 列表，但下一张
@@ -2395,9 +2500,11 @@ function AutopilotWorkflowRail({
                   title={drawerCopy.drawerTitle}
                   width={400}
                 >
+                  <MirofishThemeProvider enabled>
                   <div data-testid="autopilot-right-rail-drawer">
                     {railElement}
                   </div>
+                  </MirofishThemeProvider>
                 </HoloDrawer>
               </>
             ) : null}
@@ -2596,6 +2703,7 @@ function AutopilotWorkflowRail({
     <aside
       className="grid min-w-0 content-start xl:h-full xl:max-h-full xl:overflow-y-auto xl:overflow-x-hidden"
       data-testid="autopilot-workflow-rail"
+      data-mf-surface
       style={{
         // 硬约束 aside 宽度。父级 grid track 是 minmax(0, 2fr)，但 grid item
         // 的 min-width: auto 默认会让 item 的最小宽度 = min-content。当内部
@@ -2613,6 +2721,7 @@ function AutopilotWorkflowRail({
       <section
         className="min-w-0 h-full border border-slate-200 bg-white"
         data-testid="autopilot-workflow-steps"
+        data-mf-card
       >
         {/*
           2026-05-19：移除顶部 antd Steps 横向步骤条（输入 / 编组 两步）。
@@ -3007,6 +3116,7 @@ export function AutopilotSpecTreeHandoffPanel({
     <div
       className="rounded-[14px] border border-emerald-200 bg-emerald-50 px-4 py-4"
       data-testid="autopilot-spec-tree-handoff"
+      data-mf-card
     >
       {content}
     </div>
@@ -3014,6 +3124,7 @@ export function AutopilotSpecTreeHandoffPanel({
     <section
       className="rounded-[14px] border border-emerald-200 bg-emerald-50 px-4 py-4"
       data-testid="autopilot-spec-tree-handoff"
+      data-mf-card
     >
       {content}
     </section>
@@ -3558,6 +3669,28 @@ export default function AutopilotRoutePage() {
     ]
   );
 
+  // --- Header HistoryEntryPoint data ---
+  const headerHistoryJobId = latestJob?.id ?? null;
+  const headerHistoryFamilyState = useFamilyData({
+    jobId: headerHistoryJobId,
+    enabled: Boolean(headerHistoryJobId),
+    disableRemoteFetch: IS_GITHUB_PAGES,
+  });
+  const headerHistoryFamilyCount = resolveHistoryEntryFamilyCount({
+    familyJobCount: headerHistoryFamilyState.data?.jobs.length,
+    hasParentJob: Boolean(latestJob?.parentJobId),
+  });
+  const handleHeaderOpenHistory = useCallback((jobId: string) => {
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    url.searchParams.set("history", "1");
+    url.searchParams.set("activeJob", jobId);
+    window.history.pushState({}, "", url);
+    window.dispatchEvent(
+      new CustomEvent(AUTOPILOT_HISTORY_OPEN_EVENT, { detail: { jobId } }),
+    );
+  }, []);
+
   useEffect(() => {
     let active = true;
     setProjectContext(null);
@@ -3740,7 +3873,7 @@ export default function AutopilotRoutePage() {
               : createBlueprintClarificationSession;
             const clarResult = await createClarificationSession?.(
               result.data.intake.id,
-              { projectId: currentProjectId ?? undefined }
+              { projectId: currentProjectId ?? undefined, locale }
             );
             if (!clarResult) return;
             if (clarResult.ok) {
@@ -3786,6 +3919,7 @@ export default function AutopilotRoutePage() {
         : createBlueprintClarificationSession;
       const result = await createClarificationSession?.(intake.id, {
         projectId: currentProjectId ?? undefined,
+        locale,
       });
       if (!result) return;
 
@@ -3859,6 +3993,7 @@ export default function AutopilotRoutePage() {
         clarificationSessionId: clarificationSession?.id,
         clarifications: answers,
         domainContext: projectContext ?? undefined,
+        locale,
       });
       if (!result) return;
 
@@ -3927,6 +4062,7 @@ export default function AutopilotRoutePage() {
     generationActions: pagesBlueprintRuntime
       ? pagesGenerationActions
       : undefined,
+    locale,
     onAdvanced: nextSubStage => {
       if (nextSubStage) {
         subStageState.setPinnedSubStage(nextSubStage);
@@ -4057,6 +4193,15 @@ export default function AutopilotRoutePage() {
                 <ArrowRight className="size-3" aria-hidden="true" />
               </button>
             ) : null}
+            <HistoryEntryPoint
+              jobId={headerHistoryJobId}
+              locale={locale}
+              familyCount={headerHistoryFamilyCount}
+              staleCount={latestJob?.staleArtifactIds?.length ?? 0}
+              staticPreview={IS_GITHUB_PAGES}
+              disabled={IS_GITHUB_PAGES}
+              onOpen={handleHeaderOpenHistory}
+            />
             <AutopilotLanguageSwitch
               locale={locale}
               onLocaleChange={setLocale}
@@ -4080,6 +4225,7 @@ export default function AutopilotRoutePage() {
             consoleLines={consoleLines}
           />
 
+          <MirofishThemeProvider enabled className="min-w-0 xl:h-full xl:min-h-0" style={{ minWidth: 0, maxWidth: "100%" }}>
           <AutopilotWorkflowRail
             locale={locale}
             targetText={targetText}
@@ -4155,6 +4301,7 @@ export default function AutopilotRoutePage() {
               }
             }}
           />
+          </MirofishThemeProvider>
 
         </div>
       </div>
