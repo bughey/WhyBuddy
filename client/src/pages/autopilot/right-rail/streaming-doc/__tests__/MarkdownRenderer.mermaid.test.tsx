@@ -4,9 +4,9 @@
  * Verifies that the MarkdownRenderer correctly routes mermaid-annotated code
  * blocks to MermaidBlock and non-mermaid blocks to CodeBlock.
  *
- * Since MermaidBlock starts in "streaming" state during SSR (useEffect deferred),
+ * Since MermaidBlock starts closed diagrams in "loading" state during SSR,
  * we verify routing by checking:
- * - Mermaid blocks: rendered via MermaidBlock (shows CodeBlock with language="mermaid")
+ * - Mermaid blocks: rendered via MermaidBlock (shows the loading placeholder)
  * - Non-mermaid blocks: rendered via CodeBlock directly (shows language label)
  *
  * We also test the tokenizer's detection logic directly for precise assertions.
@@ -32,7 +32,7 @@ vi.mock("@/contexts/ThemeContext", () => ({
 // Import after mocks
 import { MarkdownRenderer, __testing__ } from "../MarkdownRenderer";
 
-const { tokenizeMarkdown } = __testing__;
+const { normalizeFlattenedMermaidCode, tokenizeMarkdown } = __testing__;
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -40,7 +40,7 @@ const { tokenizeMarkdown } = __testing__;
 
 function renderMarkdown(markdown: string, isStreaming = false) {
   return renderToStaticMarkup(
-    <MarkdownRenderer markdown={markdown} isStreaming={isStreaming} locale="en" />,
+    <MarkdownRenderer markdown={markdown} isStreaming={isStreaming} locale="en-US" />,
   );
 }
 
@@ -122,21 +122,16 @@ describe("MarkdownRenderer — mermaid routing", () => {
       const md = "```mermaid\ngraph TD; A-->B\n```";
       const html = renderMarkdown(md);
 
-      // MermaidBlock in SSR renders as CodeBlock (streaming initial state)
-      // with language="mermaid". CodeBlock normalizes "mermaid" to "plain".
-      expect(html).toContain('data-testid="streaming-doc-code-block"');
-      // The mermaid block does NOT have data-language="mermaid" because
-      // CodeBlock normalizes it to "plain". But it does contain the code.
-      expect(html).toContain("graph TD; A--&gt;B");
+      expect(html).toContain('data-testid="mermaid-loading"');
+      expect(html).not.toContain('data-testid="streaming-doc-code-block"');
     });
 
     it('routes language="Mermaid" (case-insensitive) to MermaidBlock', () => {
       const md = "```Mermaid\nsequenceDiagram\n  A->>B: Hello\n```";
       const html = renderMarkdown(md);
 
-      // Case-insensitive detection: "Mermaid" should still route to MermaidBlock
-      expect(html).toContain('data-testid="streaming-doc-code-block"');
-      expect(html).toContain("sequenceDiagram");
+      expect(html).toContain('data-testid="mermaid-loading"');
+      expect(html).not.toContain('data-language="plain"');
     });
 
     it('routes language="typescript" to CodeBlock (not MermaidBlock)', () => {
@@ -173,18 +168,19 @@ describe("MarkdownRenderer — mermaid routing", () => {
 
       const html = renderMarkdown(md);
 
-      // Should have 3 code blocks total (typescript + mermaid-as-codeblock + json)
+      // Should have 2 code blocks total (typescript + json); mermaid shows loading
       const codeBlockMatches = html.match(
         /data-testid="streaming-doc-code-block"/g,
       );
-      expect(codeBlockMatches?.length).toBe(3);
+      expect(codeBlockMatches?.length).toBe(2);
+      expect(html).toContain('data-testid="mermaid-loading"');
 
       // Should have typescript and json language attributes (from direct CodeBlock)
       expect(html).toContain('data-language="typescript"');
       expect(html).toContain('data-language="json"');
 
-      // Mermaid block content should be present
-      expect(html).toContain("graph TD; A--&gt;B");
+      // Mermaid block is no longer shown as raw code while the diagram renderer loads.
+      expect(html).not.toContain("graph TD; A--&gt;B");
     });
 
     it("renders unclosed mermaid block as streaming CodeBlock", () => {
@@ -196,9 +192,32 @@ describe("MarkdownRenderer — mermaid routing", () => {
       expect(html).toContain('data-is-streaming="true"');
       expect(html).toContain("graph TD; A--&gt;B");
     });
+
+    it("routes flattened live mermaid paragraphs to MermaidBlock", () => {
+      const md =
+        "mermaid graph TD A[Request Intake] --> B[Route Selection] B --> C[Repository Context Loading]";
+      const html = renderMarkdown(md);
+
+      expect(html).toContain('data-testid="mermaid-loading"');
+      expect(html).not.toContain("mermaid graph TD");
+    });
   });
 
   describe("detection logic correctness", () => {
+    it("normalizes flattened graph diagrams into parseable edge lines", () => {
+      const code = normalizeFlattenedMermaidCode(
+        "mermaid graph TD A[Request Intake] --> B[Route Selection] B --> C[Repository Context Loading]",
+      );
+
+      expect(code).toBe(
+        [
+          "graph TD",
+          "  A[Request Intake] --> B[Route Selection]",
+          "  B --> C[Repository Context Loading]",
+        ].join("\n"),
+      );
+    });
+
     it("detection uses case-insensitive comparison", () => {
       // The renderToken function uses: token.language?.toLowerCase().trim() === "mermaid"
       const variants = ["mermaid", "Mermaid", "MERMAID", "MeRmAiD"];

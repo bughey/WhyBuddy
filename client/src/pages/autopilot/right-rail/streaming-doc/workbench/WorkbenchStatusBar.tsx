@@ -241,17 +241,19 @@ export const WorkbenchStatusBar: FC<WorkbenchStatusBarProps> = ({
             <Eye className="h-3 w-3 shrink-0" aria-hidden="true" />
             <span className="truncate">{reviewLabel}</span>
           </button>
-          <button
-            type="button"
-            data-testid="autopilot-workbench-action-refresh"
-            onClick={onRefresh}
-            disabled={isRefreshDisabled}
-            aria-disabled={isRefreshDisabled}
-            className="inline-flex h-7 max-w-[86px] items-center gap-1 rounded-md bg-slate-900 px-2 text-[10px] font-bold text-white shadow-sm transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-400"
-          >
-            <RefreshCw className="h-3 w-3 shrink-0" aria-hidden="true" />
-            <span className="truncate">{refreshLabel}</span>
-          </button>
+          {onGenerateAll ? null : (
+            <button
+              type="button"
+              data-testid="autopilot-workbench-action-refresh"
+              onClick={onRefresh}
+              disabled={isRefreshDisabled}
+              aria-disabled={isRefreshDisabled}
+              className="inline-flex h-7 max-w-[86px] items-center gap-1 rounded-md bg-slate-900 px-2 text-[10px] font-bold text-white shadow-sm transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-400"
+            >
+              <RefreshCw className="h-3 w-3 shrink-0" aria-hidden="true" />
+              <span className="truncate">{refreshLabel}</span>
+            </button>
+          )}
         </div>
       </div>
       {/* Phase 2 / Task 7：三个统计 badge（R2.5） */}

@@ -13,7 +13,7 @@
  * Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 5.2, 6.2, 6.3
  */
 
-import { useState, type FC } from "react";
+import { useState, type FC, type ReactElement } from "react";
 import {
   useBlueprintRealtimeStore,
   type SpecDocsNodeStatus,
@@ -305,7 +305,7 @@ const BatchSummaryLine: FC<{ summary: SpecDocsBatchSummary }> = ({ summary }) =>
  *
  * Validates: Requirements 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 5.2, 6.2, 6.3
  */
-export function SpecDocsProgressPanel(): JSX.Element | null {
+export function SpecDocsProgressPanel(): ReactElement | null {
   const progress = useBlueprintRealtimeStore((s) => s.specDocsProgress);
   const dismissProgress = useBlueprintRealtimeStore((s) => s.dismissSpecDocsProgress);
 

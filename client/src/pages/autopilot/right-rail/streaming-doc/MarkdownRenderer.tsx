@@ -361,6 +361,23 @@ function buildHeadingId(tokenIndex: number): string {
   return `streaming-doc-heading-${tokenIndex}`;
 }
 
+function normalizeFlattenedMermaidCode(input: string): string {
+  let mermaidCode = input.trimStart().replace(/^mermaid[\s\b]+/i, "");
+  if (!mermaidCode.includes("\n") && /-->|---|==>/.test(mermaidCode)) {
+    mermaidCode = mermaidCode
+      .replace(/^(graph|flowchart)\s+([A-Za-z]{2})\s+/i, "$1 $2\n  ")
+      .replace(/(\])\s+([A-Z][A-Za-z0-9_]*\s+(?:-->|---|==>))/g, "$1\n  $2")
+      .replace(/(\])\s+([A-Z][A-Za-z0-9_]*\[)/g, "$1\n  $2");
+  }
+  return mermaidCode;
+}
+
+function looksLikeFlattenedMermaidParagraph(text: string): boolean {
+  const trimmed = text.trimStart();
+  if (!/^mermaid[\s\b]+/i.test(trimmed)) return false;
+  return /^(mermaid\s+)?(graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|journey|gantt|pie|mindmap|timeline)\b/i.test(trimmed);
+}
+
 /**
  * 把单个 token 渲染成对应的 React 元素。抽出独立函数便于后续接入
  * Task 4.1（DocOutline）时复用 heading 信息。
@@ -407,6 +424,16 @@ function renderToken(
       return null;
     }
     case "paragraph":
+      if (looksLikeFlattenedMermaidParagraph(token.text)) {
+        return (
+          <MermaidBlock
+            key={key}
+            code={normalizeFlattenedMermaidCode(token.text)}
+            isStreaming={false}
+            closed={true}
+          />
+        );
+      }
       return (
         <p
           key={key}
@@ -464,7 +491,7 @@ function renderToken(
         // - "```\nmermaid graph TD A --> B" → "graph TD A --> B"
         let mermaidCode = langLower === "mermaid"
           ? token.code
-          : trimmedCode.replace(/^mermaid[\s\b]+/i, "");
+          : normalizeFlattenedMermaidCode(trimmedCode);
 
         // Heuristic: if mermaid code is collapsed onto one line (LLMs sometimes
         // emit malformed blocks like "graph TD A --> B B --> C"), insert
@@ -613,4 +640,5 @@ export const __testing__ = {
   renderInline,
   extractHeadings,
   buildHeadingId,
+  normalizeFlattenedMermaidCode,
 };

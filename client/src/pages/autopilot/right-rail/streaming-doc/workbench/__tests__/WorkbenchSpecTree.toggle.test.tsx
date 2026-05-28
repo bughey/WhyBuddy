@@ -312,7 +312,7 @@ describe("WorkbenchSpecTree (Phase 1 / Task 3)", () => {
     expect(markup).toContain("1/3 reviewing");
   });
 
-  it("(b) provides distinct toggle buttons per root and renders both root toggles independently", () => {
+  it("(b) renders toggles for roots with children or generated documents", () => {
     const markup = renderToStaticMarkup(
       <WorkbenchSpecTree {...makeProps()} />
     );
@@ -321,8 +321,8 @@ describe("WorkbenchSpecTree (Phase 1 / Task 3)", () => {
     expect(markup).toContain(
       'data-testid="autopilot-workbench-spec-tree-toggle-root-1"'
     );
-    // root-2 没有子节点 => 不渲染 toggle
-    expect(markup).not.toContain(
+    // root-2 没有子节点但有 requirements 文档 => 仍应渲染 toggle，用户才能展开文档行
+    expect(markup).toContain(
       'data-testid="autopilot-workbench-spec-tree-toggle-root-2"'
     );
 
@@ -330,6 +330,9 @@ describe("WorkbenchSpecTree (Phase 1 / Task 3)", () => {
     // aria-expanded="true"
     expect(markup).toMatch(
       /data-testid="autopilot-workbench-spec-tree-toggle-root-1"[^>]*aria-expanded="true"/
+    );
+    expect(markup).toMatch(
+      /data-testid="autopilot-workbench-spec-tree-toggle-root-2"[^>]*aria-expanded="false"/
     );
   });
 
@@ -548,5 +551,22 @@ describe("WorkbenchSpecTree (Phase 1 / Task 3)", () => {
     expect(badges.length).toBeGreaterThanOrEqual(2);
     expect(markup).toContain("Stale because route_generation changed");
     expect(markup).toContain("Stale because clarification changed");
+  });
+
+  it("(j) expands document-only leaf nodes so design and tasks rows can be selected", () => {
+    const element = invokeTreeView(makeProps(), {
+      expandedNodeIds: new Set<string>(["root-2"]),
+    });
+    const markup = renderToStaticMarkup(element);
+
+    expect(markup).toContain(
+      'data-testid="autopilot-workbench-spec-tree-toggle-root-2"'
+    );
+    expect(markup).toMatch(
+      /data-testid="autopilot-workbench-spec-tree-toggle-root-2"[^>]*aria-expanded="true"/
+    );
+    expect(markup).toContain(
+      'data-testid="autopilot-workbench-spec-tree-doc-doc-root-2-requirements"'
+    );
   });
 });

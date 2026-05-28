@@ -2,8 +2,9 @@
  * Unit tests for MermaidBlock component.
  *
  * Since the project uses renderToStaticMarkup (no DOM environment / @testing-library),
- * useEffect does not fire during SSR. The MermaidBlock component initializes in
- * "streaming" state and transitions via useEffect.
+ * useEffect does not fire during SSR. The MermaidBlock component initializes closed
+ * diagrams directly in "loading" state so the workbench never shows a completed
+ * design diagram as a raw code block while the client render effect warms up.
  *
  * Test strategy:
  * - Streaming state: fully testable via SSR (initial state matches streaming)
@@ -115,16 +116,13 @@ describe("MermaidBlock", () => {
       expect(mockRender).not.toHaveBeenCalled();
     });
 
-    it("renders initial streaming state in SSR for closed blocks (loading transition is async)", () => {
+    it("renders initial loading state in SSR for closed blocks", () => {
       const html = renderToStaticMarkup(
         <MermaidBlock code="graph TD; A-->B" isStreaming={false} closed={true} />,
       );
 
-      // In SSR, the component starts in "streaming" state before useEffect fires.
-      // The loading placeholder (data-testid="mermaid-loading") appears only after
-      // useEffect sets state to "loading". This verifies the component doesn't crash.
-      expect(html).toBeDefined();
-      expect(html.length).toBeGreaterThan(0);
+      expect(html).toContain('data-testid="mermaid-loading"');
+      expect(html).not.toContain('data-testid="streaming-doc-code-block"');
     });
   });
 

@@ -237,4 +237,18 @@ describe("WorkbenchStatusBar — action buttons (Phase 1 / Task 2)", () => {
     expect(onReview).toHaveBeenCalledTimes(1);
     expect(onRefresh).toHaveBeenCalledTimes(1);
   });
+
+  it("(f) renders one generation entry point when onGenerateAll is provided", () => {
+    const onGenerateAll = vi.fn();
+    const markup = renderToStaticMarkup(
+      <WorkbenchStatusBar {...makeProps({ onGenerateAll })} />
+    );
+
+    expect(markup).toContain(
+      'data-testid="autopilot-workbench-action-generate-all"'
+    );
+    expect(markup).not.toContain(
+      'data-testid="autopilot-workbench-action-refresh"'
+    );
+  });
 });

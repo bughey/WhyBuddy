@@ -483,8 +483,9 @@ export const WorkbenchSpecTreeView: FC<WorkbenchSpecTreeViewProps> = (props) => 
 
     const childIds = childrenByParent.get(nodeId) ?? [];
     const hasChildren = childIds.length > 0;
-    const expanded = effectiveExpandedIds.has(nodeId);
     const docs = docsByNodeId.get(node.id) ?? [];
+    const hasExpandableContent = hasChildren || docs.length > 0;
+    const expanded = effectiveExpandedIds.has(nodeId);
     const ephemeral = observingSnapshot.byNodeTitle.get(node.title);
     const chipDescriptor = deriveSpecTreeChip(docs, ephemeral);
 
@@ -516,7 +517,7 @@ export const WorkbenchSpecTreeView: FC<WorkbenchSpecTreeViewProps> = (props) => 
         style={{ paddingLeft: depth * 12 }}
       >
         <div className="flex min-w-0 items-center gap-1 px-1 py-1">
-          {hasChildren ? (
+          {hasExpandableContent ? (
             <button
               type="button"
               data-testid={`autopilot-workbench-spec-tree-toggle-${node.id}`}

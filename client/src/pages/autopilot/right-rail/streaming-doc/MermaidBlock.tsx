@@ -41,7 +41,7 @@ export const MermaidBlock: FC<MermaidBlockProps> = ({
   const { theme } = useTheme();
   const [state, setState] = useState<
     "streaming" | "loading" | "rendered" | "error"
-  >("streaming");
+  >(() => (isStreaming || !closed ? "streaming" : "loading"));
   const [svgHtml, setSvgHtml] = useState<string>("");
   const [errorMsg, setErrorMsg] = useState<string>("");
   const [fullscreenOpen, setFullscreenOpen] = useState(false);
