@@ -123,27 +123,84 @@ export function useAutoAdvance({
   // 防止重复触发
   const advancedStagesRef = useRef<Set<string>>(new Set());
   const mountedRef = useRef(true);
-  // 首次加载延迟:页面刚进入编组时不立即推进,给用户 3 秒看当前状态
+  // 首次加载延迟：页面刚进入编组时不立即推进，给用户一个观察窗口。
+  // duanyun-rebrand-and-stage3-unblock-2026-05-28 §A.3：
+  //   - 默认 800ms（原 3000ms）。
+  //   - 当挂载时 job.stage 已经超过 clarification（说明这次挂载不是第一次入场，
+  //     而是 spec 阶段后的 re-attach），则跳过延迟，避免阻塞 spec_docs →
+  //     effect_preview 的正常自动推进。
   const initialDelayRef = useRef(true);
+  const lastJobStageRef = useRef<string | null>(null);
 
   useEffect(() => {
     mountedRef.current = true;
+    const initialStage = job?.stage ?? null;
+    const skipDelay =
+      initialStage !== null &&
+      initialStage !== "input" &&
+      initialStage !== "clarification";
+    if (skipDelay) {
+      initialDelayRef.current = false;
+    }
     const timer = setTimeout(() => {
       initialDelayRef.current = false;
-    }, 3000);
+    }, 800);
     return () => {
       mountedRef.current = false;
       clearTimeout(timer);
     };
+    // 仅依赖 mount，job.stage 在后续 effect 中通过 lastJobStageRef 处理。
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // 当 jobId 变化时重置
   useEffect(() => {
     advancedStagesRef.current = new Set();
+    lastJobStageRef.current = null;
     setError(null);
     setAdvancing(false);
     setAdvancingTo(null);
   }, [jobId]);
+
+  // duanyun-rebrand-and-stage3-unblock-2026-05-28 §A.2：
+  // 当 job.stage 回退（例如用户从 effect_preview 回到 spec_docs 重生成），
+  // advancedStagesRef 中的旧条目会让自动推进永久哑火。这里在 stage 回退时
+  // 把比新 stage 更靠后的所有条目清空，让用户的二次推进重新生效。
+  useEffect(() => {
+    const currentStage = job?.stage ?? null;
+    const previousStage = lastJobStageRef.current;
+    lastJobStageRef.current = currentStage;
+    if (!currentStage || !previousStage || currentStage === previousStage) {
+      return;
+    }
+    const order = [
+      "input",
+      "clarification",
+      "route_generation",
+      "spec_tree",
+      "spec_docs",
+      "effect_preview",
+      "preview",
+      "prompt_packaging",
+      "engineering_landing",
+      "runtime_capability",
+      "engineering_handoff",
+    ];
+    const currentIdx = order.indexOf(currentStage);
+    const previousIdx = order.indexOf(previousStage);
+    if (currentIdx < 0 || previousIdx < 0 || currentIdx >= previousIdx) {
+      return;
+    }
+    // Stage 回退：清掉 currentStage 之后的所有 advanced 标记。
+    const next = new Set<string>();
+    advancedStagesRef.current.forEach(stageKey => {
+      const idx = order.indexOf(stageKey);
+      if (idx >= 0 && idx <= currentIdx) {
+        next.add(stageKey);
+      }
+    });
+    advancedStagesRef.current = next;
+  }, [job?.stage]);
 
   const advance = useCallback(
     async (targetStage: string, action: () => Promise<{ ok: boolean; error?: ApiRequestError }>) => {
@@ -285,8 +342,13 @@ export function useAutoAdvance({
     // 直接调用 API,不检查 advancedStagesRef(用户主动点击应该总是执行)
     if (stage === "spec_tree") {
       void advance("spec_docs", async () => {
+        // duanyun-rebrand-and-stage3-unblock-2026-05-28 §A.1：
+        // 用户明确要求 "你不要生成全部，这特别费时间，你只生成一份就好了"。
+        // 默认只生成 requirements 文档以缩短关键路径。后端仍可一次受理 3 个
+        // 文档类型；这里只是 client-side 的默认值，UI 入口（详情页或 worker）
+        // 仍可显式 override 为 ["requirements","design","tasks"]。
         const result = await actions.generateSpecDocuments(jobId, {
-          types: ["requirements", "design", "tasks"],
+          types: ["requirements"],
           locale,
         });
         return { ok: result.ok, error: result.ok ? undefined : result.error };
