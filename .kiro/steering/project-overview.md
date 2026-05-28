@@ -612,7 +612,7 @@ cube-pets-office/
 - 审计日志不可删除，只能追加，哈希链保证完整性
 - Guest Agent 必须在沙箱中运行，TTL 到期自动清理
 - UI 组件使用 glass-panel / glass-panel-strong / glass-3d 工具类
-- 标题字体 Space Grotesk (--font-display)，数据字体 JetBrains Mono (--font-mono)
+- 标题字体 DM Sans / Noto Sans SC (--font-display)，数据字体 JetBrains Mono (--font-mono)
 
 ## 环境变量分组
 

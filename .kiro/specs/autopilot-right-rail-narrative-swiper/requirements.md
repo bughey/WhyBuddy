@@ -206,7 +206,7 @@
 
 #### Acceptance Criteria
 
-1. THE 6 个 Stage_Visual_Lane SHALL 共用同一套字体（标题 Space Grotesk、数据 JetBrains Mono）与同一组冷灰色板基底
+1. THE 6 个 Stage_Visual_Lane SHALL 共用同一套字体（标题 DM Sans / Noto Sans SC、数据 JetBrains Mono）与同一组冷灰色板基底
 2. THE 6 个 Stage_Visual_Lane 的差异化 SHALL 集中在以下维度：背景纹理、装饰元素、入场或退场动效、状态色强度
 3. THE Stage_Visual_Lane 的差异化 SHALL 不引入与现有 OKLCH 设计令牌冲突的新主题色
 4. WHILE Stage 处于 preview，THE Stage_Visual_Lane 的“灯光”效果 SHALL 限制亮度峰值不超过现有 glow-button 的最大发光值；该亮度约束仅作用于 preview 阶段，其他 Stage 不强制此上限

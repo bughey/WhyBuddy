@@ -11,7 +11,7 @@
   - [x] 1.1 在 `client/src/index.css` 中新增 CSS 变量（glass-bg、glow 色、状态色、字体变量）
   - [x] 1.2 新增 `.glass-panel`、`.glass-panel-strong`、`.glass-3d` 工具类
   - [x] 1.3 新增呼吸光晕 `@keyframes breathe-glow` 和波纹 `@keyframes ripple` 动画
-  - [x] 1.4 在 `client/index.html` 中添加 Space Grotesk + JetBrains Mono 字体预连接
+  - [x] 1.4 在 `client/index.html` 中添加 DM Sans + JetBrains Mono 字体预连接
   - [x] 1.5 更新 `:root` 字体变量，标题用 `--font-display`，数据用 `--font-mono`
   - [x] 1.6 更新滚动条样式与毛玻璃风格统一
 

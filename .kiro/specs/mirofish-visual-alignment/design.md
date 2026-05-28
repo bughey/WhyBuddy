@@ -111,7 +111,7 @@ import "./styles/mirofish-layer.css";    // @layer mirofish { ... } scoped rules
   --mf-font-body: "Noto Sans SC", var(--font-body);
   --mf-title-size: 4.5rem;
   --mf-title-weight: 500;
-  --mf-title-spacing: -2px;
+  --mf-title-spacing: 0;
   --mf-mono-weight: 700;
 
   /* Spacing */
@@ -358,7 +358,7 @@ function useMirofishMotionProps() {
 | `--mf-font-body` | font-family | `"Noto Sans SC", var(--font-body)` | Chinese body text |
 | `--mf-title-size` | length | `4.5rem` | Main title size |
 | `--mf-title-weight` | number | `500` | Title font weight |
-| `--mf-title-spacing` | length | `-2px` | Title letter spacing |
+| `--mf-title-spacing` | length | `0` | Title letter spacing |
 | `--mf-mono-weight` | number | `700` | Mono font weight |
 | `--mf-gap-section` | length | `60px` | Section gaps |
 | `--mf-gap-element` | length | `16px` | Element gaps |

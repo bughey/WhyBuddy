@@ -22,7 +22,7 @@
 - **MiroFish_Theme_Layer**: 一个可选的 CSS 层（`@layer mirofish`），包含所有 MiroFish 对齐的变量覆盖和基础样式规则
 - **Accent_Color**: MiroFish 设计系统中唯一的强调色 `#FF4500`（橙红），用于交互元素高亮和状态指示
 - **Border_Style**: MiroFish 统一边框规范：`1px solid #E5E5E5`，无阴影，无圆角或最大 2px 圆角
-- **Typography_Stack**: MiroFish 字体栈：Space Grotesk（标题，weight 500）、JetBrains Mono（标签/代码，weight 700）、Noto Sans SC（中文正文）
+- **Typography_Stack**: MiroFish 字体栈：DM Sans / Noto Sans SC（标题，weight 500）、JetBrains Mono（标签/代码，weight 700）、Noto Sans SC（中文正文）
 - **Spacing_Scale**: MiroFish 间距体系：大块间距 60-80px，紧凑元素间距 15-20px，最大内容宽度 1400px 居中
 
 ## Requirements
@@ -34,7 +34,7 @@
 #### Acceptance Criteria
 
 1. THE Design_Token_Set SHALL define color tokens limited to `--mf-color-bg` (#FFFFFF), `--mf-color-fg` (#000000), `--mf-color-accent` (#FF4500), and `--mf-color-border` (#E5E5E5)
-2. THE Design_Token_Set SHALL define typography tokens including `--mf-font-title` (Space Grotesk), `--mf-font-mono` (JetBrains Mono), `--mf-font-body` (Noto Sans SC), `--mf-title-size` (4.5rem), `--mf-title-weight` (500), `--mf-title-spacing` (-2px), and `--mf-mono-weight` (700)
+2. THE Design_Token_Set SHALL define typography tokens including `--mf-font-title` (DM Sans / Noto Sans SC), `--mf-font-mono` (JetBrains Mono), `--mf-font-body` (Noto Sans SC), `--mf-title-size` (4.5rem), `--mf-title-weight` (500), `--mf-title-spacing` (0), and `--mf-mono-weight` (700)
 3. THE Design_Token_Set SHALL define spacing tokens including `--mf-gap-section` (60px-80px), `--mf-gap-element` (15px-20px), and `--mf-max-width` (1400px)
 4. THE Design_Token_Set SHALL define border tokens including `--mf-border` (1px solid #E5E5E5), `--mf-radius` (0px or 2px maximum), and `--mf-shadow` (none)
 5. THE Design_Token_Set SHALL be defined in a single CSS file at `client/src/styles/mirofish-tokens.css`
@@ -59,7 +59,7 @@
 
 #### Acceptance Criteria
 
-1. WHEN the AutopilotRoutePage is rendered, THE Typography_Stack SHALL apply Space Grotesk at weight 500 to all heading elements within the page
+1. WHEN the AutopilotRoutePage is rendered, THE Typography_Stack SHALL apply DM Sans / Noto Sans SC at weight 500 to all heading elements within the page
 2. WHEN the AutopilotRoutePage is rendered, THE Typography_Stack SHALL apply JetBrains Mono at weight 700 to all metric labels, status indicators, and code-like content
 3. WHEN the AutopilotRoutePage is rendered, THE Typography_Stack SHALL apply Noto Sans SC to Chinese body text content
 4. WHEN an opted-in MiroFish-aware component within the 2D cockpit scope is migrated, THE Typography_Stack SHALL avoid `font-black` (weight 900) and use the appropriate MiroFish weight instead (500 for titles, 700 for mono labels). Broader typography cleanup beyond migrated components is out of MVP scope.

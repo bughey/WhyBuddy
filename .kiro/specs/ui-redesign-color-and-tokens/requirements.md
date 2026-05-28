@@ -79,7 +79,7 @@
 
 #### 验收标准
 
-1. THE Design_Token_System SHALL 保留 `--font-display: "Space Grotesk"` 作为标题字体，因其几何无衬线风格与 SaaS 方向兼容
+1. THE Design_Token_System SHALL 保留 `--font-display: "DM Sans", "Noto Sans SC", system-ui, sans-serif` 作为标题字体，与 SaaS 方向兼容
 2. THE Design_Token_System SHALL 保留 `--font-mono: "JetBrains Mono"` 作为数据/代码字体
 3. THE Design_Token_System SHALL 保留 `--font-body: "DM Sans"` 作为正文字体
 4. THE Design_Token_System SHALL 确保 `h1`–`h4` 和 `[data-slot="card-title"]` 继续使用 `--font-display`

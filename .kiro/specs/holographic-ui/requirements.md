@@ -68,7 +68,7 @@
 作为用户，我希望界面有科技感的排版风格，标题和数据使用不同的字体。
 
 #### 验收标准
-- AC-6.1: 标题字体使用 Space Grotesk（Google Fonts 加载）
+- AC-6.1: 标题字体使用 DM Sans / Noto Sans SC（Google Fonts 加载）
 - AC-6.2: 数据/代码字体使用 JetBrains Mono
 - AC-6.3: 正文字体保持 DM Sans
 - AC-6.4: 字体加载使用 `font-display: swap` 避免 FOIT
