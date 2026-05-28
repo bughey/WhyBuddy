@@ -9,7 +9,7 @@
  *   - `pending`   → `#EAEAEA` + 整卡 50% 透明度
  * - 根节点使用 `<article>` 语义标签
  * - header: 16px × 20px（`px-5 pt-4 pb-3`），body: 20px × 24px（内部由 children 自行布局）
- * - 序号 + 标题：Space Grotesk（继承），标题 17px；序号以 JetBrains Mono 11px 补零展示
+ * - 序号 + 标题：继承 display font，标题 17px；序号以 JetBrains Mono 11px 补零展示
  * - apiPath: JetBrains Mono 11px `#999`
  * - summary: Noto Sans SC 13px `#666`，line-height 22px
  *

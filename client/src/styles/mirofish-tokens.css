@@ -16,7 +16,7 @@
   --mf-font-body: "Noto Sans SC", var(--font-body);
   --mf-title-size: 4.5rem;
   --mf-title-weight: 500;
-  --mf-title-spacing: -2px;
+  --mf-title-spacing: 0;
   --mf-mono-weight: 700;
 
   /* Spacing */

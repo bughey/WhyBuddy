@@ -876,7 +876,7 @@ function MobileBoard({
           <div
             className="text-[9px] font-semibold uppercase tracking-[0.32em] text-white/90"
             style={{
-              fontFamily: "'Space Grotesk', 'Noto Sans SC', sans-serif",
+              fontFamily: "'DM Sans', 'Noto Sans SC', system-ui, sans-serif",
               textShadow: glowTextShadow,
             }}
           >
@@ -885,7 +885,7 @@ function MobileBoard({
           <div
             className="mt-2 text-[16px] font-black leading-[1.08] tracking-[0.08em] text-white"
             style={{
-              fontFamily: "'Space Grotesk', 'Noto Sans SC', sans-serif",
+              fontFamily: "'DM Sans', 'Noto Sans SC', system-ui, sans-serif",
               textShadow: `${glowTextShadow}, 0 2px 10px rgba(15,23,42,0.35)`,
             }}
           >

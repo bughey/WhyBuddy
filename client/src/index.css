@@ -162,7 +162,7 @@
   --status-error: #ef4444;
 
   /* 字体 */
-  --font-display: "Space Grotesk", system-ui, sans-serif;
+  --font-display: "DM Sans", "Noto Sans SC", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", "Fira Code", monospace;
   --font-body: "DM Sans", system-ui, sans-serif;
 }
