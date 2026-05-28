@@ -40,14 +40,18 @@ const CLARIFICATION_SESSION_ARTIFACT_ID_PREFIX = "clarification-session-";
  *
  * 这是私有 helper，故意不导出。
  */
-function parseSessionFromArtifactId(artifactId: string | undefined | null): string | null {
+function parseSessionFromArtifactId(
+  artifactId: string | undefined | null
+): string | null {
   if (typeof artifactId !== "string") {
     return null;
   }
   if (!artifactId.startsWith(CLARIFICATION_SESSION_ARTIFACT_ID_PREFIX)) {
     return null;
   }
-  const remainder = artifactId.slice(CLARIFICATION_SESSION_ARTIFACT_ID_PREFIX.length);
+  const remainder = artifactId.slice(
+    CLARIFICATION_SESSION_ARTIFACT_ID_PREFIX.length
+  );
   return remainder.length > 0 ? remainder : null;
 }
 
@@ -76,7 +80,7 @@ function readPayloadRecord(payload: unknown): Record<string, unknown> | null {
  */
 function readNonEmptyStringField(
   payload: Record<string, unknown> | null,
-  field: string,
+  field: string
 ): string | null {
   if (payload === null) {
     return null;
@@ -169,10 +173,13 @@ function pickEarlier(a: string, b: string): string {
  * 或随机值。
  */
 export function computeLogicalArtifactKey(
-  artifact: BlueprintGenerationArtifact,
+  artifact: BlueprintGenerationArtifact
 ): LogicalArtifactKey {
   const payload = readPayloadRecord(artifact.payload);
-  const artifactId = typeof artifact.id === "string" && artifact.id.length > 0 ? artifact.id : null;
+  const artifactId =
+    typeof artifact.id === "string" && artifact.id.length > 0
+      ? artifact.id
+      : null;
   const type: BlueprintGenerationArtifactType | undefined = artifact.type;
 
   // clarification_session 走专属回退链
@@ -233,7 +240,8 @@ export function computeLogicalArtifactKey(
   }
   if (type === "intake") {
     const fromPayload = readNonEmptyStringField(payload, "intakeId");
-    return `intake:${fromPayload ?? artifactId ?? ""}`;
+    const fromIdField = readNonEmptyStringField(payload, "id");
+    return `intake:${fromPayload ?? fromIdField ?? artifactId ?? ""}`;
   }
   if (type === "github_source") {
     const fromPayload = readNonEmptyStringField(payload, "normalizedUrl");
@@ -261,7 +269,10 @@ export function computeLogicalArtifactKey(
  *
  * 该函数返回新对象，永远不会修改入参。
  */
-function mergePayloads(serverPayload: unknown, representativePayload: unknown): unknown {
+function mergePayloads(
+  serverPayload: unknown,
+  representativePayload: unknown
+): unknown {
   const serverRecord = readPayloadRecord(serverPayload);
   const representativeRecord = readPayloadRecord(representativePayload);
 
@@ -318,7 +329,7 @@ function mergePayloads(serverPayload: unknown, representativePayload: unknown): 
  * - 函数纯：不调用 `Date.now()` / random / 日志 / 网络。
  */
 export function mergeLogicalArtifacts(
-  artifacts: readonly BlueprintGenerationArtifact[],
+  artifacts: readonly BlueprintGenerationArtifact[]
 ): BlueprintGenerationArtifact[] {
   if (!Array.isArray(artifacts) || artifacts.length === 0) {
     return [];

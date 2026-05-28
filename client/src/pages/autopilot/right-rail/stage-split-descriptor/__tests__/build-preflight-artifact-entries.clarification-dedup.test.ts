@@ -27,6 +27,7 @@ import type {
   BlueprintClarificationSession,
   BlueprintGenerationArtifact,
   BlueprintGenerationJob,
+  BlueprintIntake,
 } from "@shared/blueprint/contracts";
 
 import { buildPreflightArtifactEntries } from "../build-preflight-artifact-entries";
@@ -48,7 +49,7 @@ const SERVER_ARTIFACT_ID = "blueprint-artifact-9f2c";
  * - 其余必填字段填稳定默认，避免与逻辑去重无关的字段干扰断言。
  */
 function buildClarificationSession(
-  overrides: Partial<BlueprintClarificationSession> = {},
+  overrides: Partial<BlueprintClarificationSession> = {}
 ): BlueprintClarificationSession {
   return {
     id: SESSION_ID,
@@ -99,7 +100,7 @@ function buildClarificationSession(
  * 显式提供（让测试聚焦 artifact 级别的合并断言，不被 job 其它字段干扰）。
  */
 function buildJob(
-  artifacts: BlueprintGenerationArtifact[],
+  artifacts: BlueprintGenerationArtifact[]
 ): BlueprintGenerationJob {
   return {
     id: "job-1",
@@ -162,7 +163,7 @@ describe("buildPreflightArtifactEntries — clarification dedup", () => {
 
     // 仅对 clarification_session 做 type-级别断言，避免被未来其它 sub 数据污染。
     const clarifications = output.filter(
-      (artifact) => artifact.type === "clarification_session",
+      artifact => artifact.type === "clarification_session"
     );
     expect(clarifications.length).toBe(1);
 
@@ -212,13 +213,78 @@ describe("buildPreflightArtifactEntries — clarification dedup", () => {
     });
 
     const clarifications = output.filter(
-      (artifact) => artifact.type === "clarification_session",
+      artifact => artifact.type === "clarification_session"
     );
     expect(clarifications.length).toBe(2);
 
     // 两个独立 sessionId 都被保留（分别落在 `clar:S-123` 与 `clar:S-999`）。
-    const ids = clarifications.map((artifact) => artifact.id);
+    const ids = clarifications.map(artifact => artifact.id);
     expect(ids).toContain("clarification-session-S-123");
     expect(ids).toContain("blueprint-artifact-other");
+  });
+});
+
+describe("buildPreflightArtifactEntries - intake artifact ownership", () => {
+  it("deduplicates local intake with the server intake artifact and excludes route sandbox artifacts from intake_created", () => {
+    const intake: BlueprintIntake = {
+      id: "IN-1",
+      targetText: "Build a blueprint route",
+      githubUrls: [],
+      sources: [],
+      duplicateGithubUrls: [],
+      domainNotes: [],
+      evidence: [],
+      assets: [],
+      readiness: {
+        status: "ready",
+        score: 1,
+        answeredRequired: 0,
+        requiredTotal: 0,
+        missingQuestionIds: [],
+      },
+      createdAt: "2026-05-22T10:00:00Z",
+      updatedAt: "2026-05-22T10:00:00Z",
+    };
+    const latestJob = buildJob([
+      {
+        id: "server-intake",
+        type: "intake",
+        title: "Blueprint Intake",
+        summary: "Server intake",
+        createdAt: "2026-05-22T10:00:01Z",
+        payload: intake,
+      },
+      {
+        id: "route-sandbox",
+        type: "sandbox_derivation_job",
+        title: "Route generation sandbox derivation",
+        summary: "Route sandbox output",
+        createdAt: "2026-05-22T10:00:01Z",
+        payload: {
+          provenance: {
+            routeSetId: "RS-1",
+            routeId: "R-1",
+          },
+        },
+      },
+    ]);
+
+    const output = buildPreflightArtifactEntries({
+      sub: "intake_created",
+      intake,
+      projectContext: null,
+      clarificationSession: null,
+      routeSet: null,
+      selection: null,
+      specTree: null,
+      job: latestJob,
+    });
+
+    expect(output.filter(artifact => artifact.type === "intake")).toHaveLength(
+      1
+    );
+    expect(output.map(artifact => artifact.type)).not.toContain(
+      "sandbox_derivation_job"
+    );
   });
 });

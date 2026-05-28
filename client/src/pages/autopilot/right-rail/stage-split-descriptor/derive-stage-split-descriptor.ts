@@ -21,13 +21,18 @@
  * 对应需求：1.1、1.2、1.4、1.5、2.3、3.2、4.5
  */
 
-import type { AnyStageSub, StageSplitDescriptor, StageSplitDescriptorInput } from "./types";
+import type {
+  AnyStageSub,
+  StageSplitDescriptor,
+  StageSplitDescriptorInput,
+} from "./types";
 import { STAGE_ARTIFACT_TYPES } from "./stage-artifact-types";
 import { STAGE_FILTER_BY_SUB } from "./stage-filter-by-sub";
 import { buildPreflightArtifactEntries } from "./build-preflight-artifact-entries";
 import { buildPreflightExecutionFallbackEntries } from "./build-preflight-execution-fallback-entries";
 import { buildFabricArtifactEntries } from "./build-fabric-artifact-entries";
 import { buildFabricExecutionFallbackEntries } from "./build-fabric-execution-fallback-entries";
+import { filterArtifactsForStage } from "./filter-artifacts-for-stage";
 import { mergeLogicalArtifacts } from "./merge-logical-artifacts";
 import type { AppLocale } from "@/lib/locale";
 
@@ -59,7 +64,11 @@ const PREFLIGHT_SUBS: ReadonlySet<AnyStageSub> = new Set([
   "route",
 ] as const);
 
-type PreflightSub = "target_input" | "intake_created" | "clarification" | "route";
+type PreflightSub =
+  | "target_input"
+  | "intake_created"
+  | "clarification"
+  | "route";
 
 type FabricSub =
   | "agent_crew_fabric"
@@ -75,7 +84,7 @@ function isPreflightSub(sub: AnyStageSub): sub is PreflightSub {
 }
 
 export function deriveStageSplitDescriptor(
-  input: StageSplitDescriptorInput,
+  input: StageSplitDescriptorInput
 ): StageSplitDescriptor {
   const { sub } = input;
 
@@ -89,7 +98,7 @@ export function deriveStageSplitDescriptor(
 
 function derivePreflightDescriptor(
   input: StageSplitDescriptorInput,
-  sub: PreflightSub,
+  sub: PreflightSub
 ): StageSplitDescriptor {
   const {
     locale,
@@ -148,7 +157,7 @@ function derivePreflightDescriptor(
 
 function deriveFabricDescriptor(
   input: StageSplitDescriptorInput,
-  sub: FabricSub,
+  sub: FabricSub
 ): StageSplitDescriptor {
   const { isActive, isCompleted, locale, job } = input;
   const artifactTypes = STAGE_ARTIFACT_TYPES[sub];
@@ -157,9 +166,8 @@ function deriveFabricDescriptor(
   // Local-derived artifacts (currently [] for all fabric subs)
   const local = buildFabricArtifactEntries({ sub, job });
 
-  // Filter job.artifacts by whitelist — single read point (no double-counting)
-  const allowedTypes = new Set(artifactTypes);
-  const jobArtifacts = (job?.artifacts ?? []).filter(a => allowedTypes.has(a.type));
+  // Filter job.artifacts by sub-stage ownership first, then merge once.
+  const jobArtifacts = filterArtifactsForStage(sub, job?.artifacts ?? []);
 
   // Merge: local first (caller-ordering contract), then job artifacts
   const artifacts = mergeLogicalArtifacts([...local, ...jobArtifacts]);
@@ -167,9 +175,10 @@ function deriveFabricDescriptor(
   // Fallback entries with stageId from STAGE_FILTER_BY_SUB
   // Only provide fallback when no artifacts are present — otherwise the panel
   // uses its built-in deriveArtifactFallbackExecutionEntries ("阶段已产出…")
-  const fallbackExecutionEntries = artifacts.length === 0
-    ? buildFabricExecutionFallbackEntries({ sub, locale, job })
-    : [];
+  const fallbackExecutionEntries =
+    artifacts.length === 0
+      ? buildFabricExecutionFallbackEntries({ sub, locale, job })
+      : [];
 
   // stageFilter from the mapping table
   const stageFilter = STAGE_FILTER_BY_SUB[sub];

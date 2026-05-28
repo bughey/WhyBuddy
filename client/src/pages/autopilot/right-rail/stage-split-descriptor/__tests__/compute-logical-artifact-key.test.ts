@@ -125,7 +125,7 @@ describe("computeLogicalArtifactKey — clarification_session fallback chain", (
       payload: { unrelated: "value" },
     });
     expect(computeLogicalArtifactKey(artifact)).toBe(
-      "clar:blueprint-artifact-no-prefix",
+      "clar:blueprint-artifact-no-prefix"
     );
   });
 
@@ -139,7 +139,7 @@ describe("computeLogicalArtifactKey — clarification_session fallback chain", (
       payload: { sessionId: 123, id: { nested: true } },
     });
     expect(computeLogicalArtifactKey(artifact)).toBe(
-      "clar:blueprint-artifact-zz",
+      "clar:blueprint-artifact-zz"
     );
   });
 
@@ -170,7 +170,7 @@ describe("computeLogicalArtifactKey — non-clarification rows from design.md Co
       payload: undefined,
     });
     expect(computeLogicalArtifactKey(artifact)).toBe(
-      "route_set:blueprint-artifact-rs-x",
+      "route_set:blueprint-artifact-rs-x"
     );
   });
 
@@ -190,7 +190,7 @@ describe("computeLogicalArtifactKey — non-clarification rows from design.md Co
       payload: {},
     });
     expect(computeLogicalArtifactKey(artifact)).toBe(
-      "route_sel:blueprint-artifact-sel-x",
+      "route_sel:blueprint-artifact-sel-x"
     );
   });
 
@@ -210,7 +210,7 @@ describe("computeLogicalArtifactKey — non-clarification rows from design.md Co
       payload: { unrelated: "value" },
     });
     expect(computeLogicalArtifactKey(artifact)).toBe(
-      "spec_tree:blueprint-artifact-tree-x",
+      "spec_tree:blueprint-artifact-tree-x"
     );
   });
 
@@ -223,6 +223,15 @@ describe("computeLogicalArtifactKey — non-clarification rows from design.md Co
     expect(computeLogicalArtifactKey(artifact)).toBe("intake:IN-1");
   });
 
+  it("intake uses payload.id when payload.intakeId is missing", () => {
+    const artifact = makeArtifact({
+      id: "blueprint-artifact-intake-1",
+      type: "intake",
+      payload: { id: "IN-1" },
+    });
+    expect(computeLogicalArtifactKey(artifact)).toBe("intake:IN-1");
+  });
+
   it("intake falls back to artifact.id when payload.intakeId is missing", () => {
     const artifact = makeArtifact({
       id: "blueprint-artifact-intake-x",
@@ -230,7 +239,7 @@ describe("computeLogicalArtifactKey — non-clarification rows from design.md Co
       payload: undefined,
     });
     expect(computeLogicalArtifactKey(artifact)).toBe(
-      "intake:blueprint-artifact-intake-x",
+      "intake:blueprint-artifact-intake-x"
     );
   });
 
@@ -241,7 +250,7 @@ describe("computeLogicalArtifactKey — non-clarification rows from design.md Co
       payload: { normalizedUrl: "https://github.com/owner/repo" },
     });
     expect(computeLogicalArtifactKey(artifact)).toBe(
-      "gh:https://github.com/owner/repo",
+      "gh:https://github.com/owner/repo"
     );
   });
 
@@ -252,7 +261,7 @@ describe("computeLogicalArtifactKey — non-clarification rows from design.md Co
       payload: {},
     });
     expect(computeLogicalArtifactKey(artifact)).toBe(
-      "gh:blueprint-artifact-gh-x",
+      "gh:blueprint-artifact-gh-x"
     );
   });
 
@@ -272,7 +281,7 @@ describe("computeLogicalArtifactKey — non-clarification rows from design.md Co
       payload: undefined,
     });
     expect(computeLogicalArtifactKey(artifact)).toBe(
-      "pctx:blueprint-artifact-pctx-x",
+      "pctx:blueprint-artifact-pctx-x"
     );
   });
 });

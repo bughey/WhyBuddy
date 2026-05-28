@@ -42,6 +42,7 @@ import type {
 } from "@shared/blueprint/contracts";
 
 import type { PreflightExecutionFallbackSub } from "./build-preflight-execution-fallback-entries";
+import { filterArtifactsForStage } from "./filter-artifacts-for-stage";
 import { mergeLogicalArtifacts } from "./merge-logical-artifacts";
 
 /**
@@ -57,14 +58,14 @@ export const PREFLIGHT_ARTIFACT_TYPES: Record<
   readonly BlueprintGenerationArtifactType[]
 > = {
   target_input: [],
-  intake_created: [
-    "intake",
-    "github_source",
-    "project_context",
+  intake_created: ["intake", "github_source", "project_context"],
+  clarification: ["clarification_session"],
+  route: [
+    "route_set",
+    "route_selection",
+    "spec_tree",
     "sandbox_derivation_job",
   ],
-  clarification: ["clarification_session"],
-  route: ["route_set", "route_selection", "spec_tree"],
 };
 
 export function buildPreflightArtifactEntries({
@@ -103,7 +104,7 @@ export function buildPreflightArtifactEntries({
       },
     });
 
-    intake.sources.forEach((source) => {
+    intake.sources.forEach(source => {
       localArtifacts.push({
         id: `github-source-${source.id}`,
         type: "github_source",
@@ -114,13 +115,18 @@ export function buildPreflightArtifactEntries({
       });
     });
 
-    if (projectContext || intake.assets.length > 0 || intake.evidence.length > 0) {
+    if (
+      projectContext ||
+      intake.assets.length > 0 ||
+      intake.evidence.length > 0
+    ) {
       localArtifacts.push({
         id: `project-context-${projectContext?.projectId ?? intake.id}`,
         type: "project_context",
         title: "项目领域上下文",
         summary: `资产 ${projectContext?.assets.length ?? intake.assets.length} 个，证据 ${projectContext?.evidence.length ?? intake.evidence.length} 条`,
-        createdAt: projectContext?.updatedAt ?? intake.updatedAt ?? intake.createdAt,
+        createdAt:
+          projectContext?.updatedAt ?? intake.updatedAt ?? intake.createdAt,
         payload: projectContext ?? {
           assets: intake.assets,
           evidence: intake.evidence,
@@ -174,11 +180,10 @@ export function buildPreflightArtifactEntries({
     }
   }
 
-  const seenIds = new Set(localArtifacts.map((artifact) => artifact.id));
-  const allowedTypes = new Set(PREFLIGHT_ARTIFACT_TYPES[sub]);
-  const jobArtifacts =
-    job?.artifacts.filter(
-      (artifact) => allowedTypes.has(artifact.type) && !seenIds.has(artifact.id)
-    ) ?? [];
+  const seenIds = new Set(localArtifacts.map(artifact => artifact.id));
+  const jobArtifacts = filterArtifactsForStage(
+    sub,
+    job?.artifacts ?? []
+  ).filter(artifact => !seenIds.has(artifact.id));
   return mergeLogicalArtifacts([...localArtifacts, ...jobArtifacts]);
 }
