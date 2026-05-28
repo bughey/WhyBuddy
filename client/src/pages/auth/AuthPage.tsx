@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuthStore } from "@/lib/auth-store";
 import { cn } from "@/lib/utils";
+import { BRAND_NAME_FULL } from "@shared/brand";
 
 type AuthMode = "login" | "code" | "register";
 
@@ -95,7 +96,7 @@ export default function AuthPage() {
           </span>
           <div className="min-w-0">
             <p className="text-sm font-semibold uppercase tracking-[0.08em] text-slate-500">
-              Cube Pets Office
+              {BRAND_NAME_FULL}
             </p>
             <h1 className="mt-1 text-2xl font-semibold tracking-normal">
               {copy.title}

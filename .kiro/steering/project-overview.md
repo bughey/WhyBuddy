@@ -10,6 +10,25 @@
 
 ## inclusion: auto
 
+## 2026-05-28 Rebrand: 端云 / Duanyun
+
+This project's user-facing brand has changed from `Cube Pets Office` to
+`端云 / Duanyun`. Strategy is **alias-first, not big-bang rename**:
+
+- User-visible touchpoints (HTML title, login, loading, README hero,
+  `package.json` `name`) consume `shared/brand.ts`.
+- Internal symbols (file names, module identifiers, audit / lineage event
+  families, the 287 spec dirs, this steering file's older sections) keep
+  their existing strings; a future `duanyun-internal-rename` spec will
+  carry out the coordinated sweep.
+- The legacy package name lives on as `BRAND_PACKAGE_LEGACY` in
+  `shared/brand.ts` for places that still need to reference the old token.
+
+The name expands to `端 (edge / endpoint) + 云 (cloud)` — workloads run at
+the edge when they can (browser runtime, native sandbox, your laptop's
+Docker), and fall back to the cloud when they need shared coordination
+(LLM, MCP servers, the Lobster Executor service).
+
 ## 2026-04-30 Project-first next phase
 
 This project overview now treats Project-first as the next product mainline above the closed Task Autopilot Phase 1 baseline.
