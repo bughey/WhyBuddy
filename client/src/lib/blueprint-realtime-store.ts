@@ -184,6 +184,13 @@ export interface SpecDocsNodeEntry {
   position: number;
   status: SpecDocsNodeStatus;
   errorSummary?: string;
+  /**
+   * whybuddy-spec-tree-progress-merge-2026-05-29 §3（决策 Q1=A2 白盒）：
+   * 节点曾经历过 `failed → processing` 重试。一旦置 true 永久保留，
+   * 即使后续 `node_completed` 也不清除——让 SPEC 树节点行能渲染
+   * "绿 ✓ + 橙 ⚠ 角标"，向用户透明展示"这个节点重试过"。
+   */
+  wasRetried?: boolean;
 }
 
 /**
@@ -239,7 +246,9 @@ const VALID_TRANSITIONS: Record<SpecDocsNodeStatus, SpecDocsNodeStatus[]> = {
   processing: ["completed", "failed"],
   completed: ["assembled"],
   assembled: [],
-  failed: [],
+  // whybuddy-spec-tree-progress-merge-2026-05-29 §3（Q1=A2）：放宽 failed 终态，
+  // 允许后端把失败节点重排重试（failed → processing）。原为 `[]`（终态）。
+  failed: ["processing"],
 };
 
 /**
@@ -899,6 +908,10 @@ function handleSpecDocsProgressEvent(
       const node = currentState.nodes[nodeId];
       if (!node) return null; // Unknown node (Req 2.8)
       if (!isValidTransition(node.status, "processing")) return null; // (Req 2.7)
+      // whybuddy-spec-tree-progress-merge-2026-05-29 §3（Q1=A2 白盒）：
+      // 若本次 node_started 是从 failed 态重新进入 processing（后端重排重试），
+      // 永久标记 wasRetried，使最终态可渲染 "✓ + ⚠" 角标。
+      const wasRetried = node.status === "failed" ? true : node.wasRetried;
       return {
         specDocsProgress: {
           ...currentState,
@@ -909,6 +922,7 @@ function handleSpecDocsProgressEvent(
               status: "processing",
               title: String(payload.nodeTitle ?? "").slice(0, 200),
               position: Number(payload.position) || 0,
+              ...(wasRetried ? { wasRetried: true } : {}),
             },
           },
         },
@@ -1501,3 +1515,41 @@ export const useBlueprintRealtimeStore = create<
     set(initialState);
   },
 }));
+
+/**
+ * whybuddy-spec-tree-progress-merge-2026-05-29 §8.5：DEV-only e2e 注入口。
+ *
+ * 本 dev 环境 `AUTOPILOT_REAL_RUNTIME=true` 会把 job 一路自动驾驶冲过
+ * spec_docs，且真 LLM 批量生成耗时数分钟、无法稳定复现 `node_failed → 重试
+ * → node_completed`（A2 白盒）这条路径。Playwright 验收脚本因此需要一个
+ * 浏览器侧的 socket 事件本地回放入口，按 batch_init → node_started →
+ * node_failed → node_started → node_completed → batch_finished 顺序直接
+ * dispatch，确保 5 态 + retried 渲染都被真浏览器验证到，不依赖真 LLM 时序。
+ *
+ * 该 accessor 仅在 `import.meta.env.DEV` 下挂到 `window`，生产构建（Vite
+ * 静态消除 `if (false)` 分支）不包含此代码，因此不构成生产暴露面。与既有
+ * `globalThis.__snapshot*`（browser-runtime.ts / snapshot-lifecycle-bridge.ts）
+ * 的 dev accessor 模式一致。
+ */
+if (import.meta.env.DEV && typeof window !== "undefined") {
+  (window as unknown as Record<string, unknown>).__blueprintRealtimeStore = {
+    dispatchEvent: (event: BlueprintRelayedEvent) =>
+      useBlueprintRealtimeStore.getState().dispatchEvent(event),
+    getSpecDocsProgress: () =>
+      useBlueprintRealtimeStore.getState().specDocsProgress,
+    getState: () => useBlueprintRealtimeStore.getState(),
+    /**
+     * DEV-only setter that lets the e2e harness pivot `batchStatus` without
+     * going through the reducer (used to reproduce the "leftover processing
+     * entry from a prior batch that never fired batch_finished" race that the
+     * stale-guard in `deriveNodeStatusById` is supposed to neutralize).
+     */
+    setBatchStatus: (
+      next: "idle" | "running" | "assembling" | "finished"
+    ): void => {
+      useBlueprintRealtimeStore.setState((state) => ({
+        specDocsProgress: { ...state.specDocsProgress, batchStatus: next },
+      }));
+    },
+  };
+}
