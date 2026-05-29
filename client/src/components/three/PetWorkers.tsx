@@ -23,6 +23,14 @@ import {
   type SceneFusionMode,
   type MissionAgentId,
 } from "./scene-fusion/role-id-bridge";
+import {
+  createBlueprintSceneData,
+  deriveBlueprintAgentPatrol,
+  deriveBlueprintFlowRoutes,
+  type BlueprintSceneFlowRoute,
+  type BlueprintSceneAgentConfig,
+  type BlueprintSceneDepartmentMarker,
+} from "./scene-fusion/blueprint-scene-agents";
 import { getRoleRuntimeVisual } from "./scene-fusion/role-runtime-visual";
 import type { AppLocale } from "@/lib/locale";
 import {
@@ -50,7 +58,7 @@ import { selectWorkflowOrganization } from "@/lib/workflow-selectors";
  * 将 RolePhase 映射到 AgentAnimationType。
  * 覆盖所有 RolePhase 值。
  */
-export function mapRolePhaseToAnimation(phase: RolePhase): AgentAnimationType {
+function mapRolePhaseToAnimation(phase: RolePhase): AgentAnimationType {
   switch (phase) {
     case "thinking":
       return "reading";
@@ -77,7 +85,7 @@ export function mapRolePhaseToAnimation(phase: RolePhase): AgentAnimationType {
 /**
  * 将 RolePhase 映射到 StatusCategory（影响光效和边框样式）。
  */
-export function mapRolePhaseToStatusCategory(phase: RolePhase): StatusCategory {
+function mapRolePhaseToStatusCategory(phase: RolePhase): StatusCategory {
   switch (phase) {
     case "thinking":
     case "activated":
@@ -113,30 +121,8 @@ function usePrefersReducedMotion(): boolean {
   return reduced;
 }
 
-type SceneAgentConfig = {
-  id: string;
-  name: string;
-  shortLabel: string;
-  titleLabel: string;
-  department: string;
-  role: "ceo" | "manager" | "worker";
-  emoji: string;
-  animal: AgentVisualConfig["animal"];
-  position: [number, number, number];
-  rotation: [number, number, number];
-  scale: number;
-  animationType: AgentAnimationType;
-  idleText: string;
-  color: string;
-  isGuest?: boolean;
-};
-
-type SceneDepartmentMarker = {
-  id: string;
-  label: string;
-  position: [number, number, number];
-  color: string;
-};
+type SceneAgentConfig = BlueprintSceneAgentConfig;
+type SceneDepartmentMarker = BlueprintSceneDepartmentMarker;
 
 const SCENE_SLOT_TEMPLATES = [
   {
@@ -404,13 +390,22 @@ function animateWorker(
 
   switch (animationType) {
     case "typing":
-      group.position.y = basePosition[1] + Math.sin(time * 4 * motion) * 0.015;
-      group.rotation.z = Math.sin(time * 2 * motion) * 0.03;
+      // 打字动作：手部上下 + 轻微肩部前倾。把 y 振幅从 0.015 放到 0.035，
+      // 让活跃中的角色明显「动起来」，与 idle pose 形成可视差。
+      // 二次回归（用户反馈仍看不到运动）：amplitude 0.035 → 0.10（10cm），
+      // 加 yaw 摇摆 0.12 让躯干侧倾。1.5Hz × 10cm 在默认相机下肉眼明显。
+      group.position.y = basePosition[1] + Math.sin(time * 4 * motion) * 0.1;
+      group.rotation.z = Math.sin(time * 2 * motion) * 0.12;
+      group.rotation.y =
+        baseRotation[1] + Math.sin(time * 1.5 * motion) * 0.08;
       break;
     case "reading":
+      // 阅读：呼吸 + 低头。amplitude 0.03 → 0.08（8cm），加 yaw 摇摆。
       group.position.y =
-        basePosition[1] + Math.sin(time * 1.5 * motion) * 0.012;
-      group.rotation.z = Math.sin(time * 0.8 * motion) * 0.02;
+        basePosition[1] + Math.sin(time * 1.5 * motion) * 0.08;
+      group.rotation.z = Math.sin(time * 0.8 * motion) * 0.1;
+      group.rotation.y =
+        baseRotation[1] + Math.sin(time * 1.2 * motion) * 0.1;
       break;
     case "organizing": {
       const walkCycle = Math.sin(time * 0.8 * motion);
@@ -423,30 +418,39 @@ function animateWorker(
       break;
     }
     case "discussing":
-      group.rotation.y = baseRotation[1] + Math.sin(time * 1.2 * motion) * 0.25;
+      // 讨论：身体大幅左右转 + 上下点头。y 0.04 → 0.09。
+      group.rotation.y = baseRotation[1] + Math.sin(time * 1.2 * motion) * 0.4;
       group.position.y =
-        basePosition[1] + Math.abs(Math.sin(time * 3 * motion)) * 0.03;
+        basePosition[1] + Math.abs(Math.sin(time * 3 * motion)) * 0.09;
       break;
     case "noting":
-      group.position.y = basePosition[1] + Math.sin(time * 5 * motion) * 0.01;
-      group.rotation.x = baseRotation[0] + Math.sin(time * 2.5 * motion) * 0.05;
+      // 记笔记：快速点头 + 上下浮动。y 0.025 → 0.07。
+      group.position.y = basePosition[1] + Math.sin(time * 5 * motion) * 0.07;
+      group.rotation.x = baseRotation[0] + Math.sin(time * 2.5 * motion) * 0.18;
+      group.rotation.y =
+        baseRotation[1] + Math.sin(time * 1.0 * motion) * 0.08;
       break;
     case "examining":
-      // Simulate "examining closely" motion: slight forward lean + left-right scanning
-      group.rotation.x = baseRotation[0] + Math.sin(time * 1.2) * 0.08;
-      group.rotation.y = baseRotation[1] + Math.sin(time * 0.6) * 0.15;
-      group.position.y = basePosition[1] + Math.sin(time * 2) * 0.01;
+      // 仔细查看：前倾 + 左右扫视。y 0.025 → 0.06。转头幅度也加大。
+      group.rotation.x = baseRotation[0] + Math.sin(time * 1.2) * 0.2;
+      group.rotation.y = baseRotation[1] + Math.sin(time * 0.6) * 0.3;
+      group.position.y = basePosition[1] + Math.sin(time * 2) * 0.06;
       break;
     case "listening":
-      // "倾听"动画：头部微倾 + 轻微上下浮动
-      group.rotation.z = baseRotation[2] + Math.sin(time * 0.8) * 0.1;
-      group.position.y = basePosition[1] + Math.sin(time * 1.5) * 0.01;
+      // 倾听：头部微倾 + 上下浮动 + 横向摇摆。
+      // 三次回归（用户反馈：「3D 角色都没动，看着像静止」）：把 listening
+      // 这个 idle 默认动画改成对所有 idle 角色都明显可见的呼吸：y 0.04 →
+      // 0.09（9cm），加快 1.5Hz → 2.0Hz，同时叠 0.18 yaw 横摆，让没收到
+      // 实时 phase 的角色（fuzzy 匹配前的旧 fallback 路径）也保持「活着」。
+      group.rotation.z = baseRotation[2] + Math.sin(time * 0.8) * 0.15;
+      group.rotation.y = baseRotation[1] + Math.sin(time * 0.5) * 0.18;
+      group.position.y = basePosition[1] + Math.sin(time * 2.0) * 0.09;
       break;
     case "speaking":
-      // "说话"动画：轻微点头 + 左右摇摆
-      group.rotation.x = baseRotation[0] + Math.sin(time * 3) * 0.06;
-      group.rotation.y = baseRotation[1] + Math.sin(time * 1.5) * 0.08;
-      group.position.y = basePosition[1] + Math.abs(Math.sin(time * 4)) * 0.015;
+      // "说话"动画：点头 + 摇摆。y 0.035 → 0.08。
+      group.rotation.x = baseRotation[0] + Math.sin(time * 3) * 0.15;
+      group.rotation.y = baseRotation[1] + Math.sin(time * 1.5) * 0.18;
+      group.position.y = basePosition[1] + Math.abs(Math.sin(time * 4)) * 0.08;
       break;
   }
 }
@@ -602,14 +606,30 @@ function MessageFlowPath({
   color,
   opacity,
   phase,
+  visualWeight = "active",
 }: {
   from: [number, number, number];
   to: [number, number, number];
   color: string;
   opacity: number;
   phase: number;
+  visualWeight?: "subtle" | "active";
 }) {
   const particleRefs = useRef<Array<THREE.Mesh | null>>([]);
+  const subtle = visualWeight === "subtle";
+  const glowLineWidth = subtle ? 0.9 : 1.45;
+  const mainLineWidth = subtle ? 0.5 : 0.82;
+  const glowOpacity = subtle
+    ? Math.min(0.08, opacity * 0.34)
+    : Math.min(0.13, opacity * 0.38);
+  const mainOpacity = subtle
+    ? Math.min(0.26, opacity + 0.02)
+    : Math.min(0.48, opacity + 0.1);
+  const particleRadius = subtle ? 0.034 : 0.048;
+  const particleOpacity = subtle
+    ? Math.min(0.34, opacity + 0.08)
+    : Math.min(0.58, opacity + 0.14);
+  const particleEmissiveIntensity = subtle ? 0.56 : 0.85;
 
   const curve = useMemo(() => {
     const start = getFlowAnchor(from);
@@ -630,10 +650,10 @@ function MessageFlowPath({
     particleRefs.current.forEach((mesh, index) => {
       if (!mesh) return;
 
-      const t = (clock.elapsedTime * 0.18 + phase + index * 0.19) % 1;
+      const t = (clock.elapsedTime * 0.32 + phase + index * 0.19) % 1;
       mesh.position.copy(curve.getPointAt(t));
       mesh.scale.setScalar(
-        0.84 * (0.88 + Math.sin(clock.elapsedTime * 6 + index) * 0.12)
+        1.1 * (0.85 + Math.sin(clock.elapsedTime * 7 + index) * 0.18)
       );
     });
   });
@@ -643,9 +663,16 @@ function MessageFlowPath({
       <Line
         points={points}
         color={color}
-        lineWidth={1.25}
+        lineWidth={glowLineWidth}
         transparent
-        opacity={opacity}
+        opacity={glowOpacity}
+      />
+      <Line
+        points={points}
+        color={color}
+        lineWidth={mainLineWidth}
+        transparent
+        opacity={mainOpacity}
       />
 
       {[0, 1, 2].map(index => (
@@ -655,13 +682,70 @@ function MessageFlowPath({
             particleRefs.current[index] = mesh;
           }}
         >
-          <sphereGeometry args={[0.065, 16, 16]} />
+          <sphereGeometry args={[particleRadius, 14, 14]} />
           <meshStandardMaterial
             color={color}
             emissive={color}
-            emissiveIntensity={0.55}
+            emissiveIntensity={particleEmissiveIntensity}
             transparent
-            opacity={Math.min(0.95, opacity + 0.18)}
+            opacity={particleOpacity}
+          />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+function AgentMotionCue({
+  color,
+  active,
+}: {
+  color: string;
+  active: boolean;
+}) {
+  const dotRefs = useRef<Array<THREE.Mesh | null>>([]);
+
+  useFrame(({ clock }) => {
+    dotRefs.current.forEach((mesh, index) => {
+      if (!mesh) return;
+      const phase = clock.elapsedTime * (active ? 3.2 : 1.8) + index * 2.1;
+      const radius = active ? 0.92 : 0.76;
+      mesh.position.set(
+        Math.cos(phase) * radius,
+        0.42 + Math.sin(phase * 1.7) * 0.16,
+        Math.sin(phase) * radius
+      );
+      mesh.scale.setScalar(active ? 1.2 : 0.95);
+    });
+  });
+
+  return (
+    <group>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.08, 0]}>
+        <ringGeometry args={[0.72, 0.735, 42]} />
+        <meshStandardMaterial
+          color={color}
+          emissive={color}
+          emissiveIntensity={active ? 0.42 : 0.22}
+          transparent
+          opacity={active ? 0.12 : 0.055}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+      {[0, 1, 2].map(index => (
+        <mesh
+          key={index}
+          ref={mesh => {
+            dotRefs.current[index] = mesh;
+          }}
+        >
+          <sphereGeometry args={[active ? 0.065 : 0.048, 12, 12]} />
+          <meshStandardMaterial
+            color={color}
+            emissive={color}
+            emissiveIntensity={active ? 1.05 : 0.62}
+            transparent
+            opacity={active ? 0.58 : 0.34}
           />
         </mesh>
       ))}
@@ -838,12 +922,32 @@ function AgentWorker({
         speedBoost
       );
     } else {
-      // 降级：静态位置，不播放运动动画
+      // Reduced-motion 降级：以前是「位置硬复位回 baseline」（看起来像石像）。
+      // 用户反馈「3D 角色都没动，以前是能动的」——根因就是 OS 端开了
+      // prefers-reduced-motion: reduce 后整张办公室一片静止。改为「极低
+      // 振幅呼吸」：1.5cm 上下浮动 + 极小转动，传达「场景活着」的信号但
+      // 不构成可感知的动画运动（满足 WCAG reduced-motion 的精神，避免
+      // 体感「死掉」）。振幅是普通 listening 动画的 ~1/3。
       groupRef.current.position.set(...config.position);
       groupRef.current.rotation.set(...config.rotation);
+      groupRef.current.position.y =
+        config.position[1] + Math.sin(clock.elapsedTime * 0.6) * 0.015;
     }
 
     // Scale: blend base scale with guest animation progress (0.5→1 range)
+    if (mode === "blueprint") {
+      const patrol = deriveBlueprintAgentPatrol({
+        agentId: config.id,
+        basePosition: config.position,
+        baseRotation: config.rotation,
+        time: clock.elapsedTime,
+        rolePhase: rolePhase ?? "idle",
+        motionScale: prefersReducedMotion ? 0.65 : 1,
+      });
+      groupRef.current.position.set(...patrol.position);
+      groupRef.current.rotation.set(...patrol.rotation);
+    }
+
     const guestScaleFactor = config.isGuest
       ? 0.5 + guestAnim.progress * 0.5
       : 1;
@@ -884,6 +988,12 @@ function AgentWorker({
       }}
     >
       <primitive object={cloned} />
+      {mode === "blueprint" ? (
+        <AgentMotionCue
+          color={activeSignalLightColor}
+          active={Boolean(rolePhase && rolePhase !== "idle")}
+        />
+      ) : null}
 
       {showPrimaryLabel ? (
         <Html
@@ -1073,6 +1183,9 @@ export function PetWorkers({
     () => selectWorkflowOrganization(scopedCurrentWorkflow),
     [scopedCurrentWorkflow]
   );
+  const blueprintSceneRolePhases = useBlueprintRealtimeStore(
+    state => state.rolePhases
+  );
 
   // Track guest agents that are in the process of leaving (exit animation)
   const [guestLeavingIds, setGuestLeavingIds] = useState<Set<string>>(
@@ -1095,6 +1208,14 @@ export function PetWorkers({
   }, [socket]);
 
   const { configs, departmentMarkers } = useMemo(() => {
+    if (mode === "blueprint") {
+      const sceneData = createBlueprintSceneData(locale, blueprintSceneRolePhases);
+      return {
+        configs: sceneData.sceneAgents,
+        departmentMarkers: sceneData.markers,
+      };
+    }
+
     if (organization) {
       const sceneData = createDynamicSceneData(organization, locale);
       return {
@@ -1153,7 +1274,7 @@ export function PetWorkers({
         },
       ],
     };
-  }, [agents, locale, organization]);
+  }, [agents, blueprintSceneRolePhases, locale, mode, organization]);
 
   const configMap = useMemo(
     () =>
@@ -1164,7 +1285,28 @@ export function PetWorkers({
     [configs]
   );
 
-  const flowRoutes = useMemo(() => {
+  // whybuddy-spec-tree-progress-merge-2026-05-29 follow-up：在 blueprint 模式下，
+  // workflow-store 的 messages 永远是空（autopilot 走 BlueprintRealtimeStore 而
+  // 不是 mission-first 的 socket message bus），导致 3D 场景的连线 / 粒子流
+  // 永远画不出来，办公室看着像静态海报。这里订阅 rolePhases，每一对当前正在
+  // 「活跃」的角色（通过 fuzzy 解析映射回 mission agent slot）→ 合成一条
+  // MessageFlowPath route，让用户能看到「正在工作的那几个角色之间正有任务
+  // 在路由」。mission-first 模式不订阅，行为不变。
+  const blueprintRolePhases = useBlueprintRealtimeStore(
+    state => state.rolePhases
+  );
+  const blueprintFlowRoutes = useMemo(() => {
+    if (mode !== "blueprint") return [];
+    return deriveBlueprintFlowRoutes(blueprintRolePhases, configMap);
+  }, [mode, blueprintRolePhases, configMap]);
+
+  const flowRoutes = useMemo<BlueprintSceneFlowRoute[]>(() => {
+    // blueprint 模式优先用合成的角色活跃路由（来自 BlueprintRealtimeStore），
+    // 没有活跃角色时再走下面 mission-first 的派生逻辑（兼容空态 / 测试态）。
+    if (mode === "blueprint" && blueprintFlowRoutes.length > 0) {
+      return blueprintFlowRoutes;
+    }
+
     const recentMessages = messages
       .filter(
         message => configMap[message.from_agent] && configMap[message.to_agent]
@@ -1238,16 +1380,16 @@ export function PetWorkers({
     return routes.filter(
       (
         route
-      ): route is {
-        key: string;
-        from: [number, number, number];
-        to: [number, number, number];
-        color: string;
-        opacity: number;
-        phase: number;
-      } => Boolean(route.from && route.to)
+      ): route is BlueprintSceneFlowRoute => Boolean(route.from && route.to)
     );
-  }, [configMap, configs, messages, scopedCurrentWorkflow]);
+  }, [
+    mode,
+    blueprintFlowRoutes,
+    configMap,
+    configs,
+    messages,
+    scopedCurrentWorkflow,
+  ]);
 
   return (
     <group>
@@ -1270,6 +1412,7 @@ export function PetWorkers({
           color={route.color}
           opacity={route.opacity}
           phase={route.phase}
+          visualWeight={route.visualWeight}
         />
       ))}
 
