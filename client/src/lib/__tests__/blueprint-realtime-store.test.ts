@@ -318,7 +318,7 @@ describe("BlueprintRealtimeStore", () => {
   });
 
   // 8. unsubscribe 重置状态（但不清空 logEntries，保留历史）
-  it("should reset state on unsubscribe but preserve logEntries", () => {
+  it("should reset state on unsubscribe and clear active logEntries", () => {
     (mockSocket as unknown as { connected: boolean }).connected = true;
 
     const store = useBlueprintRealtimeStore.getState();
@@ -357,8 +357,7 @@ describe("BlueprintRealtimeStore", () => {
     expect(state.capabilityStatuses).toEqual({});
     expect(state.capabilityOwners).toEqual({});
     expect(state.agentProgress).toEqual([]);
-    // logEntries 保留历史
-    expect(state.logEntries.length).toBeGreaterThan(0);
+    expect(state.logEntries).toEqual([]);
   });
 
   // 9. 额外：connectionState 跟踪

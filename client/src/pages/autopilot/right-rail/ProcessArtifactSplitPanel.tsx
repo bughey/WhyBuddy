@@ -126,6 +126,13 @@ export const ProcessArtifactSplitPanel: FC<ProcessArtifactSplitPanelProps> = ({
     (state) => state.agentReasoning.entries
   );
   const sourceReasoningEntries = reasoningEntries ?? storeReasoningEntries;
+  const scopedReasoningEntries = useMemo(
+    () =>
+      job?.id
+        ? sourceReasoningEntries.filter(entry => entry.jobId === job.id)
+        : sourceReasoningEntries,
+    [sourceReasoningEntries, job?.id]
+  );
   const filterSet = useMemo(
     () =>
       stageFilter === undefined
@@ -143,8 +150,8 @@ export const ProcessArtifactSplitPanel: FC<ProcessArtifactSplitPanelProps> = ({
     [artifacts, job?.artifacts, artifactTypeSet]
   );
   const reasoningCards = useMemo(
-    () => deriveReasoningCards(sourceReasoningEntries, filterSet),
-    [sourceReasoningEntries, filterSet]
+    () => deriveReasoningCards(scopedReasoningEntries, filterSet),
+    [scopedReasoningEntries, filterSet]
   );
   const fallbackReasoningCards = useMemo(
     () =>

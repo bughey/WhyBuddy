@@ -2791,7 +2791,7 @@ function AutopilotWorkflowRail({
       }}
     >
       <section
-        className="min-w-0 h-full border border-[#E5E5E5] bg-white"
+        className="min-w-0 h-full bg-white"
         data-testid="autopilot-workflow-steps"
         data-mf-card
         style={{ borderRadius: "0px" }}
@@ -3410,11 +3410,20 @@ export default function AutopilotRoutePage() {
   useEffect(() => {
     let active = true;
 
+    if (!IS_GITHUB_PAGES && !currentProjectId) {
+      resetLatestGenerationSnapshot();
+      setApiError(null);
+      return () => {
+        active = false;
+      };
+    }
+
+    const latestProjectId = currentProjectId ?? undefined;
     const latestJobRequest =
       IS_GITHUB_PAGES && pagesBlueprintRuntime
         ? pagesBlueprintRuntime.fetchLatestGenerationJob()
         : fetchLatestBlueprintGenerationJob({
-            projectId: currentProjectId ?? undefined,
+            projectId: latestProjectId,
           });
 
     latestJobRequest.then(result => {
@@ -3430,14 +3439,26 @@ export default function AutopilotRoutePage() {
     return () => {
       active = false;
     };
-  }, [applyLatestGenerationSnapshot, currentProjectId, pagesBlueprintRuntime]);
+  }, [
+    applyLatestGenerationSnapshot,
+    currentProjectId,
+    pagesBlueprintRuntime,
+    resetLatestGenerationSnapshot,
+  ]);
 
   const refreshLatestGenerationSnapshot = useCallback(async () => {
+    if (!IS_GITHUB_PAGES && !currentProjectId) {
+      resetLatestGenerationSnapshot();
+      setApiError(null);
+      return false;
+    }
+
+    const latestProjectId = currentProjectId ?? undefined;
     const latestJobRequest =
       IS_GITHUB_PAGES && pagesBlueprintRuntime
         ? pagesBlueprintRuntime.fetchLatestGenerationJob()
         : fetchLatestBlueprintGenerationJob({
-            projectId: currentProjectId ?? undefined,
+            projectId: latestProjectId,
           });
     const result = await latestJobRequest;
     if (!result.ok) {
@@ -3447,7 +3468,12 @@ export default function AutopilotRoutePage() {
 
     applyLatestGenerationSnapshot(result.data);
     return true;
-  }, [applyLatestGenerationSnapshot, currentProjectId, pagesBlueprintRuntime]);
+  }, [
+    applyLatestGenerationSnapshot,
+    currentProjectId,
+    pagesBlueprintRuntime,
+    resetLatestGenerationSnapshot,
+  ]);
 
   const refreshPagesBlueprintSnapshot = useCallback(async () => {
     if (!pagesBlueprintRuntime) return false;

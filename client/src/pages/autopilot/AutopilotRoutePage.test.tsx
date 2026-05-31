@@ -557,7 +557,7 @@ describe("AutopilotRoutePage", () => {
     );
 
     expect(routeSource).toMatch(/const refreshLatestGenerationSnapshot\s*=\s*useCallback/);
-    expect(routeSource).toMatch(/fetchLatestBlueprintGenerationJob\(\{\s*projectId:\s*currentProjectId\s*\?\?\s*undefined,\s*\}\)/);
+    expect(routeSource).toMatch(/fetchLatestBlueprintGenerationJob\(\{\s*projectId:\s*latestProjectId\s*,\s*\}\)/);
     expect(routeSource).toMatch(/onHistoryPanelClosed=\{async \(\) => \{\s*await refreshLatestGenerationSnapshot\(\);\s*\}\}/);
     expect(closeHandler).toMatch(/closeAutopilotHistorySearch\(\)/);
     expect(closeHandler).toMatch(/setHistoryPanelOpen\(false\)/);
@@ -723,7 +723,7 @@ describe("AutopilotRoutePage", () => {
     );
 
     expect(source).toMatch(/fetchLatestBlueprintGenerationJob/);
-    expect(source).toMatch(/fetchLatestBlueprintGenerationJob\(\{\s*projectId:\s*currentProjectId\s*\?\?\s*undefined,\s*\}\)/);
+    expect(source).toMatch(/fetchLatestBlueprintGenerationJob\(\{\s*projectId:\s*latestProjectId\s*,\s*\}\)/);
     expect(source).toMatch(/const applyLatestGenerationSnapshot\s*=\s*useCallback/);
     expect(source).toMatch(/applyLatestGenerationSnapshot\(\s*result\.data\s*\)/);
 
@@ -737,6 +737,24 @@ describe("AutopilotRoutePage", () => {
     expect(helperSource).toMatch(/setIntake\(\s*snapshot\.intake\s*\)/);
     expect(helperSource).toMatch(/resetLatestGenerationSnapshot\(\)/);
     expect(helperSource).toMatch(/setProjectContext\(\s*snapshot\.projectContext\s*\?\?\s*null\s*\)/);
+  });
+
+  it("does not fetch the global latest blueprint job when no current project is selected", async () => {
+    const fs = await import("node:fs/promises");
+    const path = await import("node:path");
+    const source = await fs.readFile(
+      path.resolve(__dirname, "./AutopilotRoutePage.tsx"),
+      "utf8"
+    );
+
+    expect(source).toMatch(/if \(!IS_GITHUB_PAGES && !currentProjectId\) \{/);
+
+    const latestFetchRegion = source.slice(
+      source.indexOf("const latestJobRequest ="),
+      source.indexOf("const refreshPagesBlueprintSnapshot")
+    );
+    expect(latestFetchRegion).toMatch(/const latestProjectId = currentProjectId \?\? undefined/);
+    expect(latestFetchRegion).toMatch(/projectId:\s*latestProjectId/);
   });
 
   it("uses the GitHub Pages static blueprint runtime without remote right-rail fetches", async () => {

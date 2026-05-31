@@ -1200,16 +1200,24 @@ export const useBlueprintRealtimeStore = create<
 
     const s = getOrCreateSocket();
 
-    // 当 jobId 变化时保留历史 agentReasoning entries，避免阶段切换
-    // （intake.id → job.id）时丢失之前的执行步骤。entries 的 stageId
-    // 字段已标记每条 entry 属于哪个阶段，MiroFishCardStream 可按需过滤。
+    // A subscription is a hard job boundary. These slices are active-job data,
+    // so switching from one job/project to another must wipe them instead of
+    // preserving historical entries. Connection-level state stays outside this
+    // reset because it describes the socket, not the current job.
     set({
       subscribedJobId: jobId,
       connectionState: "connecting",
+      rolePhases: {},
+      roleRuntimeStates: {},
+      agentProgress: [],
+      capabilityStatuses: {},
+      capabilityOwners: {},
+      fleetRoleCards: [],
+      logEntries: [],
       agentReasoning: {
         jobId,
-        entries: state.agentReasoning.entries,
-        currentIteration: state.agentReasoning.currentIteration,
+        entries: [],
+        currentIteration: 0,
         status: "idle",
       },
     });
@@ -1370,6 +1378,7 @@ export const useBlueprintRealtimeStore = create<
       capabilityStatuses: {},
       capabilityOwners: {},
       fleetRoleCards: [],
+      logEntries: [],
       connectionState: s.connected ? "connected" : "disconnected",
       // `autopilot-agent-reasoning-stream` spec Task 8.6 / 8.7：
       // agentReasoning 与 rolePhases / agentProgress / capabilityStatuses 同属
@@ -1380,6 +1389,11 @@ export const useBlueprintRealtimeStore = create<
   },
 
   dispatchEvent(event: BlueprintRelayedEvent) {
+    const activeJobId = get().subscribedJobId;
+    if (activeJobId && event.jobId !== activeJobId) {
+      return;
+    }
+
     const { type, payload } = event;
 
     set((state) => {
