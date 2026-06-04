@@ -1,3 +1,11 @@
+# WhyBuddy Skill 闭环总图（改进版 v2 · 伴随式角色 + 落地交付）
+
+> 在 v1(四处发力点)基础上再加两块,全部 ★ + 青虚线:
+> 五、**伴随式审查与接地层**——挑刺者 + 接地者,横切输入/澄清/路线/规格,按需触发(模糊度·真仓库·风险),不常驻开会。
+> 六、**落地交付升级**——视觉分两路(看感觉→生图模型并标“预览”;结构图→确定性渲染)、可追溯矩阵、更厚的交付包(接口契约草稿·验收用例·未决项·校验台账)。
+> 约定:实线=主流程;虚线=反馈/失效/运行时;菱形=判断闸;**青虚线 + ★ = 相对原合并版的新增/改动**。
+
+```mermaid
 flowchart TB
 
 U["用户想法 / User Idea<br/>一句话目标 · 仓库 · 文件 · 截图"]:::entry
@@ -6,7 +14,7 @@ subgraph S1["01 输入层 / Input"]
   direction TB
   IN_RAW["原始输入 / Raw Input"]:::input
   IN_GH{"有 GitHub 链接? / Has repo URL?"}:::gate
-  IN_INGEST["GitHub 解析 / Ingestion<br/>repo · readme · 目录骨架"]:::input
+  IN_INGEST["★ GitHub 深度解析 / Deep Ingestion<br/>文件 · 符号 · 接口契约"]:::input
   IN_FALL["降级状态 / Fallback<br/>权限失败 · 仓库不可访问"]:::fallback
   IN_NORM["归一化 / Normalize<br/>去重 · 证据 · 失败状态"]:::input
   IN_CTX["项目上下文 / Project Context<br/>目标 · 摘要 · 来源 · 证据"]:::input
@@ -39,31 +47,40 @@ subgraph DG["决策与协作 / Decision and Collaboration"]
   D_DEG["降级兜底 / Degradation"]:::fallback
 end
 
+subgraph CO["★ 伴随式审查与接地 / Companion · 按需触发：模糊度·真仓库·风险"]
+  direction TB
+  CO_CRIT["★ 挑刺者 / Critic<br/>找漏洞 · 证据不足处"]:::companion
+  CO_GROUND["★ 接地者 / Grounding<br/>读真代码 · 逼挂真实出处"]:::companion
+end
+
 subgraph S4["04 规格树生成核心 / SPEC Tree Generation Core"]
   direction TB
-  SP_PROMPT["提示词构造 / Prompt Builder"]:::spec
+  SP_PROMPT["★ 提示词构造 / Prompt Builder<br/>成功标准→需求 · 验收用 EARS"]:::spec
   SP_REDACT["脱敏 / Redaction"]:::spec
   SP_LLM["LLM JSON 生成 / callJson<br/>retryAttempts = 1"]:::spec
   SP_SCHEMA{"Schema 校验 / Validator"}:::gate
   SP_NORM["归一化 / Normalizer<br/>稳定 ID 重映射"]:::spec
-  SP_INV{"不变量守卫 / Invariant Guard<br/>唯一根 · 父可达 · 深度 · 无环"}:::gate
+  SP_INV{"★ 不变量守卫 / Invariant Guard<br/>唯一根 · 父可达 · 深度 · 无环<br/>+ 需求覆盖成功标准 · 每节点挂证据"}:::gate
   SP_FALL["确定性兜底 / Deterministic Fallback<br/>已预先满足不变量"]:::fallback
   SP_PROV["来源追踪 / Provenance<br/>llm · llm_fallback · template"]:::spec
-  SP_TREE["规格树 / SPEC Tree<br/>Requirements · Design · Tasks · Evidence"]:::artifact
+  SP_TREE["规格树 / SPEC Tree<br/>Requirements · Design · Tasks · Evidence(带真实出处)"]:::artifact
 end
 
 subgraph S5["05 规格文档 / SPEC Document"]
   direction TB
   SD_GEN["文档生成器 / Doc Generator"]:::doc
   SD_DOCS["文档 / Docs<br/>requirements.md · design.md · tasks.md"]:::doc
-  SD_ACC["验收 · 证据 / Acceptance · Evidence"]:::doc
+  SD_ACC["验收 · 证据 · 用例 / Acceptance · Evidence · Tests"]:::doc
 end
 
 subgraph S6["06 效果预览与交付 / Preview and Handoff"]
   direction TB
   EP_PACK["提示词包 / Prompt Pack"]:::preview
   EP_PREV["效果预览 / Effect Preview"]:::preview
-  EP_HAND["交付包 · 导出 / Handoff · Export<br/>md · zip · online"]:::preview
+  EP_VIS_GEN["★ 视觉预览·生成 / Gen Preview<br/>规格文档→生图提示词→生图模型<br/>UI 草样 · 标『预览·未验证』"]:::preview
+  EP_VIS_REND["★ 结构图·渲染 / Rendered<br/>规格树→Mermaid 确定性出图<br/>架构总图 · 不交给生图模型"]:::preview
+  EP_MATRIX["★ 可追溯矩阵 / Traceability<br/>需求↔设计↔任务↔证据↔用例"]:::preview
+  EP_HAND["交付包 · 导出 / Handoff · Export<br/>md·zip · 接口契约(草稿·待核) · 验收用例<br/>未决项登记 · 校验台账 · 视觉预览(标来源)"]:::preview
 end
 
 subgraph S7["07 运行时与状态 / Runtime and State"]
@@ -97,8 +114,9 @@ end
 subgraph QA["质量门 / Quality Gate"]
   direction TB
   QA_TEST["测试 / Tests<br/>状态 · SSR · E2E · 截图"]:::qa
-  QA_CONTENT["内容质量校验 / Content Check<br/>规格本身是否成立"]:::qa
+  QA_CONTENT["★ 内容质量校验 / Content Check<br/>规格成立 · 验收为 EARS 句式"]:::qa
   QA_MERGE{"合并门槛 / Merge Gate<br/>自动断言 + 人工目检"}:::gate
+  QA_LEDGER["★ 校验台账 / Checks Ledger<br/>脚本 · 退出码 · 输出"]:::ledger
 end
 
 DONE["交付完成 / Shipped"]:::artifact
@@ -111,8 +129,10 @@ subgraph LEGEND["图例 / Legend （颜色与连线一致）"]
   LG_G["绿 实线 / Green<br/>产物 · 文档 · 交付 Artifacts"]:::pGreen
   LG_GR["灰 虚线 / Gray dashed<br/>运行时 · 工具 · 支撑 Runtime"]:::pGray
   LG_R["红 虚线 / Red dashed<br/>失效 · 回炉 · 反馈 Loops"]:::pRed
+  LG_NEW["★ 青虚线 / Teal dashed<br/>新增：伴随角色·视觉·矩阵·台账"]:::pLedger
 end
 
+%% ===== 蓝色 主流程 (0-14) =====
 U --> IN_RAW
 IN_RAW --> IN_GH
 IN_GH -->|有仓库 / yes| IN_INGEST
@@ -129,6 +149,7 @@ RT_CMP --> RT_SEL
 RT_SEL --> RT_GATE
 RT_GATE -->|确认 / confirm| D_GATE
 
+%% ===== 橙色 决策与协作 (15-20) =====
 D_GATE -->|简单 / simple| D_SA
 D_GATE -->|复杂 / complex| D_BO
 D_BO --> D_ROLES
@@ -136,6 +157,7 @@ D_ROLES --> D_SYN
 D_SA --> SP_PROMPT
 D_SYN --> SP_PROMPT
 
+%% ===== 紫色 规格树生成核心 (21-28) =====
 SP_PROMPT --> SP_REDACT
 SP_REDACT --> SP_LLM
 SP_LLM --> SP_SCHEMA
@@ -145,6 +167,7 @@ SP_INV -->|不变量通过| SP_PROV
 SP_FALL --> SP_PROV
 SP_PROV --> SP_TREE
 
+%% ===== 绿色 产物·文档·交付 (29-40) =====
 SP_TREE --> SD_GEN
 SD_GEN --> SD_DOCS
 SD_DOCS --> SD_ACC
@@ -158,6 +181,7 @@ SD_DOCS --> WF_JOB
 EP_HAND --> RV
 RV -->|通过·交付| DONE
 
+%% ===== 灰色虚线 运行时·工具·支撑 (41-60) =====
 D_SA -. 调用工具 .-> D_TOOLS
 D_ROLES -. 调用工具 .-> D_TOOLS
 D_TOOLS -. 证据返回 .-> D_ROLES
@@ -179,6 +203,7 @@ QA_TEST -.-> QA_MERGE
 QA_CONTENT -.-> QA_MERGE
 QA_MERGE -. 放行发布 .-> DONE
 
+%% ===== 红色虚线 失效·回炉·反馈 (61-92) =====
 IN_INGEST -. 权限失败 .-> IN_FALL
 IN_FALL -.-> IN_NORM
 CL_READY -. 未就绪·回去补充 .-> CL_GAP
@@ -212,6 +237,30 @@ EP_PREV -. 用户不满 .-> ITER
 ITER -. 再推演 .-> RP
 QA_MERGE -. 不通过·回炉 .-> FB
 
+%% ===== ★ v1 改动 青虚线 (93-100) =====
+CL_BRIEF -. 成功标准派生需求 .-> SP_PROMPT
+SP_SCHEMA -. 校验结果 .-> QA_LEDGER
+SP_INV -. 校验结果 .-> QA_LEDGER
+QA_TEST -. 结果 .-> QA_LEDGER
+QA_CONTENT -. 结果 .-> QA_LEDGER
+QA_MERGE -. 结果 .-> QA_LEDGER
+QA_LEDGER -. 随交付导出 .-> EP_HAND
+QA_LEDGER -. 落盘存档 .-> WF_JOB
+
+%% ===== ★ v2 新增：伴随角色 + 视觉分流 + 追溯矩阵 (101-111) =====
+CO_CRIT -. 伴随挑刺 .-> CL_GAP
+CO_GROUND -. 伴随接地 .-> IN_INGEST
+CO_GROUND -. 伴随接地 .-> CL_BRIEF
+CO_CRIT -. 伴随挑刺 .-> RT_CMP
+CO_CRIT -. 伴随挑刺 .-> SP_PROMPT
+SD_DOCS -. 转生图提示词 .-> EP_VIS_GEN
+EP_VIS_GEN -.-> EP_HAND
+SP_TREE -. 确定性渲染 .-> EP_VIS_REND
+EP_VIS_REND -.-> EP_HAND
+SP_TREE -. 汇总追溯 .-> EP_MATRIX
+EP_MATRIX -.-> EP_HAND
+
+%% ===== 节点样式（按层）=====
 classDef entry fill:#eef6ff,stroke:#2563eb,color:#0f172a,stroke-width:2px;
 classDef input fill:#eff6ff,stroke:#2563eb,color:#111827,stroke-width:1.5px;
 classDef clarify fill:#fff7ed,stroke:#f97316,color:#111827,stroke-width:1.5px;
@@ -228,17 +277,41 @@ classDef fallback fill:#fee2e2,stroke:#dc2626,color:#111827,stroke-width:1.5px;
 classDef artifact fill:#dcfce7,stroke:#16a34a,color:#111827,stroke-width:2px;
 classDef qa fill:#f8fafc,stroke:#475569,color:#111827,stroke-width:1.5px;
 classDef gate fill:#fffbeb,stroke:#d97706,color:#111827,stroke-width:2px;
+classDef ledger fill:#ccfbf1,stroke:#0f766e,color:#0f172a,stroke-width:2px;
+classDef companion fill:#ccfbf1,stroke:#0f766e,color:#0f172a,stroke-width:1.5px;
 
+%% ===== 图例样式（描边=对应线色）=====
 classDef pBlue fill:#eff6ff,stroke:#2563eb,color:#0f172a,stroke-width:3px;
 classDef pOrange fill:#fff7ed,stroke:#ea580c,color:#0f172a,stroke-width:3px;
 classDef pPurple fill:#f5f3ff,stroke:#7c3aed,color:#0f172a,stroke-width:3px;
 classDef pGreen fill:#ecfdf5,stroke:#16a34a,color:#0f172a,stroke-width:3px;
 classDef pGray fill:#f8fafc,stroke:#64748b,color:#0f172a,stroke-width:3px;
 classDef pRed fill:#fff1f2,stroke:#ef4444,color:#0f172a,stroke-width:3px;
+classDef pLedger fill:#ccfbf1,stroke:#0f766e,color:#0f172a,stroke-width:3px;
 
+%% ===== 连线着色（按声明顺序，分段对应路径）=====
 linkStyle 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14 stroke:#2563eb,stroke-width:2.5px;
 linkStyle 15,16,17,18,19,20 stroke:#ea580c,stroke-width:2.5px;
 linkStyle 21,22,23,24,25,26,27,28 stroke:#7c3aed,stroke-width:2.5px;
 linkStyle 29,30,31,32,33,34,35,36,37,38,39,40 stroke:#16a34a,stroke-width:2.5px;
 linkStyle 41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60 stroke:#64748b,stroke-width:1.8px,stroke-dasharray:5 4;
 linkStyle 61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92 stroke:#ef4444,stroke-width:1.8px,stroke-dasharray:6 4;
+linkStyle 93,94,95,96,97,98,99,100 stroke:#0f766e,stroke-width:2.5px,stroke-dasharray:4 3;
+linkStyle 101,102,103,104,105,106,107,108,109,110,111 stroke:#0f766e,stroke-width:2px,stroke-dasharray:4 3;
+```
+
+## v2 这一版加了什么
+
+**五、伴随式审查与接地层（新子图 CO）**
+- 两个横切角色:`挑刺者`(找漏洞、证据不足处)、`接地者`(读真代码、逼挂真实出处)。
+- 用青虚线伴随到前段:输入(`IN_INGEST`)、澄清(`CL_GAP` / `CL_BRIEF`)、路线(`RT_CMP`)、规格(`SP_PROMPT`)。
+- 子图标题写明「**按需触发：模糊度·真仓库·风险**」——能力常驻、开会按需,不在每步常驻。
+- 注:原来的「决策门 / 头脑风暴」(DG)保留,作为复杂规格时升级成「全套多角色」的重型档;CO 是随时可调的轻量档。两档分工。
+
+**六、落地交付升级（S6 扩了三个节点 + 加厚交付包）**
+- `视觉预览·生成`:每份规格文档 → 生图提示词 → 生图模型(出 UI 草样),并强制标「预览·未验证」。
+- `结构图·渲染`:架构总图/规格树走 **Mermaid 确定性渲染**,不交给生图模型(它会糊框、编错字)。
+- `可追溯矩阵`:需求↔设计↔任务↔证据↔用例 一张对应表(Kiro 那张表)。
+- `交付包`标签加厚:接口契约(草稿·待核)、验收用例、未决项登记、校验台账、视觉预览(标来源)。
+
+新增全在最后两段(93–100 是 v1,101–111 是 v2),原 0–92 条线的编号和配色没动,你的彩色路径不会乱。
